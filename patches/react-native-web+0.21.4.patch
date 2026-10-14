@@ -1,0 +1,45 @@
+diff --git a/node_modules/react-native-web/dist/cjs/modules/useResponderEvents/ResponderSystem.js b/node_modules/react-native-web/dist/cjs/modules/useResponderEvents/ResponderSystem.js
+index dd697f3..8605fea 100644
+--- a/node_modules/react-native-web/dist/cjs/modules/useResponderEvents/ResponderSystem.js
++++ b/node_modules/react-native-web/dist/cjs/modules/useResponderEvents/ResponderSystem.js
+@@ -233,6 +233,10 @@ function eventListener(domEvent) {
+     }
+     return;
+   }
++  // Non-primary clicks and DevTools can deliver mouseup without a tracked start.
++  if (eventType === 'mouseup' && (domEvent.button !== 0 || trackedTouchCount === 0)) {
++    return;
++  }
+   var isStartEvent = (0, _ResponderEventTypes.isStartish)(eventType) && (0, _utils.isPrimaryPointerDown)(domEvent);
+   var isMoveEvent = (0, _ResponderEventTypes.isMoveish)(eventType);
+   var isEndEvent = (0, _ResponderEventTypes.isEndish)(eventType);
+diff --git a/node_modules/react-native-web/dist/modules/useResponderEvents/ResponderSystem.js b/node_modules/react-native-web/dist/modules/useResponderEvents/ResponderSystem.js
+index 0aec2d6..59970e3 100644
+--- a/node_modules/react-native-web/dist/modules/useResponderEvents/ResponderSystem.js
++++ b/node_modules/react-native-web/dist/modules/useResponderEvents/ResponderSystem.js
+@@ -225,6 +225,10 @@ function eventListener(domEvent) {
+     }
+     return;
+   }
++  // Non-primary clicks and DevTools can deliver mouseup without a tracked start.
++  if (eventType === 'mouseup' && (domEvent.button !== 0 || trackedTouchCount === 0)) {
++    return;
++  }
+   var isStartEvent = isStartish(eventType) && isPrimaryPointerDown(domEvent);
+   var isMoveEvent = isMoveish(eventType);
+   var isEndEvent = isEndish(eventType);
+diff --git a/node_modules/react-native-web/src/modules/useResponderEvents/ResponderSystem.js b/node_modules/react-native-web/src/modules/useResponderEvents/ResponderSystem.js
+index 6b6c4da..8f7db80 100644
+--- a/node_modules/react-native-web/src/modules/useResponderEvents/ResponderSystem.js
++++ b/node_modules/react-native-web/src/modules/useResponderEvents/ResponderSystem.js
+@@ -290,6 +290,10 @@ function eventListener(domEvent: any) {
+     return;
+   }
+ 
++  // Non-primary clicks and DevTools can deliver mouseup without a tracked start.
++  if (eventType === 'mouseup' && (domEvent.button !== 0 || trackedTouchCount === 0)) {
++    return;
++  }
+   const isStartEvent = isStartish(eventType) && isPrimaryPointerDown(domEvent);
+   const isMoveEvent = isMoveish(eventType);
+   const isEndEvent = isEndish(eventType);
