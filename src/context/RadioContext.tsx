@@ -9,7 +9,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import { getRadioMetadata, resolveRadioArtwork } from "@/services/radioMetadata";
-import { shows } from "@/data/shows";
+import { useContent } from "@/context/ContentContext";
 import {
   createStationStreamShow,
   STATION_STREAM_SHOW_ID,
@@ -29,7 +29,7 @@ type RadioContextValue = {
   buffering: boolean;
   currentShow: Show | null;
   liveShows: Show[];
-  listenerCount: number;
+  listenerCount: number | null;
   liveShowCount: number;
   error: string | null;
   toggle: () => void;
@@ -47,10 +47,14 @@ const RadioContext = createContext<RadioContextValue | null>(null);
 
 /** Actual station audio with local preview show metadata and listener counts. */
 export function RadioProvider({ children }: PropsWithChildren) {
+  const { shows, source } = useContent();
+  const lineup = useRef(shows);
+  lineup.current = shows;
   const [stationStreamShow] = useState(() => createStationStreamShow());
   const [currentShow, setCurrentShow] = useState<Show | null>(null);
   const [hasEverPlayed, setHasEverPlayed] = useState(false);
-  const [liveShows, setLiveShows] = useState(() => getLiveShows(shows));
+  const [scheduleTime, setScheduleTime] = useState(() => new Date());
+  const liveShows = useMemo(() => getLiveShows(shows, scheduleTime), [shows, scheduleTime]);
   const selectedShow = useRef<Show | null>(null);
   const { playback, status } = useRadioPlayback();
   const [sleepMinutes, setSleepMinutes] = useState<number | null>(null);
@@ -61,7 +65,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
   );
 
   useEffect(() => {
-    const updateLiveShows = () => setLiveShows(getLiveShows(shows));
+    const updateLiveShows = () => setScheduleTime(new Date());
     const interval = setInterval(updateLiveShows, 30_000);
     return () => clearInterval(interval);
   }, []);
@@ -76,7 +80,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
       selectedShow.current = show;
       setCurrentShow(show);
       playback.start(
-        getRadioMetadata(show, getLiveShows(shows).length > 1),
+        getRadioMetadata(show, getLiveShows(lineup.current).length > 1),
         restart,
       );
       // Native notifications need a file:// URL for artwork bundled in an APK.
@@ -84,7 +88,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
       void resolveRadioArtwork(show)
         .then(() => {
           if (selectedShow.current !== show) return;
-          playback.setMetadata(getRadioMetadata(show, getLiveShows(shows).length > 1));
+          playback.setMetadata(getRadioMetadata(show, getLiveShows(lineup.current).length > 1));
         })
         .catch(console.warn);
     },
@@ -109,16 +113,16 @@ export function RadioProvider({ children }: PropsWithChildren) {
       }
       startShow(selectLiveShow(shows) ?? stationStreamShow);
     },
-    [startShow, stationStreamShow],
+    [startShow, stationStreamShow, shows],
   );
   const previous = useCallback(
     () =>
       startShow(selectAdjacentLiveShow(shows, selectedShow.current?.id, -1)),
-    [startShow],
+    [startShow, shows],
   );
   const next = useCallback(
     () => startShow(selectAdjacentLiveShow(shows, selectedShow.current?.id, 1)),
-    [startShow],
+    [startShow, shows],
   );
   useEffect(() => {
     playback.setSkipHandler((direction) => direction === 1 ? next() : previous());
@@ -126,10 +130,14 @@ export function RadioProvider({ children }: PropsWithChildren) {
   }, [playback, next, previous]);
 
   useEffect(() => {
-    const show = selectedShow.current;
+    const selected = selectedShow.current;
+    const show = shows.find(item => item.id === selected?.id) ?? selected;
     if (!show) return;
+    // A catalogue refresh can update artwork/text while the native stream keeps playing.
+    selectedShow.current = show;
+    setCurrentShow(show);
     playback.setMetadata(getRadioMetadata(show, liveShows.length > 1));
-  }, [playback, liveShows]);
+  }, [playback, liveShows, shows]);
   const toggle = useCallback(() => {
     const phase = playback.getSnapshot().phase;
     if (phase === "playing" || phase === "loading") playback.pause();
@@ -139,7 +147,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
     const selected =
       selectedShow.current ?? selectLiveShow(shows) ?? stationStreamShow;
     startShow(selected, true);
-  }, [startShow, stationStreamShow]);
+  }, [startShow, stationStreamShow, shows]);
 
   const setSleepTimer = useCallback(
     (minutes: number | null) => {
@@ -178,7 +186,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
       buffering: status.phase === "loading",
       currentShow,
       liveShows,
-      listenerCount:
+      listenerCount: source === "supabase" ? null :
         currentShow?.listeners || totalListeners || stationStreamShow.listeners!,
       liveShowCount: liveShows.length,
       error: status.error,
@@ -194,6 +202,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
     }),
     [
       status,
+      source,
       hasEverPlayed,
       currentShow,
       liveShows,

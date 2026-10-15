@@ -3,7 +3,7 @@ import { ArrowUpRight, Clock3, Radio } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "@/utils/navigation";
 import { useRadio } from "@/context/RadioContext";
-import { shows } from "@/data/shows";
+import { useContent } from "@/context/ContentContext";
 import {
   getNextScheduledShow,
   SAST_TIME_ZONE,
@@ -39,6 +39,8 @@ function ShowNotice({ show, detail }: { show: Show; detail: string }) {
 }
 
 export function LiveNoticeBoard() {
+  const { shows, loading, error } = useContent();
+  const unavailable = !!error && !shows.length;
   const { liveShows } = useRadio();
   const next = liveShows.length ? null : getNextScheduledShow(shows);
   const nextTime = next
@@ -67,7 +69,7 @@ export function LiveNoticeBoard() {
         <View style={[styles.status, !liveShows.length && styles.statusOff]}>
           <View style={[styles.dot, !liveShows.length && styles.dotOff]} />
           <Text style={[styles.statusText, !liveShows.length && styles.statusTextOff]}>
-            {liveShows.length ? "LIVE NOW" : "OFF AIR"}
+            {liveShows.length ? "LIVE NOW" : loading ? "UPDATING" : unavailable ? "UNAVAILABLE" : "OFF AIR"}
           </Text>
         </View>
       </View>
@@ -82,10 +84,10 @@ export function LiveNoticeBoard() {
         <View style={styles.offAir}>
           <View style={styles.offAirCopy}>
             <Text style={styles.offAirTitle}>
-              {next ? "Between shows" : "No shows scheduled"}
+              {loading ? "Checking the schedule…" : unavailable ? "Schedule unavailable" : next ? "Between shows" : "No shows scheduled"}
             </Text>
             <Text style={styles.offAirDescription}>
-              {next ? "Here’s what’s coming up next." : "Check back for the next broadcast."}
+              {loading || unavailable ? "You can still listen to the live station." : next ? "Here’s what’s coming up next." : "Check back for the next broadcast."}
             </Text>
           </View>
           {next && nextTime ? (

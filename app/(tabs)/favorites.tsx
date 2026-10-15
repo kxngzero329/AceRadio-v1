@@ -6,9 +6,11 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { ShowGrid } from "@/components/ShowGrid";
 import { PageScrollView } from "@/components/PageScrollView";
 import { useFavorites } from "@/context/FavoritesContext";
-import { shows } from "@/data/shows";
+import { useContent } from "@/context/ContentContext";
+import { ContentStatus } from "@/components/ContentStatus";
 import { colors } from "@/theme/colors";
 export default function FavoritesScreen() {
+  const { shows, loading, error } = useContent();
   const { favorites, ready } = useFavorites();
   const selected = shows.filter((s) => favorites.includes(s.id));
   return (
@@ -24,12 +26,15 @@ export default function FavoritesScreen() {
           Saved <Text style={{ color: colors.green }}>shows.</Text>
         </Text>
         <Text style={styles.sub}>The voices you keep coming back to.</Text>
-        {!ready ? (
+        <ContentStatus />
+        {!ready || (loading && !shows.length) ? (
           <Text style={styles.emptyDesc}>Loading your saved shows…</Text>
         ) : selected.length ? (
           <View style={styles.grid}>
             <ShowGrid shows={selected} />
           </View>
+        ) : error && !shows.length ? null : favorites.length > 0 ? (
+          <Text style={styles.emptyDesc}>Your saved shows are currently unavailable. Your favourites are still saved on this device.</Text>
         ) : (
           <View testID="favorites-empty" style={styles.empty}>
             <View style={styles.heart}>

@@ -31,8 +31,9 @@ export const ShowCard = memo(function ShowCard({
   const titleHeight = Math.ceil(19 * fontScale * 2);
   const presenterHeight = Math.ceil(16 * fontScale * 2);
   const scheduleHeight = Math.ceil(15 * fontScale * 2);
-  const listeners = listenerCount.toLocaleString("en-ZA");
-  const showListenerCount = width >= 150 && fontScale <= 1.3;
+  const listeners = listenerCount?.toLocaleString("en-ZA");
+  const showListenerCount =
+    listeners !== undefined && width >= 150 && fontScale <= 1.3;
 
   return (
     <View testID={`show-card-${show.id}`} style={[styles.card, { width }]}>
@@ -57,7 +58,9 @@ export const ShowCard = memo(function ShowCard({
           {isLive && (
             <View
               testID={`show-live-badge-${show.id}`}
-              accessibilityLabel={`Live now, ${listeners} listeners`}
+              accessibilityLabel={
+                listeners ? `Live now, ${listeners} listeners` : "Live now"
+              }
               style={[styles.liveBadge, { maxWidth: Math.max(44, width - 68) }]}
             >
               <View style={styles.liveDot} />

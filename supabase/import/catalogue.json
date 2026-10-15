@@ -1,0 +1,1652 @@
+{
+  "version": 1,
+  "project_ref": "dbgpfqyighcaquxwzkfe",
+  "sources": [
+    "https://api.ace.radio/shows",
+    "https://api.ace.radio/banners",
+    "src/data/shows.ts",
+    "src/config/station.ts",
+    "app/(tabs)/about.tsx"
+  ],
+  "aliases": {
+    "ace-mornings": "mornings",
+    "the-renssance": "renaissance",
+    "the-restart": "restart",
+    "kittys-boombox-hits": "kitty",
+    "retro-reloaded": "retro"
+  },
+  "records": {
+    "media_assets": [
+      {
+        "id": "show:smooth-sundays",
+        "bucket_id": "show-artwork",
+        "object_path": "show/smooth-sundays/2d70ecd9f39343220cc79cc237cdb0d529a3358c8eb9f913a54bf8b7c1c83c45.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "2d70ecd9f39343220cc79cc237cdb0d529a3358c8eb9f913a54bf8b7c1c83c45",
+        "alt_text": "Smooth Sundays",
+        "source_url": "https://api.ace.radio/uploads/shows/smooth-sundays/4c5374d6-481a-41cc-8fb9-b63ec563f911-fafba75a-9e70-4347-ac32-f6a7bd8827aa-1778222525.jpg",
+        "status": "published"
+      },
+      {
+        "id": "banner:smooth-sundays-1778228476480",
+        "bucket_id": "banners",
+        "object_path": "banner/smooth-sundays-1778228476480/f610db618369d1ef7c3504fdcef0e96efd965d94ad1b3c4315c4f1f5c7dd313f.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "f610db618369d1ef7c3504fdcef0e96efd965d94ad1b3c4315c4f1f5c7dd313f",
+        "alt_text": "Smooth Sundays",
+        "source_url": "https://api.ace.radio/uploads/banners/general/c4039f14-5a81-48d6-a29b-02b1537a8648-3d0581bf-b309-4686-a63a-0bdfc6bf7b7b-1778228477.png",
+        "status": "published"
+      },
+      {
+        "id": "presenter:benna-october",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/benna-october/2d70ecd9f39343220cc79cc237cdb0d529a3358c8eb9f913a54bf8b7c1c83c45.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "2d70ecd9f39343220cc79cc237cdb0d529a3358c8eb9f913a54bf8b7c1c83c45",
+        "alt_text": "Benna October",
+        "source_url": "https://api.ace.radio/uploads/shows/smooth-sundays/4c5374d6-481a-41cc-8fb9-b63ec563f911-fafba75a-9e70-4347-ac32-f6a7bd8827aa-1778222525.jpg",
+        "status": "published"
+      },
+      {
+        "id": "show:weekend-reboot",
+        "bucket_id": "show-artwork",
+        "object_path": "show/weekend-reboot/59129ff764281ff9585b2d5dddf047f7f38ad9d3d264c02a302dd3849b1dc40f.png",
+        "mime_type": "image/png",
+        "width": 360,
+        "height": 360,
+        "sha256": "59129ff764281ff9585b2d5dddf047f7f38ad9d3d264c02a302dd3849b1dc40f",
+        "alt_text": "Weekend Reboot",
+        "source_url": "https://api.ace.radio/uploads/shows/weekend-reboot/a650980a-69b9-46e5-8b74-d30c5fd7ec0b-5fa4cc98-4f96-415a-88ac-090fcc92ba32-1778223048.png",
+        "status": "published"
+      },
+      {
+        "id": "banner:weekend-reboot-1778230868582",
+        "bucket_id": "banners",
+        "object_path": "banner/weekend-reboot-1778230868582/4172409f2b1b1bc96acfcfbc3a6695a077568e19ed06aada4cdc2d145dfebc00.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "4172409f2b1b1bc96acfcfbc3a6695a077568e19ed06aada4cdc2d145dfebc00",
+        "alt_text": "Weekend Reboot",
+        "source_url": "https://api.ace.radio/uploads/banners/general/80b879b7-b3cd-491d-97e8-7f64e5baa219-227872d0-9287-4c74-9d1f-3d467ef46706-1778230869.png",
+        "status": "published"
+      },
+      {
+        "id": "presenter:sandy-mahlangeni",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/sandy-mahlangeni/59129ff764281ff9585b2d5dddf047f7f38ad9d3d264c02a302dd3849b1dc40f.png",
+        "mime_type": "image/png",
+        "width": 360,
+        "height": 360,
+        "sha256": "59129ff764281ff9585b2d5dddf047f7f38ad9d3d264c02a302dd3849b1dc40f",
+        "alt_text": "Sandy Mahlangeni",
+        "source_url": "https://api.ace.radio/uploads/shows/weekend-reboot/a650980a-69b9-46e5-8b74-d30c5fd7ec0b-5fa4cc98-4f96-415a-88ac-090fcc92ba32-1778223048.png",
+        "status": "published"
+      },
+      {
+        "id": "show:top-20",
+        "bucket_id": "show-artwork",
+        "object_path": "show/top-20/57cf81acce2b006f33d85d6e8039f98ea354b0c2eadb0712aade73b808285802.png",
+        "mime_type": "image/png",
+        "width": 800,
+        "height": 800,
+        "sha256": "57cf81acce2b006f33d85d6e8039f98ea354b0c2eadb0712aade73b808285802",
+        "alt_text": "Top 20",
+        "source_url": "https://api.ace.radio/uploads/shows/top-20/a2e78fa3-61e4-49d9-821a-55a8360dc8cb-7e393a94-3dd8-4c63-a92e-348a007f2741-1782310923.png",
+        "status": "published"
+      },
+      {
+        "id": "banner:top-20-1778231668159",
+        "bucket_id": "banners",
+        "object_path": "banner/top-20-1778231668159/001ff9ff6b6ac1957f0ea0ea08270889ffe9d9241cbb621c02eda61874b6c73b.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "001ff9ff6b6ac1957f0ea0ea08270889ffe9d9241cbb621c02eda61874b6c73b",
+        "alt_text": "Top 20",
+        "source_url": "https://api.ace.radio/uploads/banners/show/6d64d104-62dd-4564-b3a7-816402095331-9b5898f9-64e8-49d8-9caf-d885d612e694-1782310968.png",
+        "status": "published"
+      },
+      {
+        "id": "presenter:christopher-marshall",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/christopher-marshall/095ba160720b1b6590b8d35dffd8b0a29f9c6bfb60db36b609b4aa5cb100cd14.png",
+        "mime_type": "image/png",
+        "width": 252,
+        "height": 252,
+        "sha256": "095ba160720b1b6590b8d35dffd8b0a29f9c6bfb60db36b609b4aa5cb100cd14",
+        "alt_text": "Christopher Marshall",
+        "source_url": null,
+        "status": "published"
+      },
+      {
+        "id": "presenter:caitlin-sisam",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/caitlin-sisam/eb6cca53231d2e1d6cad6b9282e1a5ea357818e383884069765db6ca1061512b.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "eb6cca53231d2e1d6cad6b9282e1a5ea357818e383884069765db6ca1061512b",
+        "alt_text": "Caitlin Sisam",
+        "source_url": "https://api.ace.radio/uploads/shows/kittys-boombox-hits/7edb8528-24cf-4784-9338-6e80d0f8e729-c9990545-8535-4be2-853e-11d5afde26e4-1785755036.jpg",
+        "status": "published"
+      },
+      {
+        "id": "show:club-ace",
+        "bucket_id": "show-artwork",
+        "object_path": "show/club-ace/eebb8d3cf2a05fd6613de765d1aa4412f12a3b59932ed56288675988218117d7.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "eebb8d3cf2a05fd6613de765d1aa4412f12a3b59932ed56288675988218117d7",
+        "alt_text": "Club Ace",
+        "source_url": "https://api.ace.radio/uploads/shows/club-ace/b05b4570-0680-43d2-b432-e211015a1639-2ff5507a-0edd-4bdf-be69-0ee90b17c848-1778224051.jpg",
+        "status": "published"
+      },
+      {
+        "id": "banner:club-ace-1778232041383",
+        "bucket_id": "banners",
+        "object_path": "banner/club-ace-1778232041383/73fa9dabafbbf08fc3d12e8acac30173910ec6c6f75e9f76edfd33c01c32bb2d.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "73fa9dabafbbf08fc3d12e8acac30173910ec6c6f75e9f76edfd33c01c32bb2d",
+        "alt_text": "Club Ace",
+        "source_url": "https://api.ace.radio/uploads/banners/general/e2b67cc6-5a9a-4cb0-a218-8318faf1e1be-aea56198-8902-4111-9f2c-b2b7f0b8fcd8-1778232042.png",
+        "status": "published"
+      },
+      {
+        "id": "show:retro",
+        "bucket_id": "show-artwork",
+        "object_path": "show/retro/361347977f0d87e314ebe193281c45f45e2f0a4c443e9c51c7da6884bce890fe.png",
+        "mime_type": "image/png",
+        "width": 800,
+        "height": 800,
+        "sha256": "361347977f0d87e314ebe193281c45f45e2f0a4c443e9c51c7da6884bce890fe",
+        "alt_text": "Retro Reloaded",
+        "source_url": "https://api.ace.radio/uploads/shows/retro-reloaded/97998b9e-578a-47ab-9c36-bc357fcead17-04964c91-b911-467a-93c5-9fa29f8d2e9d-1778225471.png",
+        "status": "published"
+      },
+      {
+        "id": "banner:retro-reloaded-1778232122345",
+        "bucket_id": "banners",
+        "object_path": "banner/retro-reloaded-1778232122345/5153d062dc6c7318f387f2943f58d7c111866eefcd1e0ac6d89d93dc99194e22.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "5153d062dc6c7318f387f2943f58d7c111866eefcd1e0ac6d89d93dc99194e22",
+        "alt_text": "Retro Reloaded",
+        "source_url": "https://api.ace.radio/uploads/banners/general/65d6b800-0e21-455f-b1f4-9ce48abdf857-411ce228-0617-4ee9-8dc8-6dd55cf6a2bd-1778232122.png",
+        "status": "published"
+      },
+      {
+        "id": "presenter:elton-tuck",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/elton-tuck/361347977f0d87e314ebe193281c45f45e2f0a4c443e9c51c7da6884bce890fe.png",
+        "mime_type": "image/png",
+        "width": 800,
+        "height": 800,
+        "sha256": "361347977f0d87e314ebe193281c45f45e2f0a4c443e9c51c7da6884bce890fe",
+        "alt_text": "Elton Tuck",
+        "source_url": "https://api.ace.radio/uploads/shows/retro-reloaded/97998b9e-578a-47ab-9c36-bc357fcead17-04964c91-b911-467a-93c5-9fa29f8d2e9d-1778225471.png",
+        "status": "published"
+      },
+      {
+        "id": "show:rush-hour",
+        "bucket_id": "show-artwork",
+        "object_path": "show/rush-hour/b6595e39ac7d22b91caaa3e140359e5642f4c065a8b152121fe31fe6d578f52c.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "b6595e39ac7d22b91caaa3e140359e5642f4c065a8b152121fe31fe6d578f52c",
+        "alt_text": "Rush Hour",
+        "source_url": "https://api.ace.radio/uploads/shows/rush-hour/840283df-1681-47ce-861b-8546960648c5-92ea67da-423a-42f9-a3fb-892768a702a7-1778226145.jpg",
+        "status": "published"
+      },
+      {
+        "id": "banner:rush-hour-1778232383384",
+        "bucket_id": "banners",
+        "object_path": "banner/rush-hour-1778232383384/e0072a4a1d436a04ba9e865168a5a25713a0f8c917c81c2e7ce24fd30e791aed.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "e0072a4a1d436a04ba9e865168a5a25713a0f8c917c81c2e7ce24fd30e791aed",
+        "alt_text": "Rush Hour",
+        "source_url": "https://api.ace.radio/uploads/banners/general/55506fca-844c-43ff-85c3-3d36fad2e754-835e622c-b724-4d66-ad0c-cbfe0890ba8c-1778232384.png",
+        "status": "published"
+      },
+      {
+        "id": "presenter:mel-massyn",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/mel-massyn/b6595e39ac7d22b91caaa3e140359e5642f4c065a8b152121fe31fe6d578f52c.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "b6595e39ac7d22b91caaa3e140359e5642f4c065a8b152121fe31fe6d578f52c",
+        "alt_text": "Mel Massyn",
+        "source_url": "https://api.ace.radio/uploads/shows/rush-hour/840283df-1681-47ce-861b-8546960648c5-92ea67da-423a-42f9-a3fb-892768a702a7-1778226145.jpg",
+        "status": "published"
+      },
+      {
+        "id": "show:midday-mix",
+        "bucket_id": "show-artwork",
+        "object_path": "show/midday-mix/2d5b0b36cab6a9fcbc0e9f39a73944a1eff247f67e3c6870e8c78b1ec185edf1.png",
+        "mime_type": "image/png",
+        "width": 800,
+        "height": 800,
+        "sha256": "2d5b0b36cab6a9fcbc0e9f39a73944a1eff247f67e3c6870e8c78b1ec185edf1",
+        "alt_text": "Midday Mix",
+        "source_url": "https://api.ace.radio/uploads/shows/midday-mix/e65a000c-6ad6-4bc4-990c-44204aaff912-db29c314-9249-4e4a-b0e1-679124c410f2-1778226222.png",
+        "status": "published"
+      },
+      {
+        "id": "banner:midday-mix-1778232448679",
+        "bucket_id": "banners",
+        "object_path": "banner/midday-mix-1778232448679/3daf5d0f3151a92d9c982088dad8fc7a5992d8ed7fbbc9e7a7fc7423fbd30f8a.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "3daf5d0f3151a92d9c982088dad8fc7a5992d8ed7fbbc9e7a7fc7423fbd30f8a",
+        "alt_text": "Midday Mix",
+        "source_url": "https://api.ace.radio/uploads/banners/general/aaadec13-d1c0-4726-bd6c-847e5888f34a-d9d65d8c-5602-4685-908d-48961ec0076f-1778232449.png",
+        "status": "published"
+      },
+      {
+        "id": "presenter:sulvanna-brown",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/sulvanna-brown/2d5b0b36cab6a9fcbc0e9f39a73944a1eff247f67e3c6870e8c78b1ec185edf1.png",
+        "mime_type": "image/png",
+        "width": 800,
+        "height": 800,
+        "sha256": "2d5b0b36cab6a9fcbc0e9f39a73944a1eff247f67e3c6870e8c78b1ec185edf1",
+        "alt_text": "Sulvanna Brown",
+        "source_url": "https://api.ace.radio/uploads/shows/midday-mix/e65a000c-6ad6-4bc4-990c-44204aaff912-db29c314-9249-4e4a-b0e1-679124c410f2-1778226222.png",
+        "status": "published"
+      },
+      {
+        "id": "show:mornings",
+        "bucket_id": "show-artwork",
+        "object_path": "show/mornings/d6805778246c1efbce422c188b4343beb4cf32bcb7f535ef5ac8b48147db496a.png",
+        "mime_type": "image/png",
+        "width": 800,
+        "height": 800,
+        "sha256": "d6805778246c1efbce422c188b4343beb4cf32bcb7f535ef5ac8b48147db496a",
+        "alt_text": "Ace Mornings",
+        "source_url": "https://api.ace.radio/uploads/shows/ace-mornings/aacd5e58-65f6-4f5b-81b1-bf010f9bbbd4-fda51f48-263d-433a-b911-1419ef86a2b7-1778481323.png",
+        "status": "published"
+      },
+      {
+        "id": "banner:ace-mornings-1785755700702",
+        "bucket_id": "banners",
+        "object_path": "banner/ace-mornings-1785755700702/512d0fcd27826325ff7e3d9799280f69f86ce7e5212c54acd792d955e7ac859f.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "512d0fcd27826325ff7e3d9799280f69f86ce7e5212c54acd792d955e7ac859f",
+        "alt_text": "Ace Mornings",
+        "source_url": "https://api.ace.radio/uploads/banners/show/d2cb7a9a-f5c9-47b5-956c-1e3ded0f899a-82f32066-8e16-49c6-b8f3-e82848a67861-1785755701.png",
+        "status": "published"
+      },
+      {
+        "id": "show:kitty",
+        "bucket_id": "show-artwork",
+        "object_path": "show/kitty/eb6cca53231d2e1d6cad6b9282e1a5ea357818e383884069765db6ca1061512b.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "eb6cca53231d2e1d6cad6b9282e1a5ea357818e383884069765db6ca1061512b",
+        "alt_text": "Kitty's Boombox Hits",
+        "source_url": "https://api.ace.radio/uploads/shows/kittys-boombox-hits/7edb8528-24cf-4784-9338-6e80d0f8e729-c9990545-8535-4be2-853e-11d5afde26e4-1785755036.jpg",
+        "status": "published"
+      },
+      {
+        "id": "banner:kittys-boombox-hits-1785755457807",
+        "bucket_id": "banners",
+        "object_path": "banner/kittys-boombox-hits-1785755457807/f9c92f1bbe166d8d5711e9cd5bd15e03dbf2d3e4bf81160892fd3fbcbcb97329.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "f9c92f1bbe166d8d5711e9cd5bd15e03dbf2d3e4bf81160892fd3fbcbcb97329",
+        "alt_text": "Kitty's Boombox Hits",
+        "source_url": "https://api.ace.radio/uploads/banners/show/d11b6f36-d1cb-41c4-9a72-4b934ebe0f5f-3084271f-c797-406a-b895-22077c11d6cf-1785755458.png",
+        "status": "published"
+      },
+      {
+        "id": "show:restart",
+        "bucket_id": "show-artwork",
+        "object_path": "show/restart/759ba94f266ebbedc10cf073485f71b19609fe1497e333df8ae8c8f41dd134f1.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "759ba94f266ebbedc10cf073485f71b19609fe1497e333df8ae8c8f41dd134f1",
+        "alt_text": "The Restart",
+        "source_url": "https://api.ace.radio/uploads/shows/the-restart/07b73ad0-1ab6-4b01-a95e-2af98f3b58d3-50c2b37b-1d57-4bc4-8f63-b5f98d5fbe30-1785756143.jpg",
+        "status": "published"
+      },
+      {
+        "id": "banner:the-restart-1785756183811",
+        "bucket_id": "banners",
+        "object_path": "banner/the-restart-1785756183811/49625a8b5057430c9adaf42765f4cc44954460ef55397983271633c6e335da96.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "49625a8b5057430c9adaf42765f4cc44954460ef55397983271633c6e335da96",
+        "alt_text": "The Restart",
+        "source_url": "https://api.ace.radio/uploads/banners/show/11dbf73e-7c7c-4c1a-bf84-88f9c07931c9-4c78a930-6c90-43b3-a1c8-1e7d8eee8224-1785756184.png",
+        "status": "published"
+      },
+      {
+        "id": "presenter:ryan-thomas",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/ryan-thomas/759ba94f266ebbedc10cf073485f71b19609fe1497e333df8ae8c8f41dd134f1.jpg",
+        "mime_type": "image/jpeg",
+        "height": 360,
+        "width": 360,
+        "sha256": "759ba94f266ebbedc10cf073485f71b19609fe1497e333df8ae8c8f41dd134f1",
+        "alt_text": "Ryan Thomas",
+        "source_url": "https://api.ace.radio/uploads/shows/the-restart/07b73ad0-1ab6-4b01-a95e-2af98f3b58d3-50c2b37b-1d57-4bc4-8f63-b5f98d5fbe30-1785756143.jpg",
+        "status": "published"
+      },
+      {
+        "id": "show:renaissance",
+        "bucket_id": "show-artwork",
+        "object_path": "show/renaissance/6f0d87d590cc7490dc39aa2b8c019fe68c7a8e88a38687895e500012c455dc9d.png",
+        "mime_type": "image/png",
+        "width": 800,
+        "height": 800,
+        "sha256": "6f0d87d590cc7490dc39aa2b8c019fe68c7a8e88a38687895e500012c455dc9d",
+        "alt_text": "The Renéssance",
+        "source_url": "https://api.ace.radio/uploads/shows/the-renssance/e3c937e3-124c-4d3a-98df-d9b4af76fa6b-8c0a606d-1c19-49b1-ab4c-7117aa596507-1788251176.png",
+        "status": "published"
+      },
+      {
+        "id": "banner:the-renssance-1788251258846",
+        "bucket_id": "banners",
+        "object_path": "banner/the-renssance-1788251258846/0831c239100f8cc7ca0ef0a37ba00855adc73255667c0f18d5e46dfa0fcfb6a2.png",
+        "mime_type": "image/png",
+        "width": 1600,
+        "height": 800,
+        "sha256": "0831c239100f8cc7ca0ef0a37ba00855adc73255667c0f18d5e46dfa0fcfb6a2",
+        "alt_text": "The Renéssance",
+        "source_url": "https://api.ace.radio/uploads/banners/show/890f72a5-4a0b-4c82-896e-5c0733b14f57-baa1c31f-4e12-4a58-bfa4-af86e942bef4-1788251259.png",
+        "status": "published"
+      },
+      {
+        "id": "presenter:rene-whittles",
+        "bucket_id": "presenter-photos",
+        "object_path": "presenter/rene-whittles/6f0d87d590cc7490dc39aa2b8c019fe68c7a8e88a38687895e500012c455dc9d.png",
+        "mime_type": "image/png",
+        "width": 800,
+        "height": 800,
+        "sha256": "6f0d87d590cc7490dc39aa2b8c019fe68c7a8e88a38687895e500012c455dc9d",
+        "alt_text": "René Whittles",
+        "source_url": "https://api.ace.radio/uploads/shows/the-renssance/e3c937e3-124c-4d3a-98df-d9b4af76fa6b-8c0a606d-1c19-49b1-ab4c-7117aa596507-1788251176.png",
+        "status": "published"
+      },
+      {
+        "id": "team:luke-henwood",
+        "bucket_id": "station-media",
+        "object_path": "team/luke-henwood/e0657cb8ba0c287c5df5d3070edd234a4a3db677a54b8f801ae2b01eaee41738.png",
+        "mime_type": "image/png",
+        "width": 252,
+        "height": 252,
+        "sha256": "e0657cb8ba0c287c5df5d3070edd234a4a3db677a54b8f801ae2b01eaee41738",
+        "alt_text": "Luke Henwood",
+        "source_url": null,
+        "status": "published"
+      }
+    ],
+    "presenters": [
+      {
+        "id": "benna-october",
+        "name": "Benna October",
+        "bio": null,
+        "photo_id": "presenter:benna-october",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Benna October"
+      },
+      {
+        "id": "sandy-mahlangeni",
+        "name": "Sandy Mahlangeni",
+        "bio": null,
+        "photo_id": "presenter:sandy-mahlangeni",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Sandy Mahlangeni"
+      },
+      {
+        "id": "christopher-marshall",
+        "name": "Christopher Marshall",
+        "bio": null,
+        "photo_id": "presenter:christopher-marshall",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Christopher Marshall"
+      },
+      {
+        "id": "caitlin-sisam",
+        "name": "Caitlin Sisam",
+        "bio": null,
+        "photo_id": "presenter:caitlin-sisam",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Caitlin Sisam"
+      },
+      {
+        "id": "jarred-sisam",
+        "name": "Jarred Sisam",
+        "bio": null,
+        "photo_id": null,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Jarred Sisam"
+      },
+      {
+        "id": "elton-tuck",
+        "name": "Elton Tuck",
+        "bio": null,
+        "photo_id": "presenter:elton-tuck",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Elton Tuck"
+      },
+      {
+        "id": "mel-massyn",
+        "name": "Mel Massyn",
+        "bio": null,
+        "photo_id": "presenter:mel-massyn",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Mel Massyn"
+      },
+      {
+        "id": "sulvanna-brown",
+        "name": "Sulvanna Brown",
+        "bio": null,
+        "photo_id": "presenter:sulvanna-brown",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Sulvanna Brown"
+      },
+      {
+        "id": "ryan-thomas",
+        "name": "Ryan Thomas",
+        "bio": null,
+        "photo_id": "presenter:ryan-thomas",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "Ryan Thomas"
+      },
+      {
+        "id": "rene-whittles",
+        "name": "René Whittles",
+        "bio": null,
+        "photo_id": "presenter:rene-whittles",
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "René Whittles"
+      }
+    ],
+    "shows": [
+      {
+        "id": "smooth-sundays",
+        "title": "Smooth Sundays",
+        "subtitle": "Laid-back grooves for your easy Sunday flow.",
+        "description": "Spend your Sunday with Benna October on Smooth Sundays.",
+        "artwork_id": "show:smooth-sundays",
+        "poster_id": "banner:smooth-sundays-1778228476480",
+        "accent": "#1E6E53",
+        "category": "weekends",
+        "display_order": 2,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "smooth-sundays",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Sunday"
+            ],
+            "startTime": "10:00",
+            "endTime": "14:00"
+          },
+          "hosts": [
+            "Benna October"
+          ],
+          "created_at": "2026-05-08 08:42:05",
+          "updated_at": "2026-05-08 12:13:09",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "weekend-reboot",
+        "title": "Weekend Reboot",
+        "subtitle": "Fresh energy. Fresh sound. Fresh you.",
+        "description": "Refresh your Saturday afternoon with Sandy Mahlangeni on Weekend Reboot.",
+        "artwork_id": "show:weekend-reboot",
+        "poster_id": "banner:weekend-reboot-1778230868582",
+        "accent": "#078387",
+        "category": "weekends",
+        "display_order": 4,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "weekend-reboot",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Saturday"
+            ],
+            "startTime": "12:00",
+            "endTime": "15:00"
+          },
+          "hosts": [
+            "Sandy Mahlangeni"
+          ],
+          "created_at": "2026-05-08 08:50:48",
+          "updated_at": "2026-05-08 09:05:07",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "top-20",
+        "title": "Top 20",
+        "subtitle": "The hits. The hype. The charts you can't miss.",
+        "description": "Christopher Marshall and Caitlin Sisam bring you the Top 20.",
+        "artwork_id": "show:top-20",
+        "poster_id": "banner:top-20-1778231668159",
+        "accent": "#08748A",
+        "category": "weekends",
+        "display_order": 5,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "top-20",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Saturday"
+            ],
+            "startTime": "09:00",
+            "endTime": "12:00"
+          },
+          "hosts": [
+            "Christopher Marshall",
+            "Caitlin Sisam"
+          ],
+          "created_at": "2026-05-08 08:56:44",
+          "updated_at": "2026-06-24 16:22:03",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "club-ace",
+        "title": "Club Ace",
+        "subtitle": "Your weekend starts here. Four hours of pure energy.",
+        "description": "Start the weekend with Jarred Sisam and Benna October on Club Ace.",
+        "artwork_id": "show:club-ace",
+        "poster_id": "banner:club-ace-1778232041383",
+        "accent": "#753578",
+        "category": "weekdays",
+        "display_order": 6,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "club-ace",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Friday"
+            ],
+            "startTime": "18:00",
+            "endTime": "22:00"
+          },
+          "hosts": [
+            "Jarred Sisam",
+            "Benna October"
+          ],
+          "created_at": "2026-05-08 09:07:31",
+          "updated_at": "2026-05-08 09:15:47",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "retro",
+        "title": "Retro Reloaded",
+        "subtitle": "Rewinding the hits you still know by heart.",
+        "description": "Revisit the classics with Elton Tuck on Retro Reloaded.",
+        "artwork_id": "show:retro",
+        "poster_id": "banner:retro-reloaded-1778232122345",
+        "accent": "#A27D37",
+        "category": "weekdays",
+        "display_order": 7,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "retro-reloaded",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Thursday"
+            ],
+            "startTime": "18:00",
+            "endTime": "21:00"
+          },
+          "hosts": [
+            "Elton Tuck"
+          ],
+          "created_at": "2026-05-08 09:31:11",
+          "updated_at": "2026-05-08 10:09:30",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "rush-hour",
+        "title": "Rush Hour",
+        "subtitle": "Beats, traffic talk and the drive that moves you.",
+        "description": "Mel Massyn brings you the soundtrack to the weekday drive home.",
+        "artwork_id": "show:rush-hour",
+        "poster_id": "banner:rush-hour-1778232383384",
+        "accent": "#B34E78",
+        "category": "weekdays",
+        "display_order": 10,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "rush-hour",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday"
+            ],
+            "startTime": "15:00",
+            "endTime": "18:00"
+          },
+          "hosts": [
+            "Mel Massyn"
+          ],
+          "created_at": "2026-05-08 09:42:25",
+          "updated_at": "2026-05-08 10:09:30",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "midday-mix",
+        "title": "Midday Mix",
+        "subtitle": "Halfway through the day, all the way turned up.",
+        "description": "Keep your afternoon moving with Sulvanna Brown on Midday Mix.",
+        "artwork_id": "show:midday-mix",
+        "poster_id": "banner:midday-mix-1778232448679",
+        "accent": "#D8525F",
+        "category": "weekdays",
+        "display_order": 11,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "midday-mix",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday"
+            ],
+            "startTime": "12:00",
+            "endTime": "15:00"
+          },
+          "hosts": [
+            "Sulvanna Brown"
+          ],
+          "created_at": "2026-05-08 09:43:42",
+          "updated_at": "2026-05-08 09:43:55",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "mornings",
+        "title": "Ace Mornings",
+        "subtitle": "Wake up. Turn up. Take on the day.",
+        "description": "Start your weekday with Christopher Marshall on Ace Mornings.",
+        "artwork_id": "show:mornings",
+        "poster_id": "banner:ace-mornings-1785755700702",
+        "accent": "#008A75",
+        "category": "weekdays",
+        "display_order": 12,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "ace-mornings",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday"
+            ],
+            "startTime": "06:00",
+            "endTime": "09:00"
+          },
+          "hosts": [
+            "Christopher Marshall"
+          ],
+          "created_at": "2026-05-11 08:35:23",
+          "updated_at": "2026-05-11 08:54:41",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "kitty",
+        "title": "Kitty's Boombox Hits",
+        "subtitle": "The soundtrack to your shower concerts and roadtrip sing-alongs.",
+        "description": "Sing-along favourites and feel-good hits with Caitlin Sisam.",
+        "artwork_id": "show:kitty",
+        "poster_id": "banner:kittys-boombox-hits-1785755457807",
+        "accent": "#297F83",
+        "category": "weekdays",
+        "display_order": 13,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "kittys-boombox-hits",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Tuesday"
+            ],
+            "startTime": "18:00",
+            "endTime": "21:00"
+          },
+          "hosts": [
+            "Caitlin Sisam"
+          ],
+          "created_at": "2026-08-03 13:03:56",
+          "updated_at": "2026-08-03 13:06:04",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "restart",
+        "title": "The Restart",
+        "subtitle": "Where Mondays get their groove back.",
+        "description": "Make Monday feel like the best night of the week with Ryan Thomas on The Restart.",
+        "artwork_id": "show:restart",
+        "poster_id": "banner:the-restart-1785756183811",
+        "accent": "#0967E2",
+        "category": "weekdays",
+        "display_order": 14,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "the-restart",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Monday"
+            ],
+            "startTime": "18:00",
+            "endTime": "21:00"
+          },
+          "hosts": [
+            "Ryan Thomas"
+          ],
+          "created_at": "2026-08-03 13:22:23",
+          "updated_at": "2026-08-03 13:23:32",
+          "description_source": "src/data/shows.ts"
+        }
+      },
+      {
+        "id": "renaissance",
+        "title": "The Renéssance",
+        "subtitle": "Your day. Her sound. Your station.",
+        "description": "Join René Whittles for your weekday mid-morning soundtrack.",
+        "artwork_id": "show:renaissance",
+        "poster_id": "banner:the-renssance-1788251258846",
+        "accent": "#03527C",
+        "category": "weekdays",
+        "display_order": 15,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "the-renssance",
+        "source_payload": {
+          "schedule": {
+            "days": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday"
+            ],
+            "startTime": "09:00",
+            "endTime": "12:00"
+          },
+          "hosts": [
+            "René Whittles"
+          ],
+          "created_at": "2026-09-01 10:26:16",
+          "updated_at": "2026-09-01 10:29:18",
+          "description_source": "src/data/shows.ts"
+        }
+      }
+    ],
+    "show_presenters": [
+      {
+        "show_id": "smooth-sundays",
+        "presenter_id": "benna-october",
+        "position": 0
+      },
+      {
+        "show_id": "weekend-reboot",
+        "presenter_id": "sandy-mahlangeni",
+        "position": 0
+      },
+      {
+        "show_id": "top-20",
+        "presenter_id": "christopher-marshall",
+        "position": 0
+      },
+      {
+        "show_id": "top-20",
+        "presenter_id": "caitlin-sisam",
+        "position": 1
+      },
+      {
+        "show_id": "club-ace",
+        "presenter_id": "jarred-sisam",
+        "position": 0
+      },
+      {
+        "show_id": "club-ace",
+        "presenter_id": "benna-october",
+        "position": 1
+      },
+      {
+        "show_id": "retro",
+        "presenter_id": "elton-tuck",
+        "position": 0
+      },
+      {
+        "show_id": "rush-hour",
+        "presenter_id": "mel-massyn",
+        "position": 0
+      },
+      {
+        "show_id": "midday-mix",
+        "presenter_id": "sulvanna-brown",
+        "position": 0
+      },
+      {
+        "show_id": "mornings",
+        "presenter_id": "christopher-marshall",
+        "position": 0
+      },
+      {
+        "show_id": "kitty",
+        "presenter_id": "caitlin-sisam",
+        "position": 0
+      },
+      {
+        "show_id": "restart",
+        "presenter_id": "ryan-thomas",
+        "position": 0
+      },
+      {
+        "show_id": "renaissance",
+        "presenter_id": "rene-whittles",
+        "position": 0
+      }
+    ],
+    "show_schedules": [
+      {
+        "id": "smooth-sundays-0-1000",
+        "show_id": "smooth-sundays",
+        "day_of_week": 0,
+        "starts_at": "10:00",
+        "ends_at": "14:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "weekend-reboot-6-1200",
+        "show_id": "weekend-reboot",
+        "day_of_week": 6,
+        "starts_at": "12:00",
+        "ends_at": "15:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "top-20-6-0900",
+        "show_id": "top-20",
+        "day_of_week": 6,
+        "starts_at": "09:00",
+        "ends_at": "12:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "club-ace-5-1800",
+        "show_id": "club-ace",
+        "day_of_week": 5,
+        "starts_at": "18:00",
+        "ends_at": "22:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "retro-4-1800",
+        "show_id": "retro",
+        "day_of_week": 4,
+        "starts_at": "18:00",
+        "ends_at": "21:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "rush-hour-1-1500",
+        "show_id": "rush-hour",
+        "day_of_week": 1,
+        "starts_at": "15:00",
+        "ends_at": "18:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "rush-hour-2-1500",
+        "show_id": "rush-hour",
+        "day_of_week": 2,
+        "starts_at": "15:00",
+        "ends_at": "18:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "rush-hour-3-1500",
+        "show_id": "rush-hour",
+        "day_of_week": 3,
+        "starts_at": "15:00",
+        "ends_at": "18:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "rush-hour-4-1500",
+        "show_id": "rush-hour",
+        "day_of_week": 4,
+        "starts_at": "15:00",
+        "ends_at": "18:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "rush-hour-5-1500",
+        "show_id": "rush-hour",
+        "day_of_week": 5,
+        "starts_at": "15:00",
+        "ends_at": "18:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "midday-mix-1-1200",
+        "show_id": "midday-mix",
+        "day_of_week": 1,
+        "starts_at": "12:00",
+        "ends_at": "15:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "midday-mix-2-1200",
+        "show_id": "midday-mix",
+        "day_of_week": 2,
+        "starts_at": "12:00",
+        "ends_at": "15:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "midday-mix-3-1200",
+        "show_id": "midday-mix",
+        "day_of_week": 3,
+        "starts_at": "12:00",
+        "ends_at": "15:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "midday-mix-4-1200",
+        "show_id": "midday-mix",
+        "day_of_week": 4,
+        "starts_at": "12:00",
+        "ends_at": "15:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "midday-mix-5-1200",
+        "show_id": "midday-mix",
+        "day_of_week": 5,
+        "starts_at": "12:00",
+        "ends_at": "15:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "mornings-1-0600",
+        "show_id": "mornings",
+        "day_of_week": 1,
+        "starts_at": "06:00",
+        "ends_at": "09:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "mornings-2-0600",
+        "show_id": "mornings",
+        "day_of_week": 2,
+        "starts_at": "06:00",
+        "ends_at": "09:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "mornings-3-0600",
+        "show_id": "mornings",
+        "day_of_week": 3,
+        "starts_at": "06:00",
+        "ends_at": "09:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "mornings-4-0600",
+        "show_id": "mornings",
+        "day_of_week": 4,
+        "starts_at": "06:00",
+        "ends_at": "09:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "mornings-5-0600",
+        "show_id": "mornings",
+        "day_of_week": 5,
+        "starts_at": "06:00",
+        "ends_at": "09:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "kitty-2-1800",
+        "show_id": "kitty",
+        "day_of_week": 2,
+        "starts_at": "18:00",
+        "ends_at": "21:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "restart-1-1800",
+        "show_id": "restart",
+        "day_of_week": 1,
+        "starts_at": "18:00",
+        "ends_at": "21:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "renaissance-1-0900",
+        "show_id": "renaissance",
+        "day_of_week": 1,
+        "starts_at": "09:00",
+        "ends_at": "12:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "renaissance-2-0900",
+        "show_id": "renaissance",
+        "day_of_week": 2,
+        "starts_at": "09:00",
+        "ends_at": "12:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "renaissance-3-0900",
+        "show_id": "renaissance",
+        "day_of_week": 3,
+        "starts_at": "09:00",
+        "ends_at": "12:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "renaissance-4-0900",
+        "show_id": "renaissance",
+        "day_of_week": 4,
+        "starts_at": "09:00",
+        "ends_at": "12:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      },
+      {
+        "id": "renaissance-5-0900",
+        "show_id": "renaissance",
+        "day_of_week": 5,
+        "starts_at": "09:00",
+        "ends_at": "12:00",
+        "timezone": "Africa/Johannesburg",
+        "valid_from": null,
+        "valid_until": null
+      }
+    ],
+    "banners": [
+      {
+        "id": "smooth-sundays-1778228476480",
+        "show_id": "smooth-sundays",
+        "title": "Smooth Sundays",
+        "subtitle": "Laid-back grooves for your easy Sunday flow.",
+        "image_id": "banner:smooth-sundays-1778228476480",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 2,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "smooth-sundays-1778228476480"
+      },
+      {
+        "id": "weekend-reboot-1778230868582",
+        "show_id": "weekend-reboot",
+        "title": "Weekend Reboot",
+        "subtitle": "Fresh energy. Fresh sound. Fresh you.",
+        "image_id": "banner:weekend-reboot-1778230868582",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 4,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "weekend-reboot-1778230868582"
+      },
+      {
+        "id": "top-20-1778231668159",
+        "show_id": "top-20",
+        "title": "Top 20",
+        "subtitle": "The hits. The hype. The chart you can't miss.",
+        "image_id": "banner:top-20-1778231668159",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 5,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "top-20-1778231668159"
+      },
+      {
+        "id": "club-ace-1778232041383",
+        "show_id": "club-ace",
+        "title": "Club Ace",
+        "subtitle": "Your weekend starts here. Four hours of pure energy.",
+        "image_id": "banner:club-ace-1778232041383",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 6,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "club-ace-1778232041383"
+      },
+      {
+        "id": "retro-reloaded-1778232122345",
+        "show_id": "retro",
+        "title": "Retro Reloaded",
+        "subtitle": "Rewinding the hits you still know by heart.",
+        "image_id": "banner:retro-reloaded-1778232122345",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 7,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "retro-reloaded-1778232122345"
+      },
+      {
+        "id": "rush-hour-1778232383384",
+        "show_id": "rush-hour",
+        "title": "Rush Hour",
+        "subtitle": "Beats, traffic talk and the drive that moves you.",
+        "image_id": "banner:rush-hour-1778232383384",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 10,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "rush-hour-1778232383384"
+      },
+      {
+        "id": "midday-mix-1778232448679",
+        "show_id": "midday-mix",
+        "title": "Midday Mix",
+        "subtitle": "Halfway through the day, all the way turned up.",
+        "image_id": "banner:midday-mix-1778232448679",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 11,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "midday-mix-1778232448679"
+      },
+      {
+        "id": "kittys-boombox-hits-1785755457807",
+        "show_id": "kitty",
+        "title": "Kitty's Boombox Hits",
+        "subtitle": "The soundtrack to your shower concerts and roadtrip sing-alongs.",
+        "image_id": "banner:kittys-boombox-hits-1785755457807",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 13,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "kittys-boombox-hits-1785755457807"
+      },
+      {
+        "id": "ace-mornings-1785755700702",
+        "show_id": "mornings",
+        "title": "Ace Mornings",
+        "subtitle": "Wake up. Turn up. Take on the day.",
+        "image_id": "banner:ace-mornings-1785755700702",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 14,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "ace-mornings-1785755700702"
+      },
+      {
+        "id": "the-restart-1785756183811",
+        "show_id": "restart",
+        "title": "The Restart",
+        "subtitle": "Where Mondays get their groove back.",
+        "image_id": "banner:the-restart-1785756183811",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 15,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "the-restart-1785756183811"
+      },
+      {
+        "id": "the-renssance-1788251258846",
+        "show_id": "renaissance",
+        "title": "The Renéssance",
+        "subtitle": "Your day. Her sound. Your station.",
+        "image_id": "banner:the-renssance-1788251258846",
+        "placement": "home_spotlight",
+        "link_url": null,
+        "display_order": 16,
+        "status": "published",
+        "source_system": "ace-api",
+        "external_id": "the-renssance-1788251258846"
+      }
+    ],
+    "announcements": [],
+    "station_settings": [
+      {
+        "id": "main",
+        "name": "AceRadio",
+        "stream_url": "https://studio.ace.radio/stream",
+        "tagline": "Built for those who listen differently.",
+        "location": "Cape Town, South Africa",
+        "website": "https://ace.radio",
+        "email": "studio@ace.radio",
+        "whatsapp": "https://wa.me/27730676204",
+        "social_links": {
+          "instagram": "https://www.instagram.com/ace.radio",
+          "tiktok": "https://www.tiktok.com/@ace.radio.za",
+          "facebook": "https://www.facebook.com/ace.radio.za",
+          "x": "https://x.com/aceradioza"
+        },
+        "about": {
+          "intro": "It's a vision brought to life.",
+          "vision_title": "Radio. Reimagined.",
+          "vision_body": "Built from the ground up by a driven team, AceRadio aims to reimagine what radio can be in the digital age.",
+          "location_detail": "Broadcasting from Century City, South Africa",
+          "footer": "AceRadio • Built for those who listen differently."
+        },
+        "status": "published"
+      }
+    ],
+    "station_team": [
+      {
+        "id": "luke-henwood",
+        "name": "Luke Henwood",
+        "role": "CO-FOUNDER",
+        "presenter_id": null,
+        "photo_id": "team:luke-henwood",
+        "display_order": 0,
+        "status": "published"
+      },
+      {
+        "id": "christopher-marshall",
+        "name": "Christopher Marshall",
+        "role": "CO-FOUNDER",
+        "presenter_id": "christopher-marshall",
+        "photo_id": "presenter:christopher-marshall",
+        "display_order": 1,
+        "status": "published"
+      }
+    ],
+    "station_milestones": [
+      {
+        "id": "idea",
+        "date_label": "July 2025",
+        "description": "The idea was born.",
+        "event_date": null,
+        "display_order": 0,
+        "status": "published"
+      },
+      {
+        "id": "concept",
+        "date_label": "60 days later",
+        "description": "From concept to build.",
+        "event_date": null,
+        "display_order": 1,
+        "status": "published"
+      },
+      {
+        "id": "launch",
+        "date_label": "3 October 2025",
+        "description": "AceRadio officially launched.",
+        "event_date": "2025-10-03",
+        "display_order": 2,
+        "status": "published"
+      }
+    ]
+  },
+  "files": [
+    {
+      "asset_id": "show:smooth-sundays",
+      "local_path": "assets/shows/Smooth_Sundays-Benna_October.jpg",
+      "bucket_id": "show-artwork",
+      "object_path": "show/smooth-sundays/2d70ecd9f39343220cc79cc237cdb0d529a3358c8eb9f913a54bf8b7c1c83c45.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "2d70ecd9f39343220cc79cc237cdb0d529a3358c8eb9f913a54bf8b7c1c83c45"
+    },
+    {
+      "asset_id": "banner:smooth-sundays-1778228476480",
+      "local_path": "assets/posts/Smooth_Sundays-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/smooth-sundays-1778228476480/f610db618369d1ef7c3504fdcef0e96efd965d94ad1b3c4315c4f1f5c7dd313f.png",
+      "mime_type": "image/png",
+      "sha256": "f610db618369d1ef7c3504fdcef0e96efd965d94ad1b3c4315c4f1f5c7dd313f"
+    },
+    {
+      "asset_id": "presenter:benna-october",
+      "local_path": "assets/shows/Smooth_Sundays-Benna_October.jpg",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/benna-october/2d70ecd9f39343220cc79cc237cdb0d529a3358c8eb9f913a54bf8b7c1c83c45.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "2d70ecd9f39343220cc79cc237cdb0d529a3358c8eb9f913a54bf8b7c1c83c45"
+    },
+    {
+      "asset_id": "show:weekend-reboot",
+      "local_path": "assets/shows/Weekend_Reboot-Sandy_Mahlangeni.png",
+      "bucket_id": "show-artwork",
+      "object_path": "show/weekend-reboot/59129ff764281ff9585b2d5dddf047f7f38ad9d3d264c02a302dd3849b1dc40f.png",
+      "mime_type": "image/png",
+      "sha256": "59129ff764281ff9585b2d5dddf047f7f38ad9d3d264c02a302dd3849b1dc40f"
+    },
+    {
+      "asset_id": "banner:weekend-reboot-1778230868582",
+      "local_path": "assets/posts/Weekend_Reboot-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/weekend-reboot-1778230868582/4172409f2b1b1bc96acfcfbc3a6695a077568e19ed06aada4cdc2d145dfebc00.png",
+      "mime_type": "image/png",
+      "sha256": "4172409f2b1b1bc96acfcfbc3a6695a077568e19ed06aada4cdc2d145dfebc00"
+    },
+    {
+      "asset_id": "presenter:sandy-mahlangeni",
+      "local_path": "assets/shows/Weekend_Reboot-Sandy_Mahlangeni.png",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/sandy-mahlangeni/59129ff764281ff9585b2d5dddf047f7f38ad9d3d264c02a302dd3849b1dc40f.png",
+      "mime_type": "image/png",
+      "sha256": "59129ff764281ff9585b2d5dddf047f7f38ad9d3d264c02a302dd3849b1dc40f"
+    },
+    {
+      "asset_id": "show:top-20",
+      "local_path": "assets/shows/Top_20-Christoper_Marshall-Caitlin_Sisam.png",
+      "bucket_id": "show-artwork",
+      "object_path": "show/top-20/57cf81acce2b006f33d85d6e8039f98ea354b0c2eadb0712aade73b808285802.png",
+      "mime_type": "image/png",
+      "sha256": "57cf81acce2b006f33d85d6e8039f98ea354b0c2eadb0712aade73b808285802"
+    },
+    {
+      "asset_id": "banner:top-20-1778231668159",
+      "local_path": "assets/posts/Top_20-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/top-20-1778231668159/001ff9ff6b6ac1957f0ea0ea08270889ffe9d9241cbb621c02eda61874b6c73b.png",
+      "mime_type": "image/png",
+      "sha256": "001ff9ff6b6ac1957f0ea0ea08270889ffe9d9241cbb621c02eda61874b6c73b"
+    },
+    {
+      "asset_id": "presenter:christopher-marshall",
+      "local_path": "assets/founder-profiles/christopher.png",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/christopher-marshall/095ba160720b1b6590b8d35dffd8b0a29f9c6bfb60db36b609b4aa5cb100cd14.png",
+      "mime_type": "image/png",
+      "sha256": "095ba160720b1b6590b8d35dffd8b0a29f9c6bfb60db36b609b4aa5cb100cd14"
+    },
+    {
+      "asset_id": "presenter:caitlin-sisam",
+      "local_path": "assets/shows/Kitty's_Boombox_Hits-Caitlin_Sisam.jpg",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/caitlin-sisam/eb6cca53231d2e1d6cad6b9282e1a5ea357818e383884069765db6ca1061512b.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "eb6cca53231d2e1d6cad6b9282e1a5ea357818e383884069765db6ca1061512b"
+    },
+    {
+      "asset_id": "show:club-ace",
+      "local_path": "assets/shows/Club_Ace-Benna_October-Jarred_Sisam.jpg",
+      "bucket_id": "show-artwork",
+      "object_path": "show/club-ace/eebb8d3cf2a05fd6613de765d1aa4412f12a3b59932ed56288675988218117d7.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "eebb8d3cf2a05fd6613de765d1aa4412f12a3b59932ed56288675988218117d7"
+    },
+    {
+      "asset_id": "banner:club-ace-1778232041383",
+      "local_path": "assets/posts/Club_Ace-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/club-ace-1778232041383/73fa9dabafbbf08fc3d12e8acac30173910ec6c6f75e9f76edfd33c01c32bb2d.png",
+      "mime_type": "image/png",
+      "sha256": "73fa9dabafbbf08fc3d12e8acac30173910ec6c6f75e9f76edfd33c01c32bb2d"
+    },
+    {
+      "asset_id": "show:retro",
+      "local_path": "assets/shows/Retro_Reloaded-Elton_Tuck.png",
+      "bucket_id": "show-artwork",
+      "object_path": "show/retro/361347977f0d87e314ebe193281c45f45e2f0a4c443e9c51c7da6884bce890fe.png",
+      "mime_type": "image/png",
+      "sha256": "361347977f0d87e314ebe193281c45f45e2f0a4c443e9c51c7da6884bce890fe"
+    },
+    {
+      "asset_id": "banner:retro-reloaded-1778232122345",
+      "local_path": "assets/posts/Retro_Reloaded-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/retro-reloaded-1778232122345/5153d062dc6c7318f387f2943f58d7c111866eefcd1e0ac6d89d93dc99194e22.png",
+      "mime_type": "image/png",
+      "sha256": "5153d062dc6c7318f387f2943f58d7c111866eefcd1e0ac6d89d93dc99194e22"
+    },
+    {
+      "asset_id": "presenter:elton-tuck",
+      "local_path": "assets/shows/Retro_Reloaded-Elton_Tuck.png",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/elton-tuck/361347977f0d87e314ebe193281c45f45e2f0a4c443e9c51c7da6884bce890fe.png",
+      "mime_type": "image/png",
+      "sha256": "361347977f0d87e314ebe193281c45f45e2f0a4c443e9c51c7da6884bce890fe"
+    },
+    {
+      "asset_id": "show:rush-hour",
+      "local_path": "assets/shows/Rush_Hour-Mel_Massyn.jpg",
+      "bucket_id": "show-artwork",
+      "object_path": "show/rush-hour/b6595e39ac7d22b91caaa3e140359e5642f4c065a8b152121fe31fe6d578f52c.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "b6595e39ac7d22b91caaa3e140359e5642f4c065a8b152121fe31fe6d578f52c"
+    },
+    {
+      "asset_id": "banner:rush-hour-1778232383384",
+      "local_path": "assets/posts/Rush_Hour-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/rush-hour-1778232383384/e0072a4a1d436a04ba9e865168a5a25713a0f8c917c81c2e7ce24fd30e791aed.png",
+      "mime_type": "image/png",
+      "sha256": "e0072a4a1d436a04ba9e865168a5a25713a0f8c917c81c2e7ce24fd30e791aed"
+    },
+    {
+      "asset_id": "presenter:mel-massyn",
+      "local_path": "assets/shows/Rush_Hour-Mel_Massyn.jpg",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/mel-massyn/b6595e39ac7d22b91caaa3e140359e5642f4c065a8b152121fe31fe6d578f52c.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "b6595e39ac7d22b91caaa3e140359e5642f4c065a8b152121fe31fe6d578f52c"
+    },
+    {
+      "asset_id": "show:midday-mix",
+      "local_path": "assets/shows/Midday_Mix-Sulvanna_Brown.png",
+      "bucket_id": "show-artwork",
+      "object_path": "show/midday-mix/2d5b0b36cab6a9fcbc0e9f39a73944a1eff247f67e3c6870e8c78b1ec185edf1.png",
+      "mime_type": "image/png",
+      "sha256": "2d5b0b36cab6a9fcbc0e9f39a73944a1eff247f67e3c6870e8c78b1ec185edf1"
+    },
+    {
+      "asset_id": "banner:midday-mix-1778232448679",
+      "local_path": "assets/posts/Midday_Mix-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/midday-mix-1778232448679/3daf5d0f3151a92d9c982088dad8fc7a5992d8ed7fbbc9e7a7fc7423fbd30f8a.png",
+      "mime_type": "image/png",
+      "sha256": "3daf5d0f3151a92d9c982088dad8fc7a5992d8ed7fbbc9e7a7fc7423fbd30f8a"
+    },
+    {
+      "asset_id": "presenter:sulvanna-brown",
+      "local_path": "assets/shows/Midday_Mix-Sulvanna_Brown.png",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/sulvanna-brown/2d5b0b36cab6a9fcbc0e9f39a73944a1eff247f67e3c6870e8c78b1ec185edf1.png",
+      "mime_type": "image/png",
+      "sha256": "2d5b0b36cab6a9fcbc0e9f39a73944a1eff247f67e3c6870e8c78b1ec185edf1"
+    },
+    {
+      "asset_id": "show:mornings",
+      "local_path": "assets/shows/Ace_Mornings-Christopher_Marshall.png",
+      "bucket_id": "show-artwork",
+      "object_path": "show/mornings/d6805778246c1efbce422c188b4343beb4cf32bcb7f535ef5ac8b48147db496a.png",
+      "mime_type": "image/png",
+      "sha256": "d6805778246c1efbce422c188b4343beb4cf32bcb7f535ef5ac8b48147db496a"
+    },
+    {
+      "asset_id": "banner:ace-mornings-1785755700702",
+      "local_path": "assets/posts/Ace_Mornings-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/ace-mornings-1785755700702/512d0fcd27826325ff7e3d9799280f69f86ce7e5212c54acd792d955e7ac859f.png",
+      "mime_type": "image/png",
+      "sha256": "512d0fcd27826325ff7e3d9799280f69f86ce7e5212c54acd792d955e7ac859f"
+    },
+    {
+      "asset_id": "show:kitty",
+      "local_path": "assets/shows/Kitty's_Boombox_Hits-Caitlin_Sisam.jpg",
+      "bucket_id": "show-artwork",
+      "object_path": "show/kitty/eb6cca53231d2e1d6cad6b9282e1a5ea357818e383884069765db6ca1061512b.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "eb6cca53231d2e1d6cad6b9282e1a5ea357818e383884069765db6ca1061512b"
+    },
+    {
+      "asset_id": "banner:kittys-boombox-hits-1785755457807",
+      "local_path": "assets/posts/Kitty_Boombox_Hits-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/kittys-boombox-hits-1785755457807/f9c92f1bbe166d8d5711e9cd5bd15e03dbf2d3e4bf81160892fd3fbcbcb97329.png",
+      "mime_type": "image/png",
+      "sha256": "f9c92f1bbe166d8d5711e9cd5bd15e03dbf2d3e4bf81160892fd3fbcbcb97329"
+    },
+    {
+      "asset_id": "show:restart",
+      "local_path": "assets/shows/The_Restart-Ryan_Thomas.jpg",
+      "bucket_id": "show-artwork",
+      "object_path": "show/restart/759ba94f266ebbedc10cf073485f71b19609fe1497e333df8ae8c8f41dd134f1.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "759ba94f266ebbedc10cf073485f71b19609fe1497e333df8ae8c8f41dd134f1"
+    },
+    {
+      "asset_id": "banner:the-restart-1785756183811",
+      "local_path": "assets/posts/The_Restart-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/the-restart-1785756183811/49625a8b5057430c9adaf42765f4cc44954460ef55397983271633c6e335da96.png",
+      "mime_type": "image/png",
+      "sha256": "49625a8b5057430c9adaf42765f4cc44954460ef55397983271633c6e335da96"
+    },
+    {
+      "asset_id": "presenter:ryan-thomas",
+      "local_path": "assets/shows/The_Restart-Ryan_Thomas.jpg",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/ryan-thomas/759ba94f266ebbedc10cf073485f71b19609fe1497e333df8ae8c8f41dd134f1.jpg",
+      "mime_type": "image/jpeg",
+      "sha256": "759ba94f266ebbedc10cf073485f71b19609fe1497e333df8ae8c8f41dd134f1"
+    },
+    {
+      "asset_id": "show:renaissance",
+      "local_path": "assets/shows/The_Renessance-Rene_Whittles.png",
+      "bucket_id": "show-artwork",
+      "object_path": "show/renaissance/6f0d87d590cc7490dc39aa2b8c019fe68c7a8e88a38687895e500012c455dc9d.png",
+      "mime_type": "image/png",
+      "sha256": "6f0d87d590cc7490dc39aa2b8c019fe68c7a8e88a38687895e500012c455dc9d"
+    },
+    {
+      "asset_id": "banner:the-renssance-1788251258846",
+      "local_path": "assets/posts/The_Renessance-Post.png",
+      "bucket_id": "banners",
+      "object_path": "banner/the-renssance-1788251258846/0831c239100f8cc7ca0ef0a37ba00855adc73255667c0f18d5e46dfa0fcfb6a2.png",
+      "mime_type": "image/png",
+      "sha256": "0831c239100f8cc7ca0ef0a37ba00855adc73255667c0f18d5e46dfa0fcfb6a2"
+    },
+    {
+      "asset_id": "presenter:rene-whittles",
+      "local_path": "assets/shows/The_Renessance-Rene_Whittles.png",
+      "bucket_id": "presenter-photos",
+      "object_path": "presenter/rene-whittles/6f0d87d590cc7490dc39aa2b8c019fe68c7a8e88a38687895e500012c455dc9d.png",
+      "mime_type": "image/png",
+      "sha256": "6f0d87d590cc7490dc39aa2b8c019fe68c7a8e88a38687895e500012c455dc9d"
+    },
+    {
+      "asset_id": "team:luke-henwood",
+      "local_path": "assets/founder-profiles/luke.png",
+      "bucket_id": "station-media",
+      "object_path": "team/luke-henwood/e0657cb8ba0c287c5df5d3070edd234a4a3db677a54b8f801ae2b01eaee41738.png",
+      "mime_type": "image/png",
+      "sha256": "e0657cb8ba0c287c5df5d3070edd234a4a3db677a54b8f801ae2b01eaee41738"
+    }
+  ]
+}

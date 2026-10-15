@@ -7,6 +7,7 @@ import * as SplashScreen from "expo-splash-screen";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { RadioProvider } from "@/context/RadioContext";
+import { ContentProvider } from "@/context/ContentContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { colors } from "@/theme/colors";
 import { FittedImage } from "@/components/FittedImage";
@@ -60,26 +61,28 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <FavoritesProvider>
-        <RadioProvider>
-          <StatusBar style="light" />
-          <ThemeProvider value={aceTheme}>
-            <View style={styles.navigation}>
-              <Stack
-                screenListeners={{ beforeRemove: blurWebFocus }}
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: colors.background },
-                }}
-              >
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="player" options={sheetOptions} />
-                <Stack.Screen name="show/[id]" options={sheetOptions} />
-              </Stack>
-            </View>
-          </ThemeProvider>
-        </RadioProvider>
-      </FavoritesProvider>
+      <ContentProvider>
+        <FavoritesProvider>
+          <RadioProvider>
+            <StatusBar style="light" />
+            <ThemeProvider value={aceTheme}>
+              <View style={styles.navigation}>
+                <Stack
+                  screenListeners={{ beforeRemove: blurWebFocus }}
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.background },
+                  }}
+                >
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="player" options={sheetOptions} />
+                  <Stack.Screen name="show/[id]" options={sheetOptions} />
+                </Stack>
+              </View>
+            </ThemeProvider>
+          </RadioProvider>
+        </FavoritesProvider>
+      </ContentProvider>
     </SafeAreaProvider>
   );
 }

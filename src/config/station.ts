@@ -1,4 +1,4 @@
-/** Public station stream and links. Show metadata still uses local preview fixtures. */
+/** Frontend source of truth for station identity, audio URL and contact/social links. */
 export const STATION = {
   name: "AceRadio",
   streamUrl: "https://studio.ace.radio/stream",

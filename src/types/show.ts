@@ -1,4 +1,11 @@
 import type { ImageSourcePropType } from "react-native";
+export type ShowSchedule = {
+  day: number;
+  start: string;
+  end: string;
+  validFrom: string | null;
+  validUntil: string | null;
+};
 export type Show = {
   id: string;
   title: string;
@@ -11,4 +18,6 @@ export type Show = {
   poster?: ImageSourcePropType;
   accent: string;
   listeners?: number;
+  schedules?: ShowSchedule[];
+  presenterIds?: string[];
 };

@@ -5,7 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PageScrollView } from "@/components/PageScrollView";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { ShowGrid } from "@/components/ShowGrid";
-import { shows } from "@/data/shows";
+import { useContent } from "@/context/ContentContext";
+import { ContentStatus } from "@/components/ContentStatus";
 import { useRadio } from "@/context/RadioContext";
 import { colors } from "@/theme/colors";
 
@@ -18,6 +19,7 @@ const filters: { id: ShowFilter; label: string }[] = [
 ];
 
 export default function ShowsScreen() {
+  const { shows } = useContent();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ShowFilter>("all");
   const { liveShows } = useRadio();
@@ -28,15 +30,16 @@ export default function ShowsScreen() {
       const matchesSearch = `${show.title} ${show.presenter} ${show.day}`
         .toLowerCase()
         .includes(query);
-      const weekend = /Saturday|Sunday|Weekend/i.test(show.day);
+      const weekend = show.schedules ? show.schedules.some(slot => slot.day === 0 || slot.day === 6) : /Saturday|Sunday|Weekend/i.test(show.day);
+      const weekday = show.schedules ? show.schedules.some(slot => slot.day >= 1 && slot.day <= 5) : !weekend;
       const matchesFilter =
         filter === "all" ||
         (filter === "live" && liveIds.has(show.id)) ||
-        (filter === "weekdays" && !weekend) ||
+        (filter === "weekdays" && weekday) ||
         (filter === "weekend" && weekend);
       return matchesSearch && matchesFilter;
     });
-  }, [search, filter, liveShows]);
+  }, [search, filter, liveShows, shows]);
 
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
@@ -107,7 +110,8 @@ export default function ShowsScreen() {
           </Text>
         </View>
         <ShowGrid shows={filtered} />
-        {!filtered.length && (
+        <ContentStatus emptyMessage="No shows have been published yet." />
+        {!filtered.length && shows.length > 0 && (
           <View testID="shows-empty" style={styles.empty}>
             <Text style={styles.emptyTitle}>No shows found</Text>
             <Text style={styles.emptyText}>

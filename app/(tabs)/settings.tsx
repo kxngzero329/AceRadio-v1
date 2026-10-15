@@ -136,7 +136,7 @@ export default function SettingsScreen() {
         <View style={styles.panel}>
           <Pressable
             style={styles.row}
-            onPress={() => void openVerifiedLink("WhatsApp", STATION.whatsapp)}
+            onPress={() => { void openVerifiedLink("WhatsApp", STATION.whatsapp); }}
           >
             <View style={styles.icon}>
               <MessageCircle size={20} color={colors.green} />
@@ -150,14 +150,14 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           <Pressable
             style={styles.row}
-            onPress={() => void openVerifiedLink("website", STATION.website)}
+            onPress={() => { void openVerifiedLink("website", STATION.website); }}
           >
             <View style={styles.icon}>
               <LinkIcon size={20} color={colors.green} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Official website</Text>
-              <Text style={styles.rowSub}>ace.radio</Text>
+              <Text style={styles.rowSub}>{STATION.website.replace(/^https:\/\//, "")}</Text>
             </View>
             <ChevronRight size={19} color={colors.subtle} />
           </Pressable>
@@ -191,7 +191,7 @@ export default function SettingsScreen() {
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Live stream</Text>
               <Text style={styles.rowSub}>
-                AceRadio live from Cape Town, South Africa
+                {STATION.location ?? "Streaming live"}
               </Text>
             </View>
           </View>
@@ -211,7 +211,7 @@ export default function SettingsScreen() {
               <Info size={20} color={colors.green} />
             </View>
             <View style={styles.rowBody}>
-              <Text style={styles.rowName}>AceRadio preview</Text>
+              <Text style={styles.rowName}>AceRadio</Text>
               <Text style={styles.rowSub}>
                 Version 0.1.0
               </Text>

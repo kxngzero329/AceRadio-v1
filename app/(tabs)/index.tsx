@@ -9,10 +9,15 @@ import { ShowCarousel } from "@/components/ShowCarousel";
 import { ShowSpotlight } from "@/components/ShowSpotlight";
 import { LiveRadioHero } from "@/components/LiveRadioHero";
 import { LiveNoticeBoard } from "@/components/LiveNoticeBoard";
-import { shows } from "@/data/shows";
+import { useContent } from "@/context/ContentContext";
+import { ContentStatus } from "@/components/ContentStatus";
+import { StationAnnouncements } from "@/components/StationAnnouncements";
+import { HomeBanners } from "@/components/HomeBanners";
 import { colors } from "@/theme/colors";
+import { STATION } from "@/config/station";
 
 export default function HomeScreen() {
+  const { shows } = useContent();
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScreenHeader />
@@ -21,17 +26,20 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
       >
-        <View style={styles.greeting}>
-          <Text style={styles.eyebrow}>CAPE TOWN • SOUTH AFRICA</Text>
+        {/* <View style={styles.greeting}>
+          <Text style={styles.eyebrow}>{STATION.location.toUpperCase()}</Text>
           <Text style={styles.heading}>
             Hear the <Text style={{ color: colors.green }}>difference.</Text>
           </Text>
           <Text style={styles.subtitle}>
             Your soundtrack starts right here.
           </Text>
-        </View>
+        </View> */}
 
         <LiveRadioHero />
+        <ContentStatus emptyMessage="The show lineup will appear here when it is published." />
+        <StationAnnouncements />
+        <HomeBanners />
         <LiveNoticeBoard />
 
         <View style={styles.stats}>

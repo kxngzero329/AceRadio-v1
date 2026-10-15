@@ -8,21 +8,18 @@ const socials = [
     key: "instagram",
     label: "Instagram",
     icon: "instagram",
-    url: STATION.social.instagram,
   },
   {
     key: "tiktok",
     label: "TikTok",
     icon: "tiktok",
-    url: STATION.social.tiktok,
   },
   {
     key: "facebook",
     label: "Facebook",
     icon: "facebook-f",
-    url: STATION.social.facebook,
   },
-  { key: "x", label: "X (Twitter)", icon: "x-twitter", url: STATION.social.x },
+  { key: "x", label: "X (Twitter)", icon: "x-twitter" },
 ] as const;
 export function SocialLinks() {
   return (
@@ -30,7 +27,7 @@ export function SocialLinks() {
       {socials.map((s) => (
         <Pressable
           key={s.key}
-          onPress={() => void openVerifiedLink(s.label, s.url)}
+          onPress={() => { void openVerifiedLink(s.label, STATION.social[s.key]); }}
           accessibilityLabel={`AceRadio on ${s.label}`}
           accessibilityRole="button"
           style={styles.button}

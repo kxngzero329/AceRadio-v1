@@ -148,11 +148,11 @@ export function LiveRadioHero() {
         </View>
         <View
           style={styles.listeners}
-          accessibilityLabel={`${listenerCount.toLocaleString("en-ZA")} listeners`}
+          accessibilityLabel={listenerCount === null ? "Live radio" : `${listenerCount.toLocaleString("en-ZA")} listeners`}
         >
           <Headphones size={13} color={colors.white} />
           <Text style={styles.listenersText}>
-            {listenerCount.toLocaleString("en-ZA")} listeners
+            {listenerCount === null ? "Live radio" : `${listenerCount.toLocaleString("en-ZA")} listeners`}
           </Text>
         </View>
       </View>
@@ -187,10 +187,10 @@ export function LiveRadioHero() {
                 : displayedShow.id === "aceradio-live-stream"
                   ? "ON AIR NOW"
                   : playing
-                  ? "YOU ARE LISTENING TO"
-                  : liveShows.some((show) => show.id === displayedShow.id)
-                    ? "YOUR LIVE SHOW"
-                    : "SELECTED SHOW"}
+                    ? "YOU ARE LISTENING TO"
+                    : liveShows.some((show) => show.id === displayedShow.id)
+                      ? "YOUR LIVE SHOW"
+                      : "SELECTED SHOW"}
             </Text>
             <Text style={styles.showTitle} numberOfLines={2}>
               {displayedShow.title}

@@ -2,6 +2,7 @@ import {
   Animated,
   View,
   Text,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,7 +20,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { ShowPoster } from "@/components/ShowPoster";
 import { FittedImage } from "@/components/FittedImage";
-import { getShow } from "@/data/shows";
+import { useContent } from "@/context/ContentContext";
+import { ContentStatus } from "@/components/ContentStatus";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useRadio } from "@/context/RadioContext";
 import { useModalTransition } from "@/hooks/useModalTransition";
@@ -32,7 +34,8 @@ export default function ShowDetail() {
     style: slideStyle,
   } = useModalTransition();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const show = getShow(id);
+  const { shows, presenters, loading, error } = useContent();
+  const show = shows.find(item => item.id === id);
   const { isFavorite, toggleFavorite } = useFavorites();
   const { listenLive, liveShows } = useRadio();
   if (!show)
@@ -42,11 +45,16 @@ export default function ShowDetail() {
           <Pressable accessibilityRole="button" onPress={() => close()}>
             <Text style={styles.back}>← Back</Text>
           </Pressable>
-          <Text style={styles.title}>Show not found</Text>
+          <ContentStatus />
+          {!loading && !error && <Text style={styles.title}>Show not found</Text>}
         </SafeAreaView>
       </Animated.View>
     );
   const liked = isFavorite(show.id);
+  const showPresenters = (show.presenterIds ?? []).flatMap(id => {
+    const presenter = presenters.find(item => item.id === id);
+    return presenter?.bio ? [presenter] : [];
+  });
   const isOnAir = liveShows.some((liveShow) => liveShow.id === show.id);
   return (
     <Animated.View
@@ -134,6 +142,10 @@ export default function ShowDetail() {
           <Text style={styles.heading}>About the show</Text>
           <Text style={styles.desc}>{show.detail}</Text>
           <Text style={styles.desc}>{show.subtitle}</Text>
+          {showPresenters.map(presenter => <View key={presenter.id} style={styles.presenterBio}>
+            {presenter.photo && <Image source={presenter.photo} style={styles.presenterPhoto} accessibilityLabel={presenter.name} />}
+            <View style={{ flex: 1 }}><Text style={styles.heading}>{presenter.name}</Text><Text style={styles.desc}>{presenter.bio}</Text></View>
+          </View>)}
           {show.poster ? (
             <View style={styles.poster}>
               <Text style={styles.heading}>Show spotlight</Text>
@@ -162,6 +174,8 @@ export default function ShowDetail() {
   );
 }
 const styles = StyleSheet.create({
+  presenterBio: { flexDirection: "row", gap: 14, alignItems: "flex-start", marginTop: 22 },
+  presenterPhoto: { width: 64, height: 64, borderRadius: 12 },
   sheet: { flex: 1 },
   root: { flex: 1, backgroundColor: colors.background },
   top: {

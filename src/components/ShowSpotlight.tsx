@@ -23,37 +23,32 @@ import { imageAspectRatio } from "@/utils/imageAspectRatio";
 import { useFocusEffect } from "expo-router";
 import { router } from "@/utils/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { ShowPoster } from "@/components/ShowPoster";
-import { shows } from "@/data/shows";
+import { FittedImage } from "@/components/FittedImage";
+import type { Banner } from "@/types/content";
+import { openVerifiedLink } from "@/services/links";
+import { useContent } from "@/context/ContentContext";
 import { colors } from "@/theme/colors";
 
-const slides = shows.filter((show) => show.poster);
 const INTERVAL_MS = 5500;
 
-const SpotlightSlide = memo(function SpotlightSlide({
-  show,
-  width,
-}: {
-  show: (typeof slides)[number];
-  width: number;
-}) {
-  const openShow = useCallback(
-    () => router.push({ pathname: "/show/[id]", params: { id: show.id } }),
-    [show.id],
-  );
+const SpotlightSlide = memo(function SpotlightSlide({ banner, width }: { banner: Banner; width: number }) {
+  const openBanner = useCallback(() => {
+    if (banner.showId) router.push({ pathname: "/show/[id]", params: { id: banner.showId } });
+    else if (banner.linkUrl) void openVerifiedLink(banner.title, banner.linkUrl);
+  }, [banner]);
   return (
-    <Pressable
-      style={{ width }}
-      onPress={openShow}
-      accessibilityRole="button"
-      accessibilityLabel={`Explore ${show.title}. ${show.presenter}. ${show.schedule}.`}
-    >
-      <ShowPoster show={show} />
+    <Pressable style={{ width, aspectRatio: imageAspectRatio(banner.image, 2) }} onPress={openBanner}
+      disabled={!banner.showId && !banner.linkUrl} accessibilityRole={banner.showId || banner.linkUrl ? "button" : undefined}
+      accessibilityLabel={`${banner.title}. ${banner.subtitle ?? ""}`}>
+      <FittedImage source={banner.image} accessibilityLabel={banner.title} />
     </Pressable>
   );
 });
 
 export const ShowSpotlight = memo(function ShowSpotlight() {
+  const { banners } = useContent();
+  const slides = useMemo(() => banners.filter(banner => banner.placement === "home_spotlight"), [banners]);
+  const slideIds = slides.map(slide => slide.id).join("|");
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
   const [interacting, setInteracting] = useState(false);
@@ -68,15 +63,23 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
   const target = useRef<number | null>(null);
   const moving = useRef(false);
   const gesture = useRef(false);
-  // Keep only the previous, current and next posters mounted, regardless of lineup size.
+  const safeIndex = slides.length ? index % slides.length : 0;
+  useEffect(() => {
+    target.current = null;
+    moving.current = false;
+    gesture.current = false;
+    setInteracting(false);
+    setIndex(0);
+  }, [slideIds]);
+  // Keep only the previous, current and next banners mounted.
   const pages = useMemo(
     () =>
       slides.length > 1
         ? [-1, 0, 1].map(
-            (step) => slides[(index + step + slides.length) % slides.length],
+            (step) => slides[(safeIndex + step + slides.length) % slides.length],
           )
         : slides,
-    [index],
+    [safeIndex, slides],
   );
 
   useLayoutEffect(() => {
@@ -90,7 +93,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
       resetting.current = false;
     });
     return () => cancelAnimationFrame(frame);
-  }, [index, width]);
+  }, [safeIndex, slideIds, slides.length, width]);
 
   useFocusEffect(
     useCallback(() => {
@@ -147,7 +150,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
     moving.current = false;
     gesture.current = false;
     setInteracting(false);
-  }, []);
+  }, [slides.length]);
 
   const advance = useCallback(
     (direction: number) => {
@@ -166,7 +169,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
       list.current.scrollTo({ x: next * width, animated: !reduceMotion });
       if (reduceMotion) settle(next);
     },
-    [reduceMotion, settle, width],
+    [reduceMotion, settle, width, slides.length],
   );
 
   useEffect(() => {
@@ -181,7 +184,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
       return;
     const timer = setTimeout(() => advance(1), INTERVAL_MS);
     return () => clearTimeout(timer);
-  }, [advance, autoplay, focused, appActive, index, interacting, width]);
+  }, [advance, autoplay, focused, appActive, safeIndex, interacting, width, slides.length]);
 
   const finishScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (
@@ -212,7 +215,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
   };
 
   if (!slides.length) return null;
-  const aspectRatio = imageAspectRatio(slides[0].poster!, 2);
+  const aspectRatio = imageAspectRatio(slides[0].image, 2);
 
   return (
     <View
@@ -283,8 +286,8 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
             }}
             onMomentumScrollEnd={finishScroll}
           >
-            {pages.map((show, page) => (
-              <SpotlightSlide key={page} show={show} width={width} />
+            {pages.map((banner, page) => (
+              <SpotlightSlide key={page} banner={banner} width={width} />
             ))}
           </ScrollView>
         </View>
@@ -304,12 +307,12 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
             {slides.map((slide, page) => (
               <View
                 key={slide.id}
-                style={[styles.dot, page === index && styles.activeDot]}
+                style={[styles.dot, page === safeIndex && styles.activeDot]}
               />
             ))}
           </View>
           <Text style={styles.count}>
-            {index + 1} / {slides.length}
+            {safeIndex + 1} / {slides.length}
           </Text>
         </View>
         <Pressable

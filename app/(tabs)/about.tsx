@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import { PageScrollView } from "@/components/PageScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,14 +8,15 @@ import {
   Infinity as InfinityIcon,
   MapPin,
   ArrowUpRight,
-  CalendarDays,
 } from "lucide-react-native";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SocialLinks } from "@/components/SocialLinks";
 import { openVerifiedLink } from "@/services/links";
+import { ABOUT } from "@/data/about";
 import { STATION } from "@/config/station";
 import { colors } from "@/theme/colors";
 export default function AboutScreen() {
+  const { founders, milestones } = ABOUT;
   return (
     <SafeAreaView edges={["top"]} style={styles.root}>
       <ScreenHeader />
@@ -27,53 +29,38 @@ export default function AboutScreen() {
         <Text style={styles.title}>
           More than a <Text style={{ color: colors.green }}>station.</Text>
         </Text>
-        <Text style={styles.sub}>It's a vision brought to life.</Text>
+        <Text style={styles.sub}>{ABOUT.intro}</Text>
         <View style={styles.founders}>
           <Text style={styles.h2}>Founded by</Text>
           <View style={styles.people}>
-            <View style={styles.person}>
-              <Image
-                source={require("../../assets/founder-profiles/luke.png")}
-                style={styles.face}
-                resizeMode="contain"
-                accessibilityLabel="Luke Henwood"
-              />
-              <Text style={styles.personName}>Luke Henwood</Text>
-              <Text style={styles.role}>CO-FOUNDER</Text>
-            </View>
-            <Text style={styles.and}>&</Text>
-            <View style={styles.person}>
-              <Image
-                source={require("../../assets/founder-profiles/christopher.png")}
-                style={styles.face}
-                resizeMode="contain"
-                accessibilityLabel="Christopher Marshall"
-              />
-              <Text style={styles.personName}>Christopher Marshall</Text>
-              <Text style={styles.role}>CO-FOUNDER</Text>
-            </View>
+            {founders.map((member, index) => (
+              <Fragment key={member.id}>
+                {index > 0 && <Text style={styles.and}>&</Text>}
+                <View style={styles.person}>
+                  <Image source={member.photo} style={styles.face} resizeMode="contain" accessibilityLabel={member.name} />
+                  <Text style={styles.personName}>{member.name}</Text>
+                  <Text style={styles.role}>{member.role}</Text>
+                </View>
+              </Fragment>
+            ))}
           </View>
         </View>
         <View style={styles.timeline}>
           <Text style={styles.h2}>The journey</Text>
-          {[
-            { date: "July 2025", desc: "The idea was born." },
-            { date: "60 days later", desc: "From concept to build." },
-            { date: "3 October 2025", desc: "AceRadio officially launched." },
-          ].map((event, i) => (
-            <View key={event.date} style={styles.milestone}>
+          {milestones.map((event, i) => (
+            <View key={event.id} style={styles.milestone}>
               <View style={styles.line}>
                 <View
                   style={[
                     styles.point,
-                    i === 2 && { backgroundColor: colors.green },
+                    i === milestones.length - 1 && { backgroundColor: colors.green },
                   ]}
                 />
-                {i < 2 ? <View style={styles.stem} /> : null}
+                {i < milestones.length - 1 ? <View style={styles.stem} /> : null}
               </View>
               <View style={styles.milestoneText}>
                 <Text style={styles.date}>{event.date}</Text>
-                <Text style={styles.desc}>{event.desc}</Text>
+                <Text style={styles.desc}>{event.description}</Text>
               </View>
             </View>
           ))}
@@ -82,10 +69,9 @@ export default function AboutScreen() {
           <View style={styles.visionIcon}>
             <Lightbulb size={25} color={colors.green} />
           </View>
-          <Text style={styles.visionHeading}>Radio. Reimagined.</Text>
+          <Text style={styles.visionHeading}>{ABOUT.visionTitle}</Text>
           <Text style={styles.visionText}>
-            Built from the ground up by a driven team, AceRadio aims to
-            reimagine what radio can be in the digital age.
+            {ABOUT.visionBody}
           </Text>
         </View>
         <View style={styles.highlights}>
@@ -103,9 +89,9 @@ export default function AboutScreen() {
         <View style={styles.location}>
           <MapPin size={20} color={colors.green} />
           <View>
-            <Text style={styles.locationTitle}>Proudly Cape Town</Text>
+            <Text style={styles.locationTitle}>{STATION.location}</Text>
             <Text style={styles.locationDesc}>
-              Broadcasting from Century City, South Africa
+              {ABOUT.locationDetail}
             </Text>
           </View>
         </View>
@@ -116,13 +102,13 @@ export default function AboutScreen() {
         <SocialLinks />
         <Pressable
           style={styles.website}
-          onPress={() => void openVerifiedLink("website", STATION.website)}
+          onPress={() => { void openVerifiedLink("website", STATION.website); }}
         >
-          <Text style={styles.websiteText}>Explore ace.radio</Text>
+          <Text style={styles.websiteText}>Official website</Text>
           <ArrowUpRight color={colors.green} size={19} />
         </Pressable>
         <Text style={styles.foot}>
-          AceRadio • Built for those who listen differently.
+          {ABOUT.footer}
         </Text>
       </PageScrollView>
     </SafeAreaView>

@@ -112,11 +112,7 @@ export default function PlayerScreen() {
               <View style={styles.listeners}>
                 <Headphones size={14} color={colors.green} />
                 <Text style={styles.listenerText}>
-                  {(displayedShow
-                    ? (displayedShow.listeners ?? 0)
-                    : listenerCount
-                  ).toLocaleString("en-ZA")}{" "}
-                  listeners
+                  {listenerCount === null ? "Live radio" : `${listenerCount.toLocaleString("en-ZA")} listeners`}
                 </Text>
               </View>
             </View>
