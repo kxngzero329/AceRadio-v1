@@ -43,11 +43,12 @@ const deferred = () => {
 };
 function harness(t, options = {}) {
   const sessions = [];
-  const player = new RadioPlayback(url, (source, details, notify) => {
-    const session = { source, details, notify, plays: 0, disposed: false };
+  const player = new RadioPlayback(url, (source, details, notify, skip) => {
+    const session = { source, details, notify, skip, plays: 0, pauses: 0, disposed: false };
     sessions.push(session);
     return {
       play() { session.plays++; return options.playPromise; },
+      ...(options.retainSession ? { pause() { session.pauses++; } } : {}),
       setMetadata(next) { session.details = next; },
       dispose() { session.disposed = true; },
     };
@@ -262,7 +263,7 @@ test('native setup cannot start after cancellation; latest metadata wins before 
   const calls = [];
   let listener;
   const nativePlayer = {
-    addListener(name, callback) { listener = callback; return { remove() { calls.push('unsubscribe'); } }; },
+    addListener(name, callback) { if (name === 'playbackStatusUpdate') listener = callback; return { remove() { calls.push('unsubscribe'); } }; },
     replace(source) { calls.push(['source', source.uri]); },
     setActiveForLockScreen(active, details, options) { calls.push(['lock', details?.title, options?.isLiveStream]); },
     play() { calls.push('play'); }, pause() { calls.push('pause'); }, remove() { calls.push('remove'); }, release() { calls.push('release'); },
@@ -303,7 +304,7 @@ test('Expo Go plays station audio without requesting unavailable background or l
   let audioMode;
   let lockRequests = 0;
   const nativePlayer = {
-    addListener(name, callback) { listener = callback; return { remove() { calls.push('unsubscribe'); } }; },
+    addListener(name, callback) { if (name === 'playbackStatusUpdate') listener = callback; return { remove() { calls.push('unsubscribe'); } }; },
     replace(source) { calls.push(['source', source.uri]); },
     setActiveForLockScreen() { lockRequests++; },
     play() { calls.push('play'); }, pause() { calls.push('pause'); }, remove() { calls.push('remove'); }, release() { calls.push('release'); },
@@ -341,6 +342,7 @@ test('configured native development and release builds retain background playbac
   const nativePlayer = {
     addListener() { return { remove() {} }; }, replace() {}, play() {}, pause() {}, remove() {}, release() {},
     setActiveForLockScreen(active, details, options) { locks.push({ active, details, options }); },
+    updateLockScreenMetadata(details) { locks.push({ active: true, details }); },
   };
   const { createRadioTransport } = loadModule('src/services/radioTransport.ts', {
     // Expo's native ExpoGo-module check returns false in our own dev client too.
@@ -359,4 +361,190 @@ test('configured native development and release builds retain background playbac
   assert.equal(locks.at(-1).details.title, shows[0].title);
   transport.dispose();
   assert.equal(locks.at(-1).active, false);
+});
+
+
+function nativeHarness(t, { modePromise, details = metadata(live[0]) } = {}) {
+  const calls = [];
+  const listeners = new Map();
+  const skipped = [];
+  const states = [];
+  const nativePlayer = {
+    addListener(name, handler) {
+      listeners.set(name, handler);
+      return { remove() { calls.push(['unsubscribe', name]); } };
+    },
+    replace(source) { calls.push(['replace', source]); },
+    play() { calls.push(['play']); },
+    pause() { calls.push(['pause']); },
+    remove() { calls.push(['remove']); },
+    release() { calls.push(['release']); },
+    setActiveForLockScreen(active, details, options) {
+      if (details?.artworkUrl?.startsWith('asset:')) throw Error('unknown protocol: asset');
+      calls.push(['lock', active, details, options]);
+    },
+    updateLockScreenMetadata(details) { calls.push(['metadata', details]); },
+  };
+  const { createRadioTransport } = loadModule('src/services/radioTransport.ts', {
+    expo: { isRunningInExpoGo: () => false },
+    'expo-audio': {
+      createAudioPlayer: () => nativePlayer,
+      setAudioModeAsync: () => modePromise ?? Promise.resolve(),
+    },
+    '@/utils/RadioPlayback': playbackModule,
+  });
+  const transport = createRadioTransport(url, details, state => states.push(state), direction => skipped.push(direction));
+  t.after(() => transport.dispose());
+  return { transport, calls, skipped, states, emit: (name, status) => listeners.get(name)(status) };
+}
+
+test('packaged Android artwork cannot prevent system controls; resolved artwork updates the existing session', async t => {
+  const { transport, calls } = nativeHarness(t, {
+    details: { ...metadata(live[0]), artworkUrl: 'asset:/portrait.png', canSkip: true },
+  });
+  await transport.play();
+  const locks = calls.filter(call => call[0] === 'lock');
+  assert.equal(locks.length, 1);
+  assert.equal(locks[0][1], true);
+  assert.equal(locks[0][2].artworkUrl, undefined);
+  assert.equal(locks[0][3].showNextTrack, true);
+  assert.equal(locks[0][3].showPreviousTrack, true);
+  transport.setMetadata({ ...metadata(shows[0]), artworkUrl: 'file:///cache/portrait.png', canSkip: true });
+  assert.equal(calls.at(-1)[0], 'metadata');
+  assert.equal(calls.at(-1)[1].artworkUrl, 'file:///cache/portrait.png');
+  assert.equal(calls.filter(call => call[0] === 'lock').length, 1, 'Artwork/text updates must not rebuild the media session');
+  assert.equal(calls.filter(call => call[0] === 'play').length, 1);
+});
+
+test('native pause preserves controls, remote resume updates UI, and explicit stop releases the session', async t => {
+  const { transport, calls, emit, states } = nativeHarness(t);
+  await transport.play();
+  emit('playbackStatusUpdate', { isLoaded: true, playing: true });
+  transport.pause();
+  assert.equal(states.at(-1).phase, 'paused');
+  assert.equal(calls.filter(call => call[0] === 'release').length, 0);
+  assert.equal(calls.filter(call => call[0] === 'lock' && call[1] === false).length, 0);
+  emit('playbackStatusUpdate', { isLoaded: true, playing: true, isBuffering: false });
+  assert.equal(states.at(-1).phase, 'playing', 'A remote native resume must clear the app pause guard');
+  transport.pause();
+  await transport.play();
+  assert.equal(calls.filter(call => call[0] === 'replace').length, 2, 'Resume rejoins live audio');
+  assert.equal(calls.filter(call => call[0] === 'lock').length, 1);
+  transport.dispose();
+  assert.equal(calls.filter(call => call[0] === 'release').length, 1);
+  assert.equal(calls.filter(call => call[0] === 'lock' && call[1] === false).length, 1);
+});
+
+test('pausing during native setup cancels late play without destroying the session', async t => {
+  const ready = deferred();
+  const { transport, calls, states } = nativeHarness(t, { modePromise: ready.promise });
+  const pending = transport.play();
+  transport.pause();
+  ready.resolve();
+  await pending;
+  assert.equal(calls.filter(call => call[0] === 'play').length, 0);
+  assert.equal(states.at(-1).phase, 'paused');
+  await transport.play();
+  assert.equal(calls.filter(call => call[0] === 'play').length, 1);
+});
+
+test('remote show commands honor skip availability and ignore disposed players', async t => {
+  const { transport, emit, skipped, calls } = nativeHarness(t, { details: { ...metadata(live[0]), canSkip: true } });
+  await transport.play();
+  emit('remoteTrackChange', { direction: 1 });
+  emit('remoteTrackChange', { direction: -1 });
+  assert.deepEqual(skipped, [1, -1]);
+  transport.setMetadata({ ...metadata(live[0]), canSkip: false });
+  assert.equal(calls.at(-1)[3].showNextTrack, false);
+  emit('remoteTrackChange', { direction: 1 });
+  assert.deepEqual(skipped, [1, -1]);
+  transport.dispose();
+  emit('remoteTrackChange', { direction: -1 });
+  assert.deepEqual(skipped, [1, -1]);
+});
+
+test('remote pause while buffering clears loading instead of timing out', async t => {
+  const { transport, emit, states } = nativeHarness(t);
+  await transport.play();
+  emit('playbackStatusUpdate', { isLoaded: false, isBuffering: true, playing: false, timeControlStatus: 'paused' });
+  assert.equal(states.at(-1).phase, 'paused');
+});
+
+test('shared controller retains a native paused session, invalidates pending errors, and releases on stop', async t => {
+  const pending = deferred();
+  const { player, sessions } = harness(t, { retainSession: true, playPromise: pending.promise });
+  player.start(metadata(live[0]));
+  player.pause();
+  assert.equal(sessions[0].disposed, false);
+  pending.reject(Error('Cancelled request'));
+  await Promise.resolve();
+  assert.equal(player.getSnapshot().phase, 'paused');
+  player.start(metadata(shows[0]));
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].plays, 2);
+  sessions[0].notify({ phase: 'playing' });
+  player.stop();
+  assert.equal(sessions[0].disposed, true);
+  sessions[0].notify({ phase: 'playing' });
+  assert.equal(player.getSnapshot().phase, 'paused');
+});
+
+test('shared controller routes remote navigation and ignores a released session', t => {
+  const { player, sessions } = harness(t);
+  const directions = [];
+  player.setSkipHandler(direction => directions.push(direction));
+  player.start(metadata(live[0]));
+  sessions[0].skip(1);
+  sessions[0].skip(-1);
+  player.stop();
+  sessions[0].skip(1);
+  assert.deepEqual(directions, [1, -1]);
+});
+
+test('Android drawable artwork is copied to a readable file even when Expo marks it downloaded', async () => {
+  const original = { name: 'portrait', type: 'png', uri: 'assets_shows_portrait', localUri: 'assets_shows_portrait', downloaded: true };
+  let downloads = 0;
+  class Asset {
+    static fromModule() { return original; }
+    constructor(options) { Object.assign(this, options); this.localUri = null; }
+    async downloadAsync() { downloads++; this.localUri = 'file:///cache/portrait.png'; return this; }
+  }
+  const { getRadioMetadata, resolveRadioArtwork } = loadModule('src/services/radioMetadata.ts', {
+    'expo-asset': { Asset },
+    'react-native': { Platform: { OS: 'android' } },
+  });
+  const show = { title: 'Live show', presenter: 'Presenter', image: 123 };
+  assert.equal(getRadioMetadata(show, false).artworkUrl, original.uri);
+  await resolveRadioArtwork(show);
+  assert.equal(downloads, 1);
+  assert.equal(getRadioMetadata(show, true).artworkUrl, 'file:///cache/portrait.png');
+  await resolveRadioArtwork(show);
+  assert.equal(downloads, 1, 'Resolved artwork is reused for later selections');
+});
+
+test('already readable iOS artwork and browser artwork do not need a native copy', async () => {
+  for (const platform of ['ios', 'web']) {
+    class Asset {
+      static fromModule() { return { localUri: 'file:///app/portrait.png', uri: 'file:///app/portrait.png' }; }
+      async downloadAsync() { throw Error('Unexpected download'); }
+    }
+    const { getRadioMetadata, resolveRadioArtwork } = loadModule('src/services/radioMetadata.ts', {
+      'expo-asset': { Asset },
+      'react-native': { Platform: { OS: platform } },
+    });
+    const show = { title: 'Live show', presenter: 'Presenter', image: 456 };
+    assert.equal(getRadioMetadata(show, false).artworkUrl, 'file:///app/portrait.png');
+    await resolveRadioArtwork(show);
+  }
+});
+
+test('a remote resume after app pause reports buffering and connection errors', async t => {
+  const { transport, emit, states } = nativeHarness(t);
+  await transport.play();
+  emit('playbackStatusUpdate', { isLoaded: true, playing: true });
+  transport.pause();
+  emit('playbackStatusUpdate', { isLoaded: false, isBuffering: true, playing: true });
+  assert.equal(states.at(-1).phase, 'loading');
+  emit('playbackStatusUpdate', { playbackState: 'failed', error: 'Disconnected' });
+  assert.equal(states.at(-1).phase, 'error');
 });

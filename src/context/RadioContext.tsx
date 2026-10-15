@@ -8,7 +8,7 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
-import { Asset } from "expo-asset";
+import { getRadioMetadata, resolveRadioArtwork } from "@/services/radioMetadata";
 import { shows } from "@/data/shows";
 import {
   createStationStreamShow,
@@ -75,26 +75,23 @@ export function RadioProvider({ children }: PropsWithChildren) {
       if (!show) return;
       selectedShow.current = show;
       setCurrentShow(show);
-      const artwork = show.image ?? show.poster;
-      const artworkUrl =
-        typeof artwork === "number"
-          ? Asset.fromModule(artwork).uri
-          : Array.isArray(artwork)
-            ? artwork[0]?.uri
-            : artwork?.uri;
       playback.start(
-        {
-          title: show.title,
-          artist: show.presenter,
-          artworkUrl,
-        },
+        getRadioMetadata(show, getLiveShows(shows).length > 1),
         restart,
       );
+      // Native notifications need a file:// URL for artwork bundled in an APK.
+      // Resolve it independently so listening still starts in the original tap.
+      void resolveRadioArtwork(show)
+        .then(() => {
+          if (selectedShow.current !== show) return;
+          playback.setMetadata(getRadioMetadata(show, getLiveShows(shows).length > 1));
+        })
+        .catch(console.warn);
     },
     [playback],
   );
 
-  const stop = playback.pause;
+  const stop = playback.stop;
   const clearCurrentShow = useCallback(() => {
     selectedShow.current = null;
     setCurrentShow(null);
@@ -123,11 +120,21 @@ export function RadioProvider({ children }: PropsWithChildren) {
     () => startShow(selectAdjacentLiveShow(shows, selectedShow.current?.id, 1)),
     [startShow],
   );
+  useEffect(() => {
+    playback.setSkipHandler((direction) => direction === 1 ? next() : previous());
+    return () => playback.setSkipHandler(null);
+  }, [playback, next, previous]);
+
+  useEffect(() => {
+    const show = selectedShow.current;
+    if (!show) return;
+    playback.setMetadata(getRadioMetadata(show, liveShows.length > 1));
+  }, [playback, liveShows]);
   const toggle = useCallback(() => {
     const phase = playback.getSnapshot().phase;
-    if (phase === "playing" || phase === "loading") stop();
+    if (phase === "playing" || phase === "loading") playback.pause();
     else listenLive();
-  }, [playback, stop, listenLive]);
+  }, [playback, listenLive]);
   const retry = useCallback(() => {
     const selected =
       selectedShow.current ?? selectLiveShow(shows) ?? stationStreamShow;

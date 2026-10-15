@@ -15,7 +15,10 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ]
     },
     "ios": {
@@ -54,6 +57,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "33e70d72-aa53-45a9-a75b-eb6c99bafbcf"
+      }
     }
   }
 }

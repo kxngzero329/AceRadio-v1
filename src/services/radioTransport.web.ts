@@ -9,6 +9,7 @@ export const createRadioTransport: RadioTransportFactory = (
   url,
   initialMetadata,
   onStatus,
+  onSkip,
 ) => {
   const audio = new Audio();
   audio.preload = "none";
@@ -48,6 +49,8 @@ export const createRadioTransport: RadioTransportFactory = (
   };
   const updateMetadata = (nextMetadata: StreamMetadata) => {
     metadata = nextMetadata;
+    mediaAction("previoustrack", metadata.canSkip ? () => onSkip(-1) : null);
+    mediaAction("nexttrack", metadata.canSkip ? () => onSkip(1) : null);
     if (mediaSession && typeof MediaMetadata !== "undefined") {
       try {
         mediaSession.metadata = new MediaMetadata({
@@ -116,6 +119,8 @@ export const createRadioTransport: RadioTransportFactory = (
       if (mediaSession) {
         mediaAction("play", null);
         mediaAction("pause", null);
+        mediaAction("previoustrack", null);
+        mediaAction("nexttrack", null);
         try {
           mediaSession.metadata = null;
         } catch {

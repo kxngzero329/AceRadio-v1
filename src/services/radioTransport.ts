@@ -23,6 +23,7 @@ export const createRadioTransport: RadioTransportFactory = (
   url,
   initialMetadata,
   onStatus,
+  onSkip,
 ) => {
   // Expo Go cannot receive this app's native playback-service configuration.
   // The ExpoGo module distinguishes it from our configured development client.
@@ -34,22 +35,35 @@ export const createRadioTransport: RadioTransportFactory = (
   let disposed = false;
   let started = false;
   let hasPlayed = false;
+  let paused = false;
+  let operation = 0;
+  let lockScreenActive = false;
   let metadata = initialMetadata;
-  const lockScreenOptions = {
-    showSeekForward: false,
-    showSeekBackward: false,
-    isLiveStream: true,
-  };
+  // Android decodes this field as java.net.URL. Packaged asset:/ URIs reject
+  // the entire native call, so show text controls while artwork is resolved.
+  const safeMetadata = () => audioMetadata({
+    ...metadata,
+    artworkUrl: /^(https?|file):\/\//i.test(metadata.artworkUrl ?? "")
+      ? metadata.artworkUrl
+      : undefined,
+  });
   const activateLockScreen = () => {
     if (!supportsBackgroundPlayback) return;
     try {
-      player.setActiveForLockScreen(
-        true,
-        audioMetadata(metadata),
-        lockScreenOptions,
-      );
-    } catch {
-      /* System media controls are optional; station audio can still play. */
+      const options = {
+        showSeekForward: false,
+        showSeekBackward: false,
+        isLiveStream: true,
+        showNextTrack: metadata.canSkip ?? false,
+        showPreviousTrack: metadata.canSkip ?? false,
+      };
+      if (lockScreenActive) player.updateLockScreenMetadata(safeMetadata());
+      else {
+        player.setActiveForLockScreen(true, safeMetadata(), options);
+        lockScreenActive = true;
+      }
+    } catch (error) {
+      console.warn("AceRadio could not activate system media controls", error);
     }
   };
 
@@ -57,12 +71,21 @@ export const createRadioTransport: RadioTransportFactory = (
     "playbackStatusUpdate",
     (status: AudioStatus) => {
       if (disposed || !started) return;
+      if (paused) {
+        // A native remote Play can resume while the React view is backgrounded.
+        if (status.playing || status.timeControlStatus === "waiting") paused = false;
+        else return;
+      }
       if (
         status.error ||
         status.playbackState === "failed" ||
         status.didJustFinish
       ) {
         onStatus({ phase: "error", error: STREAM_ERROR_MESSAGE });
+      } else if (
+        status.isBuffering && !status.playing && status.timeControlStatus === "paused"
+      ) {
+        onStatus({ phase: "paused" });
       } else if (
         status.isBuffering ||
         !status.isLoaded ||
@@ -78,9 +101,15 @@ export const createRadioTransport: RadioTransportFactory = (
       }
     },
   );
+  const remoteSubscription = supportsBackgroundPlayback
+    ? player.addListener("remoteTrackChange", ({ direction }) => {
+        if (!disposed && metadata.canSkip) onSkip(direction);
+      })
+    : null;
 
   return {
     async play() {
+      const request = ++operation;
       await setAudioModeAsync({
         playsInSilentMode: true,
         shouldPlayInBackground: supportsBackgroundPlayback,
@@ -88,7 +117,8 @@ export const createRadioTransport: RadioTransportFactory = (
         allowsRecording: false,
         shouldRouteThroughEarpiece: false,
       });
-      if (disposed) return;
+      if (disposed || request !== operation) return;
+      paused = false;
       started = true;
       player.replace({ uri: url });
       if (disposed) return;
@@ -96,16 +126,27 @@ export const createRadioTransport: RadioTransportFactory = (
       if (disposed) return;
       player.play();
     },
+    pause() {
+      operation++;
+      paused = true;
+      player.pause();
+      onStatus({ phase: "paused" });
+    },
     setMetadata(nextMetadata) {
+      const controlsChanged = metadata.canSkip !== nextMetadata.canSkip;
       metadata = nextMetadata;
+      // Reconfigure only when commands change; artwork/text updates reuse the session.
+      if (controlsChanged) lockScreenActive = false;
       if (started && !disposed) activateLockScreen();
     },
     dispose() {
       if (disposed) return;
       disposed = true;
+      operation++;
       // Explicit SharedObject release stops native buffering and its background service.
       for (const cleanup of [
         () => subscription.remove(),
+        () => remoteSubscription?.remove(),
         () => {
           if (supportsBackgroundPlayback) player.setActiveForLockScreen(false);
         },

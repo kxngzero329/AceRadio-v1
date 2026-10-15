@@ -145,6 +145,16 @@ function harness({ focused = true, reducedMotion = false, canGoBack = true, plat
   };
   if (platform === 'web') Object.assign(context, { window: browserWindow, PopStateEvent });
   else Object.defineProperty(context, 'window', { get() { throw new Error('Native hook accessed window'); } });
+  const historyFilename = path.join(__dirname, '..', platform === 'web'
+    ? 'src/utils/modalHistory.web.ts' : 'src/utils/modalHistory.ts');
+  const historyOutput = ts.transpileModule(fs.readFileSync(historyFilename, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const historyExports = {};
+  new vm.Script(historyOutput, { filename: historyFilename }).runInNewContext({
+    exports: historyExports, ...(platform === 'web' ? { window: browserWindow } : {}),
+  });
+  imports['@/utils/modalHistory'] = historyExports;
   new vm.Script(output, { filename }).runInNewContext(context);
   const render = () => {
     cursor = 0;
