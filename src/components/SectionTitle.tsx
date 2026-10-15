@@ -21,7 +21,10 @@ export function SectionTitle({
       {action ? (
         <Pressable
           onPress={onPress}
-          style={styles.action}
+          disabled={!onPress}
+          accessibilityState={{ disabled: !onPress }}
+          accessibilityLabel={`${action}: ${title}`}
+          style={({ pressed }) => [styles.action, pressed && styles.pressed, !onPress && styles.disabled]}
           accessibilityRole="button"
         >
           <Text style={styles.link}>{action}</Text>
@@ -36,15 +39,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingBottom: 15,
+    paddingBottom: 12,
+    gap: 12,
   },
   title: {
-    fontSize: 23,
-    fontWeight: "800",
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "700",
     color: colors.white,
-    letterSpacing: -0.7,
+    letterSpacing: -0.5,
   },
-  sub: { fontSize: 13, color: colors.muted, marginTop: 4 },
-  action: { flexDirection: "row", alignItems: "center", gap: 2 },
+  sub: { fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: 4 },
+  action: { flexDirection: "row", alignItems: "center", gap: 2, minHeight: 44, paddingHorizontal: 8, borderRadius: 10 },
+  pressed: { backgroundColor: colors.surface2 },
+  disabled: { opacity: 0.45 },
   link: { color: colors.green, fontSize: 13, fontWeight: "700" },
 });

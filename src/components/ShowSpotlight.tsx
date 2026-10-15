@@ -28,6 +28,7 @@ import type { Banner } from "@/types/content";
 import { openVerifiedLink } from "@/services/links";
 import { useContent } from "@/context/ContentContext";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
 
 const INTERVAL_MS = 5500;
 
@@ -37,7 +38,7 @@ const SpotlightSlide = memo(function SpotlightSlide({ banner, width }: { banner:
     else if (banner.linkUrl) void openVerifiedLink(banner.title, banner.linkUrl);
   }, [banner]);
   return (
-    <Pressable style={{ width, aspectRatio: imageAspectRatio(banner.image, 2) }} onPress={openBanner}
+    <Pressable style={({ pressed }) => ({ width, aspectRatio: imageAspectRatio(banner.image, 2), opacity: pressed ? 0.8 : 1 })} onPress={openBanner}
       disabled={!banner.showId && !banner.linkUrl} accessibilityRole={banner.showId || banner.linkUrl ? "button" : undefined}
       accessibilityLabel={`${banner.title}. ${banner.subtitle ?? ""}`}>
       <FittedImage source={banner.image} accessibilityLabel={banner.title} />
@@ -292,48 +293,46 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
           </ScrollView>
         </View>
       )}
-      <View style={styles.controls}>
+      {slides.length > 1 && <View style={styles.controls}>
         <Pressable
-          style={styles.arrow}
+          style={({ pressed }) => [styles.arrow, pressed && styles.arrowPressed, interacting && styles.arrowDisabled]}
           onPress={() => advance(-1)}
           disabled={interacting || slides.length < 2}
           accessibilityRole="button"
           accessibilityLabel="Previous show"
+          accessibilityState={{ disabled: interacting }}
         >
           <ChevronLeft size={22} color={colors.white} />
         </Pressable>
-        <View style={styles.progress}>
-          <View style={styles.dots} accessible={false}>
-            {slides.map((slide, page) => (
-              <View
-                key={slide.id}
-                style={[styles.dot, page === safeIndex && styles.activeDot]}
-              />
-            ))}
-          </View>
+        <View style={styles.progress} accessible accessibilityRole="adjustable"
+          accessibilityLabel={`Show spotlight: ${slides[safeIndex].title}`}
+          accessibilityValue={{ min: 1, max: slides.length, now: safeIndex + 1, text: `Slide ${safeIndex + 1} of ${slides.length}` }}
+          accessibilityActions={[{ name: "increment", label: "Next show" }, { name: "decrement", label: "Previous show" }]}
+          onAccessibilityAction={event => advance(event.nativeEvent.actionName === "increment" ? 1 : -1)}>
           <Text style={styles.count}>
             {safeIndex + 1} / {slides.length}
           </Text>
         </View>
         <Pressable
-          style={styles.arrow}
+          style={({ pressed }) => [styles.arrow, pressed && styles.arrowPressed, interacting && styles.arrowDisabled]}
           onPress={() => advance(1)}
           disabled={interacting || slides.length < 2}
           accessibilityRole="button"
           accessibilityLabel="Next show"
+          accessibilityState={{ disabled: interacting }}
         >
           <ChevronRight size={22} color={colors.white} />
         </Pressable>
-      </View>
+      </View>}
     </View>
   );
 });
 
 const styles = StyleSheet.create({
-  root: { width: "100%", marginBottom: 28 },
+  root: { width: "100%", marginBottom: 24 },
   artwork: {
     width: "100%",
-    borderRadius: 16,
+    borderRadius: layout.cardRadius,
     overflow: "hidden",
     backgroundColor: colors.surface,
   },
@@ -341,19 +340,21 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 6,
-    gap: 4,
+    paddingTop: 8,
+    gap: 8,
   },
   arrow: {
     width: 44,
     height: 44,
     borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  progress: { flex: 1, alignItems: "center", gap: 5 },
-  dots: { flexDirection: "row", alignItems: "center", gap: 4 },
-  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.border },
-  activeDot: { width: 12, backgroundColor: colors.green },
-  count: { color: colors.muted, fontSize: 10, fontVariant: ["tabular-nums"] },
+  arrowPressed: { backgroundColor: colors.surface2 },
+  arrowDisabled: { opacity: 0.4 },
+  progress: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  count: { color: colors.muted, fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"], letterSpacing: 1 },
 });

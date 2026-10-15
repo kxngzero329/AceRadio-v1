@@ -1,13 +1,20 @@
 import { useEffect } from "react";
 import { Tabs } from "expo-router";
-import { Home, Radio, Heart, Info, Settings2 } from "lucide-react-native";
-import { Easing, Platform, View } from "react-native";
+import { Home, Radio, Heart, Info, Settings2, type LucideIcon } from "lucide-react-native";
+import { Easing, Platform, StyleSheet, View, type ColorValue } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { colors } from "@/theme/colors";
 import { blurWebFocus, router } from "@/utils/navigation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { tabBarHeight } from "@/theme/layout";
+
+function TabIcon({ icon: Icon, color, focused }: { icon: LucideIcon; color: ColorValue; focused: boolean }) {
+  return <View style={[styles.icon, focused && styles.iconActive]}><Icon size={22} color={color} strokeWidth={focused ? 2.3 : 1.8} /></View>;
+}
 export default function TabLayout() {
   const reducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     if (Platform.OS === "web") return;
     const warmPlayer = setTimeout(() => router.prefetch("/player"), 700);
@@ -31,15 +38,18 @@ export default function TabLayout() {
             },
           },
           tabBarActiveTintColor: colors.green,
-          tabBarInactiveTintColor: colors.subtle,
-          tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: 1 },
+          tabBarInactiveTintColor: colors.muted,
+          tabBarLabelStyle: { fontSize: 11, fontWeight: "600", lineHeight: 14, marginTop: 3 },
+          tabBarItemStyle: { paddingHorizontal: 2 },
+          tabBarIconStyle: { width: 44, height: 30 },
+          tabBarAllowFontScaling: true,
           tabBarStyle: {
-            backgroundColor: "#090E0B",
+            backgroundColor: colors.surface,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: 78,
-            paddingTop: 9,
-            paddingBottom: 14,
+            height: tabBarHeight(insets.bottom),
+            paddingTop: 6,
+            paddingBottom: Math.max(insets.bottom, 12),
           },
         }}
       >
@@ -47,15 +57,15 @@ export default function TabLayout() {
           name="index"
           options={{
             title: "Home",
-            tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
+            tabBarIcon: ({ color, focused }) => <TabIcon icon={Home} color={color} focused={focused} />,
           }}
         />
         <Tabs.Screen
           name="shows"
           options={{
             title: "Shows",
-            tabBarIcon: ({ color, size }) => (
-              <Radio size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon icon={Radio} color={color} focused={focused} />
             ),
           }}
         />
@@ -63,8 +73,8 @@ export default function TabLayout() {
           name="favorites"
           options={{
             title: "Saved",
-            tabBarIcon: ({ color, size }) => (
-              <Heart size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon icon={Heart} color={color} focused={focused} />
             ),
           }}
         />
@@ -72,15 +82,15 @@ export default function TabLayout() {
           name="about"
           options={{
             title: "About",
-            tabBarIcon: ({ color, size }) => <Info size={size} color={color} />,
+            tabBarIcon: ({ color, focused }) => <TabIcon icon={Info} color={color} focused={focused} />,
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
             title: "Settings",
-            tabBarIcon: ({ color, size }) => (
-              <Settings2 size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon icon={Settings2} color={color} focused={focused} />
             ),
           }}
         />
@@ -89,3 +99,8 @@ export default function TabLayout() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  icon: { width: 44, height: 30, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  iconActive: { backgroundColor: colors.greenDeep },
+});

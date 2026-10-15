@@ -1,7 +1,7 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import { PageScrollView } from "@/components/PageScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowUpRight, Headphones, Signal } from "lucide-react-native";
+import { ArrowUpRight, Headphones } from "lucide-react-native";
 import { router } from "@/utils/navigation";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SectionTitle } from "@/components/SectionTitle";
@@ -10,84 +10,60 @@ import { ShowSpotlight } from "@/components/ShowSpotlight";
 import { LiveRadioHero } from "@/components/LiveRadioHero";
 import { LiveNoticeBoard } from "@/components/LiveNoticeBoard";
 import { useContent } from "@/context/ContentContext";
+import { useRadio } from "@/context/RadioContext";
 import { ContentStatus } from "@/components/ContentStatus";
 import { StationAnnouncements } from "@/components/StationAnnouncements";
 import { HomeBanners } from "@/components/HomeBanners";
 import { colors } from "@/theme/colors";
-import { STATION } from "@/config/station";
+import { layout } from "@/theme/layout";
 
 export default function HomeScreen() {
-  const { shows } = useContent();
+  const { shows, banners, loading } = useContent();
+  const { hasPlayed, currentShow } = useRadio();
+  const { width } = useWindowDimensions();
+  const hasSpotlight = banners.some(banner => banner.placement === "home_spotlight");
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <ScreenHeader />
       <PageScrollView
         testID="home-scroll"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, {
+          paddingHorizontal: width < 360 ? 16 : layout.gutter,
+          paddingBottom: hasPlayed && currentShow ? 104 : 28,
+        }]}
       >
-        {/* <View style={styles.greeting}>
-          <Text style={styles.eyebrow}>{STATION.location.toUpperCase()}</Text>
-          <Text style={styles.heading}>
-            Hear the <Text style={{ color: colors.green }}>difference.</Text>
-          </Text>
-          <Text style={styles.subtitle}>
-            Your soundtrack starts right here.
-          </Text>
-        </View> */}
-
         <LiveRadioHero />
-        <ContentStatus emptyMessage="The show lineup will appear here when it is published." />
+        <ContentStatus showLoading={false} emptyMessage="The show lineup will appear here when it is published." />
         <StationAnnouncements />
         <HomeBanners />
         <LiveNoticeBoard />
-
-        <View style={styles.stats}>
-          <View style={styles.statItem}>
-            <Headphones color={colors.green} size={20} />
-            <View>
-              <Text style={styles.statTitle}>Free listening</Text>
-              <Text style={styles.statSub}>Just press play</Text>
-            </View>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Signal color={colors.green} size={20} />
-            <View>
-              <Text style={styles.statTitle}>From Cape Town</Text>
-              <Text style={styles.statSub}>Streaming online</Text>
-            </View>
-          </View>
+        <View style={styles.stationNote}>
+          <Headphones color={colors.muted} size={14} />
+          <Text style={styles.noteText}>Free to listen</Text>
+          <View style={styles.noteDot} />
+          <Text style={styles.noteText}>From Cape Town</Text>
         </View>
-
-        <SectionTitle
-          title="Show spotlight"
-          subtitle="Meet your next favourite show"
-        />
-        <ShowSpotlight />
-
-        <SectionTitle
-          title="Our shows"
-          subtitle="Find your next favourite"
-          action="See all"
-          onPress={() => router.push("/shows")}
-        />
-        <View style={styles.grid}>
-          <ShowCarousel shows={shows} />
-        </View>
-
-        <View style={styles.manifesto}>
-          <Text style={styles.manifestoLabel}>THE ACE RADIO WAY</Text>
-          <Text style={styles.manifestoText}>
-            Not just background noise.{"\n"}
-            <Text style={{ color: colors.green }}>A feeling.</Text>
-          </Text>
-          <Text style={styles.manifestoSub}>
-            Made in Cape Town. Created for people who listen differently.
-          </Text>
-          <Pressable onPress={() => router.push("/about")} style={styles.learn}>
+        {hasSpotlight && <>
+          <SectionTitle title="Show spotlight" />
+          <ShowSpotlight />
+        </>}
+        {(shows.length > 0 || loading) && <>
+          <SectionTitle title="Our shows" action="See all" onPress={() => router.push("/shows")} />
+          <View style={styles.grid}>
+            <ShowCarousel shows={shows} loading={loading && !shows.length} />
+          </View>
+        </>}
+        <View style={styles.footer}>
+          <View style={styles.footerCopy}>
+            <Text style={styles.footerTitle}>Made in Cape Town.</Text>
+            <Text style={styles.footerSub}>Built for those who listen differently.</Text>
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Read the AceRadio story"
+            onPress={() => router.push("/about")}
+            style={({ pressed }) => [styles.learn, pressed && styles.pressed]}>
             <Text style={styles.learnText}>Our story</Text>
-            <ArrowUpRight size={17} color={colors.green} />
+            <ArrowUpRight size={16} color={colors.green} />
           </Pressable>
         </View>
       </PageScrollView>
@@ -97,68 +73,16 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  scroll: { paddingHorizontal: 21, paddingBottom: 177 },
-  greeting: { marginTop: 4, marginBottom: 24 },
-  eyebrow: {
-    color: colors.green,
-    fontWeight: "800",
-    letterSpacing: 2.1,
-    fontSize: 10,
-  },
-  heading: {
-    fontSize: 37,
-    fontWeight: "900",
-    letterSpacing: -1.9,
-    color: colors.white,
-    marginTop: 8,
-  },
-  subtitle: { fontSize: 14, color: colors.muted, marginTop: 5 },
-  stats: {
-    backgroundColor: colors.surface,
-    borderRadius: 17,
-    flexDirection: "row",
-    padding: 16,
-    marginBottom: 28,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  statItem: { flex: 1, flexDirection: "row", gap: 10, alignItems: "center" },
-  statDivider: {
-    width: 1,
-    backgroundColor: colors.border,
-    marginHorizontal: 12,
-  },
-  statTitle: { fontSize: 12, color: colors.white, fontWeight: "800" },
-  statSub: { fontSize: 10, color: colors.muted, marginTop: 4 },
-  grid: { marginBottom: 28 },
-  manifesto: {
-    marginTop: 6,
-    backgroundColor: "#0E1913",
-    borderRadius: 21,
-    borderColor: "#234832",
-    borderWidth: 1,
-    padding: 22,
-  },
-  manifestoLabel: {
-    fontSize: 10,
-    color: colors.green,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-  },
-  manifestoText: {
-    fontSize: 26,
-    lineHeight: 33,
-    fontWeight: "900",
-    letterSpacing: -0.9,
-    color: colors.white,
-    marginTop: 12,
-  },
-  manifestoSub: {
-    fontSize: 13,
-    color: colors.muted,
-    lineHeight: 20,
-    marginTop: 11,
-  },
-  learn: { flexDirection: "row", gap: 7, alignItems: "center", marginTop: 21 },
-  learnText: { color: colors.green, fontWeight: "800", fontSize: 13 },
+  scroll: { width: "100%", maxWidth: layout.contentWidth, alignSelf: "center", paddingTop: 4 },
+  stationNote: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 2, marginBottom: layout.sectionGap },
+  noteText: { color: colors.muted, fontSize: 12, lineHeight: 18 },
+  noteDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: colors.subtle, marginHorizontal: 2 },
+  grid: { marginBottom: layout.sectionGap },
+  footer: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 16 },
+  footerCopy: { flexGrow: 1, flexShrink: 1 },
+  footerTitle: { color: colors.white, fontSize: 13, fontWeight: "600", lineHeight: 20 },
+  footerSub: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 2 },
+  learn: { minHeight: 44, flexDirection: "row", gap: 5, alignItems: "center", paddingHorizontal: 8, borderRadius: layout.controlRadius },
+  learnText: { color: colors.green, fontWeight: "700", fontSize: 12 },
+  pressed: { backgroundColor: colors.surface2 },
 });

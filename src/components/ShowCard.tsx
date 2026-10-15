@@ -13,6 +13,7 @@ import type { Show } from "@/types/show";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useRadio } from "@/context/RadioContext";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
 
 export const ShowCard = memo(function ShowCard({
   show,
@@ -28,9 +29,11 @@ export const ShowCard = memo(function ShowCard({
   const isLive = liveShows.some((liveShow) => liveShow.id === show.id);
 
   // Matching text slots keep Home, Shows and Favourites cards aligned.
-  const titleHeight = Math.ceil(19 * fontScale * 2);
-  const presenterHeight = Math.ceil(16 * fontScale * 2);
-  const scheduleHeight = Math.ceil(15 * fontScale * 2);
+  const titleHeight = Math.ceil(20 * fontScale * 2);
+  const presenterHeight = Math.ceil(17 * fontScale * 2);
+  const scheduleHeight = Math.ceil(55 * fontScale);
+  const dayPrefix = `${show.day} • `;
+  const times = show.schedule.startsWith(dayPrefix) ? show.schedule.slice(dayPrefix.length) : show.schedule;
   const listeners = listenerCount?.toLocaleString("en-ZA");
   const showListenerCount =
     listeners !== undefined && width >= 150 && fontScale <= 1.3;
@@ -84,10 +87,11 @@ export const ShowCard = memo(function ShowCard({
             {show.presenter}
           </Text>
           <View style={[styles.time, { height: scheduleHeight }]}>
-            <Clock3 size={13} color={colors.muted} style={styles.clock} />
-            <Text style={styles.meta} numberOfLines={2}>
-              {show.schedule}
-            </Text>
+            <View style={styles.dayRow}>
+              <Clock3 size={12} color={colors.muted} />
+              <Text style={styles.day} numberOfLines={1}>{show.day || "Schedule"}</Text>
+            </View>
+            <Text style={styles.meta} numberOfLines={2}>{times}</Text>
           </View>
         </View>
       </Pressable>
@@ -115,7 +119,7 @@ export const ShowCard = memo(function ShowCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: layout.cardRadius,
     overflow: "hidden",
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
     gap: 5,
     alignItems: "center",
     backgroundColor: "#08110CEB",
-    borderRadius: 12,
+    borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
@@ -152,38 +156,36 @@ const styles = StyleSheet.create({
   liveText: {
     flexShrink: 1,
     color: colors.green,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "800",
     fontVariant: ["tabular-nums"],
   },
-  body: { paddingTop: 12, paddingHorizontal: 10, paddingBottom: 14 },
+  body: { padding: 12 },
   name: {
     fontSize: 15,
-    lineHeight: 19,
+    lineHeight: 20,
     includeFontPadding: false,
-    fontWeight: "800",
+    fontWeight: "700",
     color: colors.white,
   },
   presenter: {
     fontSize: 12,
-    lineHeight: 16,
-    includeFontPadding: false,
-    color: "#D8E0DA",
-    marginTop: 4,
-  },
-  time: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 5,
-    marginTop: 8,
-  },
-  clock: { marginTop: 1 },
-  meta: {
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 15,
+    lineHeight: 17,
     includeFontPadding: false,
     color: colors.muted,
+    marginTop: 3,
+  },
+  time: {
+    gap: 4,
+    marginTop: 8,
+  },
+  dayRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  day: { flex: 1, fontSize: 11, lineHeight: 15, color: colors.muted },
+  meta: {
+    fontSize: 12,
+    lineHeight: 18,
+    includeFontPadding: false,
+    color: colors.white,
   },
   like: {
     position: "absolute",

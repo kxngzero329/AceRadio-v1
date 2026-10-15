@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import { ShowCard } from "@/components/ShowCard";
 import type { Show } from "@/types/show";
 
 export function ShowGrid({ shows }: { shows: Show[] }) {
   const [width, setWidth] = useState(0);
-  const columns = width >= 680 ? 3 : 2;
+  const { fontScale } = useWindowDimensions();
+  const columns = fontScale > 1.35 ? 1 : width >= 680 ? 3 : 2;
   const cardWidth = (width - 12 * (columns - 1)) / columns;
 
   return (

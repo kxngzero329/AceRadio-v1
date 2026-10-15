@@ -1,12 +1,12 @@
 export const colors = {
-  background: "#050806",
-  surface: "#111713",
-  surface2: "#17211B",
-  border: "#26352D",
+  background: "#070C09",
+  surface: "#111B15",
+  surface2: "#19271E",
+  border: "#2A3B30",
   green: "#36D57A",
   greenDeep: "#092116",
   white: "#F6F7F3",
-  muted: "#9EA9A2",
-  subtle: "#5E6D65",
+  muted: "#B0BDB4",
+  subtle: "#879A8D",
   red: "#FF655F",
 } as const;

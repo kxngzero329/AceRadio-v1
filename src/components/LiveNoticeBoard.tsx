@@ -1,6 +1,5 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { ArrowUpRight, Clock3, Radio } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { router } from "@/utils/navigation";
 import { useRadio } from "@/context/RadioContext";
 import { useContent } from "@/context/ContentContext";
@@ -9,6 +8,7 @@ import {
   SAST_TIME_ZONE,
 } from "@/utils/showSchedule";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
 import type { Show } from "@/types/show";
 
 function ShowNotice({ show, detail }: { show: Show; detail: string }) {
@@ -21,15 +21,15 @@ function ShowNotice({ show, detail }: { show: Show; detail: string }) {
       }
       style={({ pressed }) => [styles.show, pressed && styles.pressed]}
     >
-      <Image source={show.image ?? show.poster} style={styles.artwork} />
+      {show.image || show.poster ? <Image source={show.image ?? show.poster} style={styles.artwork} accessibilityLabel={show.presenter} /> : <View style={[styles.artwork, styles.artworkPlaceholder]}><Radio size={24} color={colors.muted} /></View>}
       <View style={styles.showCopy}>
-        <Text style={styles.showTitle} numberOfLines={1}>
+        <Text style={styles.showTitle} numberOfLines={2}>
           {show.title}
         </Text>
-        <Text style={styles.presenter} numberOfLines={1}>
+        <Text style={styles.presenter} numberOfLines={2}>
           {show.presenter}
         </Text>
-        <Text style={styles.schedule} numberOfLines={1}>
+        <Text style={styles.schedule} numberOfLines={2}>
           {detail}
         </Text>
       </View>
@@ -54,22 +54,19 @@ export function LiveNoticeBoard() {
     : null;
 
   return (
-    <LinearGradient
+    <View
       testID="live-notice-board"
-      colors={["#13291C", "#0C1710"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
       style={styles.board}
     >
       <View style={styles.header}>
         <View style={styles.heading}>
           <Radio size={17} color={colors.green} />
-          <Text style={styles.headingText}>SCHEDULES</Text>
+          <Text style={styles.headingText}>Live schedule</Text>
         </View>
         <View style={[styles.status, !liveShows.length && styles.statusOff]}>
           <View style={[styles.dot, !liveShows.length && styles.dotOff]} />
           <Text style={[styles.statusText, !liveShows.length && styles.statusTextOff]}>
-            {liveShows.length ? "LIVE NOW" : loading ? "UPDATING" : unavailable ? "UNAVAILABLE" : "OFF AIR"}
+            {liveShows.length ? "ON AIR" : loading ? "UPDATING" : unavailable ? "UNAVAILABLE" : next ? "UP NEXT" : "LIVE MUSIC"}
           </Text>
         </View>
       </View>
@@ -82,20 +79,15 @@ export function LiveNoticeBoard() {
         </View>
       ) : (
         <View style={styles.offAir}>
-          <View style={styles.offAirCopy}>
+          <View style={styles.offAirCopy} accessibilityLiveRegion="polite">
+            {loading && <ActivityIndicator size="small" color={colors.green} />}
             <Text style={styles.offAirTitle}>
-              {loading ? "Checking the schedule…" : unavailable ? "Schedule unavailable" : next ? "Between shows" : "No shows scheduled"}
+              {loading ? "Checking the schedule…" : unavailable ? "Schedule unavailable" : next ? "Live music between shows" : "No shows scheduled"}
             </Text>
             <Text style={styles.offAirDescription}>
               {loading || unavailable ? "You can still listen to the live station." : next ? "Here’s what’s coming up next." : "Check back for the next broadcast."}
             </Text>
           </View>
-          {next && nextTime ? (
-            <View style={styles.nextUp}>
-              <Clock3 size={14} color={colors.green} />
-              <Text style={styles.nextTime}>{nextTime} SAST</Text>
-            </View>
-          ) : null}
           {next ? (
             <ShowNotice
               show={next.show}
@@ -104,80 +96,80 @@ export function LiveNoticeBoard() {
           ) : null}
         </View>
       )}
-    </LinearGradient>
+      <View style={styles.timezone}><Clock3 size={11} color={colors.subtle} /><Text style={styles.timezoneText}>All times in South Africa · SAST</Text></View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   board: {
-    borderRadius: 19,
+    borderRadius: layout.cardRadius,
     borderWidth: 1,
-    borderColor: "#285238",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     padding: 16,
-    marginBottom: 22,
+    marginBottom: 14,
     overflow: "hidden",
   },
   header: {
-    minHeight: 26,
+    minHeight: 28,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
   },
-  heading: { flexDirection: "row", alignItems: "center", gap: 8 },
+  heading: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
   headingText: {
+    flexShrink: 1,
     color: colors.white,
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1.3,
+    fontSize: 14,
+    fontWeight: "700",
   },
   status: {
-    borderRadius: 11,
+    borderRadius: 8,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#1D442B",
+    backgroundColor: colors.greenDeep,
     paddingHorizontal: 9,
     paddingVertical: 6,
   },
-  statusOff: { backgroundColor: "#202922" },
+  statusOff: { backgroundColor: colors.surface2 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.green },
   dotOff: { backgroundColor: colors.subtle },
   statusText: {
     color: colors.green,
     fontSize: 9,
-    fontWeight: "900",
+    fontWeight: "700",
     letterSpacing: 0.7,
   },
   statusTextOff: { color: colors.muted },
   list: { gap: 8, marginTop: 14 },
   offAir: { marginTop: 13 },
-  offAirCopy: { marginBottom: 12 },
-  offAirTitle: { color: colors.white, fontSize: 17, fontWeight: "800" },
-  offAirDescription: { color: colors.muted, fontSize: 12, marginTop: 4 },
-  nextUp: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
-  nextTime: { color: colors.green, fontSize: 10, fontWeight: "800" },
+  offAirCopy: { marginBottom: 12, gap: 4 },
+  offAirTitle: { color: colors.white, fontSize: 15, lineHeight: 21, fontWeight: "600" },
+  offAirDescription: { color: colors.muted, fontSize: 12, lineHeight: 18 },
+  timezone: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12 },
+  timezoneText: { color: colors.subtle, fontSize: 11, lineHeight: 16 },
   show: {
-    minHeight: 68,
-    borderRadius: 13,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
+    minHeight: 84,
+    borderRadius: 12,
+    paddingHorizontal: 0,
+    paddingVertical: 5,
     flexDirection: "row",
     alignItems: "center",
-    gap: 11,
-    backgroundColor: "#09130D",
-    borderWidth: 1,
-    borderColor: "#223A2A",
+    gap: 12,
   },
-  pressed: { opacity: 0.78 },
+  pressed: { opacity: 0.7, backgroundColor: colors.surface2 },
   artwork: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: colors.surface2,
   },
   showCopy: { flex: 1, minWidth: 0 },
-  showTitle: { color: colors.white, fontSize: 13, fontWeight: "800" },
-  presenter: { color: "#D8E0DA", fontSize: 11, marginTop: 3 },
-  schedule: { color: colors.muted, fontSize: 10, marginTop: 3 },
+  artworkPlaceholder: { alignItems: "center", justifyContent: "center" },
+  showTitle: { color: colors.white, fontSize: 17, lineHeight: 23, fontWeight: "700" },
+  presenter: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 3 },
+  schedule: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 5 },
 });

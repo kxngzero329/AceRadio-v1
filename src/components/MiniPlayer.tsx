@@ -10,6 +10,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Play,
   Pause,
@@ -23,8 +24,10 @@ import { useRadio } from "@/context/RadioContext";
 import { useShowTransition } from "@/hooks/useShowTransition";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { colors } from "@/theme/colors";
+import { tabBarHeight } from "@/theme/layout";
 
 export function MiniPlayer() {
+  const insets = useSafeAreaInsets();
   const {
     playing,
     hasPlayed,
@@ -105,7 +108,7 @@ export function MiniPlayer() {
   return (
     <Animated.View
       testID="mini-player"
-      style={[styles.row, { opacity, transform: [{ translateX }] }]}
+      style={[styles.row, { bottom: tabBarHeight(insets.bottom) + 8, opacity, transform: [{ translateX }] }]}
     >
       <Pressable
         disabled={clearing}
@@ -220,7 +223,6 @@ export function MiniPlayer() {
 const styles = StyleSheet.create({
   row: {
     position: "absolute",
-    bottom: 78,
     left: 14,
     right: 14,
     zIndex: 12,
@@ -228,8 +230,8 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A2A20",
-    borderColor: "#335942",
+    backgroundColor: colors.surface2,
+    borderColor: colors.border,
     borderWidth: 1,
     padding: 8,
     gap: 4,

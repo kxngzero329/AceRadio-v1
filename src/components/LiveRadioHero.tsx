@@ -39,7 +39,8 @@ export function LiveRadioHero() {
   } = useRadio();
   const { displayedShow, fade } = useShowTransition(currentShow);
   const reducedMotion = useReducedMotion();
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, width } = useWindowDimensions();
+  const compact = width < 360;
   const [loadedArtwork, setLoadedArtwork] = useState<string | null>(null);
   const reveal = useRef(new Animated.Value(0)).current;
   const revealed = useRef(false);
@@ -55,7 +56,7 @@ export function LiveRadioHero() {
     if (!displayedShow) revealed.current = false;
     const animation = Animated.timing(reveal, {
       toValue: ready ? 1 : 0,
-      duration: reducedMotion ? 0 : 650,
+      duration: reducedMotion ? 0 : 380,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: Platform.OS !== "web",
       isInteraction: false,
@@ -70,26 +71,26 @@ export function LiveRadioHero() {
   });
   const showOffset = reveal.interpolate({
     inputRange: [0, 1],
-    outputRange: [18, 0],
+    outputRange: [10, 0],
   });
   const artworkScale = reveal.interpolate({
     inputRange: [0, 1],
-    outputRange: [1.06, 1],
+    outputRange: [1.025, 1],
   });
   const label = buffering
-    ? "TUNING IN..."
+    ? "Connecting…"
     : error
-      ? "TRY AGAIN"
+      ? "Try again"
       : playing
-        ? "PAUSE LIVE"
+        ? "Pause Live"
         : currentShow
-          ? "RESUME LIVE"
-          : "LISTEN LIVE";
+          ? "Resume Live"
+          : "Listen Live";
 
   return (
     <LinearGradient
       testID="live-radio-hero"
-      colors={["#143B25", "#0A1C13", "#09120D"]}
+      colors={["#15291E", "#101C15"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.hero}
@@ -133,7 +134,7 @@ export function LiveRadioHero() {
               />
             )}
             <LinearGradient
-              colors={["#05080625", "#05080665", "#050806B8"]}
+              colors={["#070C0966", "#070C09A6", "#070C09EB"]}
               locations={[0, 0.4, 1]}
               style={StyleSheet.absoluteFill}
             />
@@ -157,7 +158,7 @@ export function LiveRadioHero() {
         </View>
       </View>
 
-      <View style={[styles.middle, { minHeight: Math.ceil(237 * fontScale) }]}>
+      <View style={[styles.middle, { minHeight: Math.ceil((displayedShow ? 228 : 198) * Math.max(1, fontScale)) }]}>
         <Animated.View
           pointerEvents="none"
           accessibilityElementsHidden={!!currentShow}
@@ -166,8 +167,8 @@ export function LiveRadioHero() {
           }
           style={[styles.intro, { opacity: introOpacity }]}
         >
-          <Radio size={38} color={colors.green} />
-          <Text style={styles.heroTitle}>This is{"\n"}AceRadio.</Text>
+          <Radio size={28} color={colors.green} />
+          <Text style={[styles.heroTitle, compact && styles.heroTitleCompact]}>This is{"\n"}AceRadio.</Text>
           <Text style={styles.description}>
             More than a station. It's a whole vibe.
           </Text>
@@ -183,7 +184,7 @@ export function LiveRadioHero() {
           >
             <Text style={styles.overline}>
               {buffering
-                ? "FINDING YOUR VIBE"
+                ? "CONNECTING LIVE"
                 : displayedShow.id === "aceradio-live-stream"
                   ? "ON AIR NOW"
                   : playing
@@ -192,7 +193,7 @@ export function LiveRadioHero() {
                       ? "YOUR LIVE SHOW"
                       : "SELECTED SHOW"}
             </Text>
-            <Text style={styles.showTitle} numberOfLines={2}>
+            <Text style={[styles.showTitle, compact && styles.showTitleCompact]} numberOfLines={2}>
               {displayedShow.title}
             </Text>
             <View style={styles.presenterRow}>
@@ -226,7 +227,7 @@ export function LiveRadioHero() {
                 : "Listen live to AceRadio"
         }
         accessibilityState={{ disabled: buffering, busy: buffering }}
-        style={({ pressed }) => [styles.listen, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.listen, buffering && styles.listenLoading, pressed && styles.pressed]}
       >
         <View style={styles.listenIcon}>
           {buffering ? (
@@ -257,7 +258,7 @@ export function LiveRadioHero() {
               ? "You are listening live"
               : currentShow
                 ? "Paused · Ready when you are"
-                : "Live radio, one tap away"}
+                : "Live from Cape Town"}
       </Text>
       {error && (
         <Text style={styles.error} accessibilityRole="alert">
@@ -270,23 +271,23 @@ export function LiveRadioHero() {
 
 const styles = StyleSheet.create({
   hero: {
-    minHeight: 380,
-    borderRadius: 25,
-    padding: 23,
+    minHeight: 350,
+    borderRadius: 22,
+    padding: 20,
     overflow: "hidden",
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#235639",
+    borderColor: "#304D3B",
   },
   orbOne: {
     position: "absolute",
-    width: 270,
-    height: 270,
-    borderWidth: 47,
-    borderColor: "#36D57A1A",
+    width: 260,
+    height: 260,
+    borderWidth: 1,
+    borderColor: "#6EAA8340",
     borderRadius: 140,
-    top: -56,
-    right: -75,
+    top: -70,
+    right: -100,
   },
   backgroundArtworkFrame: {
     position: "absolute",
@@ -297,8 +298,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  backgroundArtwork: { width: "100%", height: "100%" },
-  artwork: { width: "100%", height: "100%" },
+  backgroundArtwork: { width: "100%", height: "100%", opacity: 0.6 },
+  artwork: { width: "100%", height: "100%", opacity: 0.75 },
   topRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -310,17 +311,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 7,
     alignItems: "center",
-    backgroundColor: "#143D28E6",
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: "#163C28",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
   },
   dot: { backgroundColor: colors.green, width: 7, height: 7, borderRadius: 4 },
   liveBadgeText: {
     color: "#B5FFCB",
     fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1,
+    fontWeight: "700",
+    letterSpacing: 0.8,
   },
   listeners: {
     flexDirection: "row",
@@ -328,31 +329,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#050806A6",
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 7,
+    borderRadius: 10,
   },
   listenersText: {
     color: colors.white,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
     fontVariant: ["tabular-nums"],
   },
   middle: {
     flex: 1,
-    minHeight: 237,
+    minHeight: 198,
     justifyContent: "center",
-    marginVertical: 13,
+    marginVertical: 10,
   },
-  intro: { paddingVertical: 12 },
+  intro: { paddingVertical: 4 },
   heroTitle: {
-    fontSize: 44,
+    fontSize: 46,
     color: colors.white,
-    fontWeight: "900",
-    letterSpacing: -2,
-    lineHeight: 47,
-    marginTop: 10,
+    fontWeight: "800",
+    letterSpacing: -1.8,
+    lineHeight: 48,
+    marginTop: 12,
   },
-  description: { color: "#CDDBD2", marginTop: 8, fontSize: 13, lineHeight: 19 },
+  heroTitleCompact: { fontSize: 40, lineHeight: 43 },
+  description: { color: "#CCD8CF", marginTop: 10, fontSize: 13, lineHeight: 20 },
   show: {
     position: "absolute",
     top: 0,
@@ -370,12 +372,13 @@ const styles = StyleSheet.create({
     marginBottom: 7,
   },
   showTitle: {
-    fontSize: 36,
-    lineHeight: 40,
-    fontWeight: "900",
-    letterSpacing: -1.3,
+    fontSize: 34,
+    lineHeight: 38,
+    fontWeight: "800",
+    letterSpacing: -1,
     color: colors.white,
   },
+  showTitleCompact: { fontSize: 30, lineHeight: 35 },
   presenterRow: {
     flexDirection: "row",
     gap: 7,
@@ -389,37 +392,39 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontWeight: "700",
   },
-  schedule: { color: "#B1C6B8", fontSize: 11, lineHeight: 16, marginTop: 8 },
+  schedule: { color: "#BDCEC2", fontSize: 12, lineHeight: 17, marginTop: 8 },
   listen: {
     minHeight: 56,
     backgroundColor: colors.green,
-    borderRadius: 17,
+    borderRadius: 14,
     alignItems: "center",
     paddingHorizontal: 15,
     paddingVertical: 10,
     flexDirection: "row",
     gap: 11,
   },
+  listenLoading: { backgroundColor: "#72D99A" },
   pressed: { opacity: 0.86 },
   listenIcon: {
     width: 31,
     height: 31,
-    backgroundColor: "#FFFFFF7A",
+    backgroundColor: "#09211618",
     borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
   },
   listenText: {
     color: colors.background,
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 1,
+    fontSize: 15,
+    fontWeight: "800",
+    letterSpacing: 0.2,
     flex: 1,
   },
   status: {
-    color: "#B1C6B8",
+    color: "#BDCEC2",
     textAlign: "center",
-    fontSize: 10,
+    fontSize: 11,
+    lineHeight: 16,
     marginTop: 10,
   },
   preview: {
