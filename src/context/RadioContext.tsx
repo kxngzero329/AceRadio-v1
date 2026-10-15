@@ -22,6 +22,7 @@ import {
 } from "@/utils/radio";
 import { getLiveShows } from "@/utils/showSchedule";
 import { useRadioPlayback } from "@/hooks/useRadioPlayback";
+import { useListenerCount } from "@/hooks/useListenerCount";
 
 type RadioContextValue = {
   playing: boolean;
@@ -45,9 +46,10 @@ type RadioContextValue = {
 
 const RadioContext = createContext<RadioContextValue | null>(null);
 
-/** Actual station audio with local preview show metadata and listener counts. */
+/** Shared station playback and the verified stream's current listener count. */
 export function RadioProvider({ children }: PropsWithChildren) {
-  const { shows, source } = useContent();
+  const { shows } = useContent();
+  const listenerCount = useListenerCount();
   const lineup = useRef(shows);
   lineup.current = shows;
   const [stationStreamShow] = useState(() => createStationStreamShow());
@@ -59,10 +61,6 @@ export function RadioProvider({ children }: PropsWithChildren) {
   const { playback, status } = useRadioPlayback();
   const [sleepMinutes, setSleepMinutes] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const totalListeners = liveShows.reduce(
-    (total, show) => total + (show.listeners ?? 0),
-    0,
-  );
 
   useEffect(() => {
     const updateLiveShows = () => setScheduleTime(new Date());
@@ -186,8 +184,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
       buffering: status.phase === "loading",
       currentShow,
       liveShows,
-      listenerCount: source === "supabase" ? null :
-        currentShow?.listeners || totalListeners || stationStreamShow.listeners!,
+      listenerCount,
       liveShowCount: liveShows.length,
       error: status.error,
       toggle,
@@ -202,11 +199,10 @@ export function RadioProvider({ children }: PropsWithChildren) {
     }),
     [
       status,
-      source,
+      listenerCount,
       hasEverPlayed,
       currentShow,
       liveShows,
-      stationStreamShow,
       toggle,
       stop,
       clearCurrentShow,

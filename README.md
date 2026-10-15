@@ -20,7 +20,7 @@ Expo Go plays the station stream in the foreground. It skips this app's backgrou
 - Home's “Listen Live” selects the show scheduled at the current time in South African Standard Time (SAST), then starts the real station audio. Outside a listed show slot, it still starts the station stream. The public source is configured in `src/config/station.ts`.
 - The hero crossfades into the selected presenter artwork with a gentle zoom and text entrance. It shows the title, presenter, subtitle, schedule and listener count.
 - Live badges, the Home notice board, the Shows “Live now” filter, and playback's live lineup follow each show's printed SAST day and time slot. Schedule checks use the Africa/Johannesburg time zone and refresh automatically.
-- Bundled preview listener counts remain local estimates. Supabase mode does not import or display these as real audience statistics; it displays “Live radio”. Outside scheduled slots, playback still uses the station identity.
+- Listener counts come from the verified Icecast `/stream` statistics through a public Supabase Edge Function. They refresh about every 15 seconds and count active stream connections across players. Failed/expired statistics show “Live radio”; sample counts are never displayed in either content mode. Outside scheduled slots, playback still uses the station identity. See [listener count implementation and checks](docs/listeners.md).
 - Show details indicate whether the selected show is On Air or Off Air. Listening from show details is enabled only during that show's SAST schedule.
 - The hero, mini player and full player share one audio player and show selection across navigation. Native pause keeps the system media session available; resume keeps the selected show and reconnects to the station's current live audio. Closing the mini player or finishing the sleep timer releases the player and removes its system controls.
 - The mini player appears after station audio has actually started and remains available while paused. Previous / Play-Pause / Next use the currently scheduled live lineup; its close button stops playback and fades the mini player away.
@@ -47,6 +47,7 @@ Audio connects to the public station stream only when listening starts and works
 ```sh
 npm run typecheck
 npm run test:content
+npm run test:listeners
 npm run test:radio
 npm run test:navigation
 npm run test:web-input
@@ -102,6 +103,8 @@ Automated tests exercise the actual TypeScript transport/controller with native 
 - `src/context/RadioContext.tsx`: shared live-stream playback, preview show selection and sleep timer.
 - `src/context/ContentContext.tsx`: shared content queries, offline cache and foreground refresh.
 - `src/services/contentRepository.ts`: validated Supabase catalogue mapping.
+- `src/services/listenerStats.ts` / `src/hooks/useListenerCount.ts`: live stream count, foreground refresh and sample expiry.
+- `supabase/functions/listener-stats/`: public aggregate statistics proxy with a short warm-worker cache.
 - `src/data/about.ts`: local story, founder profiles/photos, timeline and vision.
 - `supabase/`: reproducible schema, RLS, seed and verified import manifest.
 - `scripts/backend/`: Node-only configuration, safe import and read-only verification commands.

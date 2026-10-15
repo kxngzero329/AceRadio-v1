@@ -383,6 +383,11 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# Public, read-only aggregate from the station's public Icecast statistics.
+# No database access, listener identities or privileged keys are involved.
+[functions.listener-stats]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

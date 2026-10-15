@@ -24,7 +24,7 @@ Without an explicit source flag, code defaults to the bundled catalogue for unco
 | Contact/social links | `src/config/station.ts` | Frontend only; no settings table or query dependency |
 | About and station identity | `src/data/about.ts`, `src/config/station.ts`, bundled founder photos | Frontend only; founder/history tables removed |
 | Announcements | None in the checkout/API responses | Empty table; no fabricated messages |
-| Listener counts | Bundled sample counts and random station estimate | **Not imported**; Supabase mode displays “Live radio” rather than invented audience figures |
+| Listener counts | Verified Icecast `/stream` statistics | Live, short-lived public Edge Function query; no database counter or imported sample figures. See `docs/listeners.md` |
 | Favourites and notification preference | Device AsyncStorage | Remain local; no listener account is introduced |
 | Audio | `src/config/station.ts`, `RadioPlayback`, native/web transports | Independent of Supabase; the backend cannot stop or redirect the audio connection |
 
@@ -99,6 +99,8 @@ TanStack Query deduplicates reads, caches data for 60 seconds and persists the p
 Version 1 and 2 persisted payloads remain compatible: validation ignores legacy station/About/contact fields and maps only the useful radio content. The cache namespace deliberately stays unchanged so upgrading does not discard an existing offline catalogue. New network requests use API version 3.
 
 The audio provider mounts even while content is loading or unavailable. Listen Live falls back to the station identity when no schedule is available. A successful catalogue refresh can update player metadata but does not recreate the audio transport. User-selected show metadata remains available during playback if that show is later removed. The native background-media patch is unchanged.
+
+The separate `listener-stats` Edge Function supplies a public aggregate count from Icecast. It does not query or write this database. Its client query is not persisted with the catalogue, expires stale counts, and never falls back to sample figures. See [listener implementation and verification](listeners.md).
 
 ## Repeating an approved deployment
 
