@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
@@ -17,7 +18,6 @@ import {
   Play,
   Radio,
 } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { ShowPoster } from "@/components/ShowPoster";
 import { FittedImage } from "@/components/FittedImage";
 import { useContent } from "@/context/ContentContext";
@@ -26,6 +26,9 @@ import { useFavorites } from "@/context/FavoritesContext";
 import { useRadio } from "@/context/RadioContext";
 import { useModalTransition } from "@/hooks/useModalTransition";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
+import { typography } from "@/theme/typography";
+
 export default function ShowDetail() {
   const {
     close,
@@ -35,27 +38,15 @@ export default function ShowDetail() {
   } = useModalTransition();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { shows, presenters, loading, error } = useContent();
-  const show = shows.find(item => item.id === id);
+  const show = shows.find((item) => item.id === id);
   const { isFavorite, toggleFavorite } = useFavorites();
   const { listenLive, liveShows } = useRadio();
-  if (!show)
-    return (
-      <Animated.View style={[styles.sheet, slideStyle]}>
-        <SafeAreaView style={styles.root}>
-          <Pressable accessibilityRole="button" onPress={() => close()}>
-            <Text style={styles.back}>← Back</Text>
-          </Pressable>
-          <ContentStatus />
-          {!loading && !error && <Text style={styles.title}>Show not found</Text>}
-        </SafeAreaView>
-      </Animated.View>
-    );
-  const liked = isFavorite(show.id);
-  const showPresenters = (show.presenterIds ?? []).flatMap(id => {
-    const presenter = presenters.find(item => item.id === id);
+  const liked = show ? isFavorite(show.id) : false;
+  const isOnAir = liveShows.some((liveShow) => liveShow.id === show?.id);
+  const showPresenters = (show?.presenterIds ?? []).flatMap((presenterId) => {
+    const presenter = presenters.find((item) => item.id === presenterId);
     return presenter?.bio ? [presenter] : [];
   });
-  const isOnAir = liveShows.some((liveShow) => liveShow.id === show.id);
   return (
     <Animated.View
       testID="show-detail-sheet"
@@ -68,161 +59,240 @@ export default function ShowDetail() {
       <SafeAreaView edges={["top", "bottom"]} style={styles.root}>
         <View style={styles.top}>
           <Pressable
-            onPress={() => close()}
+            onPress={close}
+            disabled={isClosing}
+            accessibilityRole="button"
             accessibilityLabel="Go back"
-            style={styles.circle}
+            accessibilityState={{ disabled: isClosing }}
+            style={({ pressed }) => [styles.circle, pressed && styles.pressed]}
           >
-            <ChevronLeft color={colors.white} />
+            <ChevronLeft color={colors.white} size={23} />
           </Pressable>
-          <Text style={styles.topTitle}>SHOW DETAILS</Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              liked ? "Remove favourite" : "Add to favourites"
-            }
-            onPress={() => toggleFavorite(show.id)}
-            style={styles.circle}
-          >
-            <Heart
-              color={colors.white}
-              size={22}
-              fill={liked ? colors.green : "transparent"}
-            />
-          </Pressable>
-        </View>
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <View style={styles.image}>
-            {show.image ? (
-              <FittedImage
-                source={show.image}
-                accessibilityLabel={show.presenter}
-              />
-            ) : (
-              <LinearGradient
-                colors={[show.accent, colors.surface]}
-                style={[StyleSheet.absoluteFill, styles.placeholder]}
-              >
-                <Radio color={colors.white} size={84} />
-              </LinearGradient>
-            )}
-          </View>
-          <Text style={styles.overline}>ACE RADIO ORIGINAL</Text>
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>{show.title}</Text>
-            <View
-              testID="show-air-status"
-              accessibilityLabel={isOnAir ? "On Air" : "Off Air"}
-              style={[styles.airBadge, isOnAir ? styles.airOn : styles.airOff]}
+          <Text style={styles.topTitle}>Show details</Text>
+          {show ? (
+            <Pressable
+              testID="show-detail-favourite"
+              accessibilityRole="button"
+              accessibilityLabel={
+                liked ? "Remove favourite" : "Add to favourites"
+              }
+              accessibilityState={{ selected: liked, disabled: isClosing }}
+              {...(Platform.OS === "web" ? { "aria-pressed": liked } : {})}
+              disabled={isClosing}
+              onPress={() => toggleFavorite(show.id)}
+              style={({ pressed }) => [
+                styles.circle,
+                liked && styles.favoriteActive,
+                pressed && styles.pressed,
+              ]}
             >
-              <View
-                style={[
-                  styles.airDot,
-                  isOnAir ? styles.airDotOn : styles.airDotOff,
-                ]}
+              <Heart
+                color={liked ? colors.green : colors.white}
+                size={21}
+                fill={liked ? colors.green : "transparent"}
               />
-              <Text
-                style={[
-                  styles.airText,
-                  isOnAir ? styles.airTextOn : styles.airTextOff,
-                ]}
-              >
-                {isOnAir ? "ON AIR" : "OFF AIR"}
+            </Pressable>
+          ) : (
+            <View style={styles.headerSpacer} />
+          )}
+        </View>
+        <ScrollView
+          testID="show-detail-scroll"
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {!show ? (
+            <View style={styles.missing}>
+              <ContentStatus />
+              {!loading && !error && (
+                <>
+                  <Radio size={36} color={colors.subtle} />
+                  <Text accessibilityRole="header" style={styles.title}>
+                    Show not found
+                  </Text>
+                  <Text style={styles.desc}>
+                    This show may no longer be available. Head back to explore
+                    the lineup.
+                  </Text>
+                </>
+              )}
+            </View>
+          ) : (
+            <>
+              <View style={styles.image}>
+                {show.image ? (
+                  <FittedImage
+                    source={show.image}
+                    accessibilityLabel={`${show.title} artwork`}
+                  />
+                ) : (
+                  <Radio color={colors.green} size={64} />
+                )}
+              </View>
+              <View style={styles.overlineRow}>
+                <Text style={typography.eyebrow}>ACE RADIO ORIGINAL</Text>
+                <View
+                  testID="show-air-status"
+                  accessibilityLabel={isOnAir ? "On Air" : "Off Air"}
+                  style={[styles.airBadge, isOnAir && styles.airOn]}
+                >
+                  <View style={[styles.airDot, isOnAir && styles.airDotOn]} />
+                  <Text style={[styles.airText, isOnAir && styles.airTextOn]}>
+                    {isOnAir ? "On air" : "Scheduled"}
+                  </Text>
+                </View>
+              </View>
+              <Text accessibilityRole="header" style={styles.title}>
+                {show.title}
               </Text>
-            </View>
-          </View>
-          <View style={styles.detail}>
-            <Mic2 size={17} color={colors.green} />
-            <Text style={styles.info}>{show.presenter}</Text>
-          </View>
-          <View style={styles.detail}>
-            <CalendarDays size={17} color={colors.green} />
-            <Text style={styles.info}>{show.schedule}</Text>
-          </View>
-          <View style={styles.rule} />
-          <Text style={styles.heading}>About the show</Text>
-          <Text style={styles.desc}>{show.detail}</Text>
-          <Text style={styles.desc}>{show.subtitle}</Text>
-          {showPresenters.map(presenter => <View key={presenter.id} style={styles.presenterBio}>
-            {presenter.photo && <Image source={presenter.photo} style={styles.presenterPhoto} accessibilityLabel={presenter.name} />}
-            <View style={{ flex: 1 }}><Text style={styles.heading}>{presenter.name}</Text><Text style={styles.desc}>{presenter.bio}</Text></View>
-          </View>)}
-          {show.poster ? (
-            <View style={styles.poster}>
-              <Text style={styles.heading}>Show spotlight</Text>
-              <ShowPoster show={show} />
-            </View>
-          ) : null}
-          <Pressable
-            testID="show-listen-live"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !isOnAir }}
-            disabled={!isOnAir}
-            style={[styles.listen, !isOnAir && styles.listenDisabled]}
-            accessibilityLabel="Listen to live radio"
-            onPress={() => {
-              if (!isOnAir) return;
-              listenLive(show.id);
-              close();
-            }}
-          >
-            <Play color={colors.background} fill={colors.background} />
-            <Text style={styles.listenText}>LISTEN LIVE</Text>
-          </Pressable>
+              <View style={styles.presenter}>
+                <Mic2 size={16} color={colors.green} />
+                <Text style={styles.presenterName}>{show.presenter}</Text>
+              </View>
+              <View style={styles.schedule}>
+                <CalendarDays size={18} color={colors.green} />
+                <View style={styles.scheduleCopy}>
+                  <Text style={styles.scheduleText}>{show.schedule}</Text>
+                  <Text style={styles.timezone}>
+                    South African Standard Time · SAST
+                  </Text>
+                </View>
+              </View>
+              <Pressable
+                testID="show-listen-live"
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !isOnAir || isClosing }}
+                disabled={!isOnAir || isClosing}
+                style={({ pressed }) => [
+                  styles.listen,
+                  !isOnAir && styles.listenDisabled,
+                  pressed && styles.listenPressed,
+                ]}
+                accessibilityLabel="Listen to live radio"
+                onPress={() => {
+                  if (!isOnAir) return;
+                  listenLive(show.id);
+                  close();
+                }}
+              >
+                <Play
+                  size={20}
+                  color={isOnAir ? colors.background : colors.muted}
+                  fill={isOnAir ? colors.background : colors.muted}
+                />
+                <Text
+                  style={[
+                    styles.listenText,
+                    !isOnAir && styles.listenTextDisabled,
+                  ]}
+                >
+                  Listen Live
+                </Text>
+              </Pressable>
+              {!isOnAir && (
+                <Text style={styles.listenHint}>
+                  Tune in when this show is on air.
+                </Text>
+              )}
+              <View style={styles.about}>
+                <Text
+                  accessibilityRole="header"
+                  style={typography.sectionTitle}
+                >
+                  About the show
+                </Text>
+                {show.detail ? (
+                  <Text style={styles.desc}>{show.detail}</Text>
+                ) : null}
+                {show.subtitle && show.subtitle !== show.detail ? (
+                  <Text style={styles.desc}>{show.subtitle}</Text>
+                ) : null}
+              </View>
+              {showPresenters.map((presenter) => (
+                <View key={presenter.id} style={styles.presenterBio}>
+                  {presenter.photo && (
+                    <Image
+                      source={presenter.photo}
+                      style={styles.presenterPhoto}
+                      accessibilityLabel={presenter.name}
+                    />
+                  )}
+                  <View style={styles.bioCopy}>
+                    <Text accessibilityRole="header" style={styles.bioTitle}>
+                      {presenter.name}
+                    </Text>
+                    <Text style={styles.desc}>{presenter.bio}</Text>
+                  </View>
+                </View>
+              ))}
+              {show.poster ? (
+                <View style={styles.poster}>
+                  <Text
+                    accessibilityRole="header"
+                    style={typography.sectionTitle}
+                  >
+                    Show spotlight
+                  </Text>
+                  <View style={styles.posterFrame}>
+                    <ShowPoster show={show} />
+                  </View>
+                </View>
+              ) : null}
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
     </Animated.View>
   );
 }
+
 const styles = StyleSheet.create({
-  presenterBio: { flexDirection: "row", gap: 14, alignItems: "flex-start", marginTop: 22 },
-  presenterPhoto: { width: 64, height: 64, borderRadius: 12 },
-  sheet: { flex: 1 },
+  sheet: { flex: 1, backgroundColor: colors.background },
   root: { flex: 1, backgroundColor: colors.background },
   top: {
-    height: 63,
+    width: "100%",
+    maxWidth: layout.contentWidth,
+    alignSelf: "center",
+    minHeight: 60,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 21,
+    paddingHorizontal: 16,
   },
   circle: {
-    width: 42,
-    height: 42,
-    backgroundColor: colors.surface,
-    borderRadius: 13,
+    width: 44,
+    height: 44,
+    borderRadius: layout.controlRadius,
     alignItems: "center",
     justifyContent: "center",
   },
-  topTitle: {
-    color: colors.muted,
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.7,
+  favoriteActive: { backgroundColor: colors.greenDeep },
+  pressed: { backgroundColor: colors.surface2 },
+  headerSpacer: { width: 44 },
+  topTitle: { color: colors.muted, fontSize: 13, fontWeight: "600" },
+  scroll: {
+    width: "100%",
+    maxWidth: layout.contentWidth,
+    alignSelf: "center",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 28,
   },
-  scroll: { paddingHorizontal: 22, paddingBottom: 30 },
   image: {
     width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
     aspectRatio: 1,
     backgroundColor: colors.surface,
-    marginTop: 9,
-    marginBottom: 23,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 22,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 22,
   },
-  poster: { marginTop: 26, gap: 14 },
-  placeholder: { alignItems: "center", justifyContent: "center" },
-  overline: {
-    fontSize: 10,
-    letterSpacing: 2,
-    color: colors.green,
-    fontWeight: "900",
-  },
-  title: {
-    color: colors.white,
-    fontSize: 33,
-    fontWeight: "900",
-    letterSpacing: -1.2,
-    marginTop: 9,
-  },
-  titleRow: {
+  overlineRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     alignItems: "center",
@@ -231,52 +301,105 @@ const styles = StyleSheet.create({
   },
   airBadge: {
     minHeight: 28,
-    borderRadius: 14,
-    paddingHorizontal: 10,
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 9,
+    backgroundColor: colors.surface2,
   },
-  airOn: { backgroundColor: "#153A24", borderColor: "#2D7646", borderWidth: 1 },
-  airOff: { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: 1 },
-  airDot: { width: 6, height: 6, borderRadius: 3 },
+  airOn: { backgroundColor: colors.greenDeep },
+  airDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.subtle,
+  },
   airDotOn: { backgroundColor: colors.green },
-  airDotOff: { backgroundColor: colors.subtle },
-  airText: { fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
+  airText: { fontSize: 11, fontWeight: "600", color: colors.muted },
   airTextOn: { color: colors.green },
-  airTextOff: { color: colors.muted },
-  detail: {
+  title: {
+    color: colors.white,
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: "700",
+    letterSpacing: -0.8,
+    marginTop: 10,
+  },
+  presenter: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginTop: 15,
+    gap: 8,
+    marginTop: 8,
   },
-  info: { color: colors.muted, fontSize: 14 },
-  rule: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginTop: 25,
-    marginBottom: 24,
-  },
-  heading: { fontSize: 18, color: colors.white, fontWeight: "900" },
-  desc: { fontSize: 14, lineHeight: 22, color: colors.muted, marginTop: 14 },
-  listen: {
-    marginTop: 35,
-    backgroundColor: colors.green,
+  presenterName: { ...typography.body, flex: 1 },
+  schedule: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
     padding: 16,
-    borderRadius: 15,
+    marginTop: 20,
+    backgroundColor: colors.surface,
+    borderRadius: layout.cardRadius,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  scheduleCopy: { flex: 1, gap: 5 },
+  scheduleText: {
+    color: colors.white,
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "600",
+  },
+  timezone: { ...typography.caption, color: colors.subtle },
+  listen: {
+    minHeight: 54,
+    padding: 14,
+    marginTop: 16,
+    backgroundColor: colors.green,
+    borderRadius: layout.controlRadius,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 11,
+    gap: 10,
   },
-  listenDisabled: { backgroundColor: colors.surface2, opacity: 0.65 },
-  listenText: {
-    color: colors.background,
-    fontWeight: "900",
-    letterSpacing: 1.2,
-    fontSize: 13,
+  listenDisabled: {
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  back: { color: colors.white, margin: 20 },
+  listenPressed: { opacity: 0.8 },
+  listenText: { color: colors.background, fontWeight: "700", fontSize: 15 },
+  listenTextDisabled: { color: colors.muted },
+  listenHint: { ...typography.caption, textAlign: "center", marginTop: 8 },
+  about: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 24,
+    marginTop: 24,
+  },
+  desc: { ...typography.body, marginTop: 10 },
+  presenterBio: {
+    flexDirection: "row",
+    gap: 14,
+    alignItems: "flex-start",
+    marginTop: 24,
+  },
+  presenterPhoto: { width: 56, height: 56, borderRadius: layout.controlRadius },
+  bioCopy: { flex: 1 },
+  bioTitle: {
+    color: colors.white,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: "600",
+  },
+  poster: { marginTop: 24, gap: 14 },
+  posterFrame: {
+    borderRadius: layout.cardRadius,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  missing: { paddingTop: 24, alignItems: "center" },
 });

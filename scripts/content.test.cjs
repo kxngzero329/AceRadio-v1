@@ -141,14 +141,22 @@ test('About renders its story, portraits and website without any content provide
   });
   const container = ({children})=>React.createElement('div',null,children);
   const icon = ()=>null;
+  const native = {View:container,Text:container,Pressable:container,Image:({source})=>React.createElement('img',{src:source}),StyleSheet:{create:value=>value}};
+  const typography = load('src/theme/typography.ts', {'react-native':native,'./colors':{colors:{}}});
+  const heading = load('src/components/PageHeading.tsx', {
+    'react/jsx-runtime':require('react/jsx-runtime'), 'react-native':native, '@/theme/typography':typography,
+  });
   const screen = load('app/(tabs)/about.tsx', {
     react:React, 'react/jsx-runtime':require('react/jsx-runtime'),
-    'react-native':{View:container,Text:container,Pressable:container,Image:({source})=>React.createElement('img',{src:source}),StyleSheet:{create:value=>value}},
+    'react-native':native,
     'react-native-safe-area-context':{SafeAreaView:container},
     'lucide-react-native':{Lightbulb:icon,RadioTower:icon,Infinity:icon,MapPin:icon,ArrowUpRight:icon},
     '@/components/PageScrollView':{PageScrollView:container},
     '@/components/ScreenHeader':{ScreenHeader:icon},
     '@/components/SocialLinks':{SocialLinks:icon},
+    '@/components/PageHeading':heading,
+    '@/hooks/usePageContentStyle':{usePageContentStyle:()=>({})},
+    '@/theme/layout':load('src/theme/layout.ts'), '@/theme/typography':typography,
     '@/services/links':{openVerifiedLink:()=>{}},
     '@/data/about':about, '@/config/station':station, '@/theme/colors':{colors:{}},
   }).default;

@@ -9,7 +9,12 @@ import { useFavorites } from "@/context/FavoritesContext";
 import { useContent } from "@/context/ContentContext";
 import { ContentStatus } from "@/components/ContentStatus";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
+import { typography } from "@/theme/typography";
+import { PageHeading } from "@/components/PageHeading";
+import { usePageContentStyle } from "@/hooks/usePageContentStyle";
 export default function FavoritesScreen() {
+  const contentStyle = usePageContentStyle();
   const { shows, loading, error } = useContent();
   const { favorites, ready } = useFavorites();
   const selected = shows.filter((s) => favorites.includes(s.id));
@@ -18,23 +23,30 @@ export default function FavoritesScreen() {
       <ScreenHeader />
       <PageScrollView
         testID="favorites-scroll"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.eyebrow}>YOUR COLLECTION</Text>
-        <Text style={styles.title}>
-          Saved <Text style={{ color: colors.green }}>shows.</Text>
-        </Text>
-        <Text style={styles.sub}>The voices you keep coming back to.</Text>
-        <ContentStatus />
+        <PageHeading
+          eyebrow="YOUR COLLECTION"
+          title={
+            <>
+              Saved <Text style={{ color: colors.green }}>shows.</Text>
+            </>
+          }
+          subtitle="The voices you keep coming back to."
+        />
+        <ContentStatus showLoading={false} />
         {!ready || (loading && !shows.length) ? (
-          <Text style={styles.emptyDesc}>Loading your saved shows…</Text>
+          <ShowGrid shows={[]} loading />
         ) : selected.length ? (
           <View style={styles.grid}>
             <ShowGrid shows={selected} />
           </View>
         ) : error && !shows.length ? null : favorites.length > 0 ? (
-          <Text style={styles.emptyDesc}>Your saved shows are currently unavailable. Your favourites are still saved on this device.</Text>
+          <Text style={styles.emptyDesc}>
+            Your saved shows are currently unavailable. Your favourites are
+            still saved on this device.
+          </Text>
         ) : (
           <View testID="favorites-empty" style={styles.empty}>
             <View style={styles.heart}>
@@ -48,7 +60,10 @@ export default function FavoritesScreen() {
             <Pressable
               testID="favorites-discover"
               accessibilityRole="button"
-              style={styles.button}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && styles.pressed,
+              ]}
               onPress={() => router.push("/shows")}
             >
               <Text style={styles.buttonText}>Discover shows</Text>
@@ -62,37 +77,27 @@ export default function FavoritesScreen() {
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingBottom: 178 },
-  eyebrow: {
-    fontSize: 10,
-    color: colors.green,
-    fontWeight: "800",
-    letterSpacing: 2,
-    marginTop: 14,
+  grid: { marginTop: 0 },
+  empty: {
+    paddingHorizontal: 20,
+    paddingVertical: 32,
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: layout.cardRadius,
   },
-  title: {
-    fontSize: 37,
-    color: colors.white,
-    fontWeight: "900",
-    marginTop: 8,
-    letterSpacing: -1.4,
-  },
-  sub: { fontSize: 14, color: colors.muted, marginTop: 5 },
-  grid: { marginTop: 28 },
-  empty: { paddingTop: 90, alignItems: "center" },
   heart: {
-    width: 95,
-    height: 95,
-    borderRadius: 30,
-    backgroundColor: "#0F2C1C",
+    width: 64,
+    height: 64,
+    borderRadius: layout.cardRadius,
+    backgroundColor: colors.greenDeep,
     alignItems: "center",
     justifyContent: "center",
   },
   emptyTitle: {
-    color: colors.white,
-    fontSize: 25,
-    fontWeight: "900",
-    marginTop: 26,
+    ...typography.sectionTitle,
+    marginTop: 20,
   },
   emptyDesc: {
     fontSize: 14,
@@ -103,14 +108,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   button: {
-    marginTop: 28,
+    marginTop: 24,
+    minHeight: 48,
     backgroundColor: colors.green,
     flexDirection: "row",
     gap: 9,
     alignItems: "center",
     paddingVertical: 15,
     paddingHorizontal: 19,
-    borderRadius: 13,
+    borderRadius: layout.controlRadius,
   },
-  buttonText: { fontWeight: "900", color: colors.background },
+  buttonText: { fontWeight: "700", fontSize: 14, color: colors.background },
+  pressed: { opacity: 0.8 },
 });

@@ -21,7 +21,7 @@ Expo Go plays the station stream in the foreground. It skips this app's backgrou
 - The hero crossfades into the selected presenter artwork with a gentle zoom and text entrance. It shows the title, presenter, subtitle, schedule and listener count.
 - Live badges, the Home notice board, the Shows “Live now” filter, and playback's live lineup follow each show's printed SAST day and time slot. Schedule checks use the Africa/Johannesburg time zone and refresh automatically.
 - Listener counts come from the verified Icecast `/stream` statistics through a public Supabase Edge Function. They refresh about every 15 seconds and count active stream connections across players. Failed/expired statistics show “Live radio”; sample counts are never displayed in either content mode. Outside scheduled slots, playback still uses the station identity. See [listener count implementation and checks](docs/listeners.md).
-- Show details indicate whether the selected show is On Air or Off Air. Listening from show details is enabled only during that show's SAST schedule.
+- Show details indicate whether the selected show is On air or Scheduled. Listening from show details is enabled only during that show's SAST schedule.
 - The hero, mini player and full player share one audio player and show selection across navigation. Native pause keeps the system media session available; resume keeps the selected show and reconnects to the station's current live audio. Closing the mini player or finishing the sleep timer releases the player and removes its system controls.
 - The mini player appears after station audio has actually started and remains available while paused. Previous / Play-Pause / Next use the currently scheduled live lineup; its close button stops playback and fades the mini player away.
 - Show changes fade the previous artwork and metadata out before showing the next selection across the hero and players.
@@ -39,6 +39,8 @@ Searchable show grid, show details and posters, locally saved favourites, founde
 Home, Shows and Favourites use the same show card: square artwork, independent heart at the top-right, content-width live badge at the top-left, and matching text slots. Narrow cards show just LIVE in the badge to keep the heart clear; its accessibility label still includes listeners.
 
 Home uses a compact hero and schedule, restrained dark surfaces, clearer schedule text and a single spotlight counter. The tab bar and mini-player share safe-area spacing, and large system fonts use a single-column show layout. See [homepage refinement and visual checks](docs/homepage.md).
+
+The full player, Show Details and remaining tabs share the same typography and page spacing. On phones, the mini-player uses two rows to keep the show title, presenter, playback status and controls readable. Shows and Saved share static loading placeholders. See [app design and interaction checks](docs/app-design.md).
 
 Shows has All shows, Live now, Weekdays and Weekend filters below search. Search and filters combine; an empty result offers a reset. Weekdays includes Monday-Friday shows, including evening shows. Pages start at the top when switching tabs, and tapping the current tab smoothly returns to the top. Closing the player or show details preserves the underlying page's scroll position. Tab changes use an eased fade, with native pages kept mounted and the player prefetched to avoid first-navigation mounting work. The navigation theme and its backing views use AceRadio's dark background.
 

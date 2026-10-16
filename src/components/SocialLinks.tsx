@@ -3,6 +3,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { STATION } from "@/config/station";
 import { openVerifiedLink } from "@/services/links";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
 const socials = [
   {
     key: "instagram",
@@ -27,10 +28,12 @@ export function SocialLinks() {
       {socials.map((s) => (
         <Pressable
           key={s.key}
-          onPress={() => { void openVerifiedLink(s.label, STATION.social[s.key]); }}
+          onPress={() => {
+            void openVerifiedLink(s.label, STATION.social[s.key]);
+          }}
           accessibilityLabel={`AceRadio on ${s.label}`}
           accessibilityRole="button"
-          style={styles.button}
+          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
         >
           <FontAwesome6 name={s.icon} size={21} color={colors.white} />
           <Text style={styles.label}>{s.label}</Text>
@@ -45,12 +48,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-    width: 74,
-    height: 70,
+    borderRadius: layout.controlRadius,
+    minWidth: 64,
+    flexBasis: 64,
+    flexGrow: 1,
+    minHeight: 76,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
   },
-  label: { color: colors.muted, fontSize: 10, fontWeight: "600" },
+  label: {
+    color: colors.muted,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  pressed: { backgroundColor: colors.surface2 },
 });

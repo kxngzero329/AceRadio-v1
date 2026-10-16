@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { View, Text, TextInput, StyleSheet, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Pressable,
+  Platform,
+  useWindowDimensions,
+} from "react-native";
 import { Search } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PageScrollView } from "@/components/PageScrollView";
@@ -9,6 +17,10 @@ import { useContent } from "@/context/ContentContext";
 import { ContentStatus } from "@/components/ContentStatus";
 import { useRadio } from "@/context/RadioContext";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
+import { typography } from "@/theme/typography";
+import { PageHeading } from "@/components/PageHeading";
+import { usePageContentStyle } from "@/hooks/usePageContentStyle";
 
 type ShowFilter = "all" | "live" | "weekdays" | "weekend";
 const filters: { id: ShowFilter; label: string }[] = [
@@ -19,7 +31,9 @@ const filters: { id: ShowFilter; label: string }[] = [
 ];
 
 export default function ShowsScreen() {
-  const { shows } = useContent();
+  const contentStyle = usePageContentStyle();
+  const { width, fontScale } = useWindowDimensions();
+  const { shows, loading } = useContent();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ShowFilter>("all");
   const { liveShows } = useRadio();
@@ -30,8 +44,12 @@ export default function ShowsScreen() {
       const matchesSearch = `${show.title} ${show.presenter} ${show.day}`
         .toLowerCase()
         .includes(query);
-      const weekend = show.schedules ? show.schedules.some(slot => slot.day === 0 || slot.day === 6) : /Saturday|Sunday|Weekend/i.test(show.day);
-      const weekday = show.schedules ? show.schedules.some(slot => slot.day >= 1 && slot.day <= 5) : !weekend;
+      const weekend = show.schedules
+        ? show.schedules.some((slot) => slot.day === 0 || slot.day === 6)
+        : /Saturday|Sunday|Weekend/i.test(show.day);
+      const weekday = show.schedules
+        ? show.schedules.some((slot) => slot.day >= 1 && slot.day <= 5)
+        : !weekend;
       const matchesFilter =
         filter === "all" ||
         (filter === "live" && liveIds.has(show.id)) ||
@@ -47,14 +65,18 @@ export default function ShowsScreen() {
       <PageScrollView
         testID="shows-scroll"
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.eyebrow}>THE LINEUP</Text>
-        <Text style={styles.title}>
-          All shows<Text style={styles.green}>.</Text>
-        </Text>
-        <Text style={styles.sub}>Discover the voices behind the music.</Text>
+        <PageHeading
+          eyebrow="THE LINEUP"
+          title={
+            <>
+              All shows<Text style={{ color: colors.green }}>.</Text>
+            </>
+          }
+          subtitle="Discover the voices behind the music."
+        />
         <View style={styles.search}>
           <Search size={18} color={colors.muted} />
           <TextInput
@@ -77,9 +99,13 @@ export default function ShowsScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Filter ${option.label.toLowerCase()}`}
               accessibilityState={{ selected: filter === option.id }}
+              {...(Platform.OS === "web"
+                ? { "aria-pressed": filter === option.id }
+                : {})}
               onPress={() => setFilter(option.id)}
               style={({ pressed }) => [
                 styles.filter,
+                { flexBasis: width < 390 || fontScale > 1.2 ? "40%" : "20%" },
                 filter === option.id && styles.filterSelected,
                 pressed && styles.pressed,
               ]}
@@ -109,8 +135,11 @@ export default function ShowsScreen() {
             {filtered.length} {filtered.length === 1 ? "SHOW" : "SHOWS"}
           </Text>
         </View>
-        <ShowGrid shows={filtered} />
-        <ContentStatus emptyMessage="No shows have been published yet." />
+        <ShowGrid shows={filtered} loading={loading && !shows.length} />
+        <ContentStatus
+          showLoading={false}
+          emptyMessage="No shows have been published yet."
+        />
         {!filtered.length && shows.length > 0 && (
           <View testID="shows-empty" style={styles.empty}>
             <Text style={styles.emptyTitle}>No shows found</Text>
@@ -143,26 +172,9 @@ export default function ShowsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingBottom: 178 },
-  eyebrow: {
-    color: colors.green,
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 2.2,
-    marginTop: 14,
-  },
-  title: {
-    color: colors.white,
-    fontWeight: "900",
-    fontSize: 39,
-    letterSpacing: -1.5,
-    marginTop: 7,
-  },
-  green: { color: colors.green },
-  sub: { color: colors.muted, fontSize: 14, marginTop: 4 },
   search: {
     minHeight: 52,
-    borderRadius: 14,
+    borderRadius: layout.controlRadius,
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
@@ -170,49 +182,57 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     paddingHorizontal: 14,
-    marginTop: 26,
   },
   input: { flex: 1, minHeight: 52, color: colors.white, fontSize: 14 },
   filters: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   filter: {
+    flexGrow: 1,
     minHeight: 44,
-    borderRadius: 22,
+    borderRadius: layout.controlRadius,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    paddingHorizontal: 13,
+    paddingHorizontal: 8,
     paddingVertical: 10,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
   },
-  filterSelected: { backgroundColor: colors.green, borderColor: colors.green },
+  filterSelected: { backgroundColor: colors.greenDeep, borderColor: "#31734A" },
   filterText: { color: colors.muted, fontSize: 12, fontWeight: "700" },
-  filterTextSelected: { color: colors.background },
+  filterTextSelected: { color: colors.green },
   liveDot: {
     width: 5,
     height: 5,
     borderRadius: 3,
     backgroundColor: colors.green,
   },
-  liveDotSelected: { backgroundColor: colors.background },
+  liveDotSelected: { backgroundColor: colors.green },
   pressed: { opacity: 0.78 },
   summary: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 26,
-    marginBottom: 16,
+    marginTop: 24,
+    marginBottom: 14,
+    gap: 12,
+    flexWrap: "wrap",
   },
-  listTitle: { color: colors.white, fontSize: 18, fontWeight: "800" },
+  listTitle: { ...typography.sectionTitle },
   count: {
-    fontSize: 10,
-    letterSpacing: 1.3,
-    fontWeight: "800",
-    color: colors.green,
+    ...typography.caption,
+    fontVariant: ["tabular-nums"],
   },
-  empty: { alignItems: "center", paddingVertical: 34 },
-  emptyTitle: { color: colors.white, fontSize: 18, fontWeight: "800" },
+  empty: {
+    alignItems: "center",
+    padding: 24,
+    borderRadius: layout.cardRadius,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  emptyTitle: { ...typography.sectionTitle },
   emptyText: {
     color: colors.muted,
     fontSize: 14,
@@ -230,5 +250,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   clearText: { color: colors.green, fontSize: 13, fontWeight: "700" },
-  note: { color: colors.subtle, fontSize: 11, lineHeight: 17, marginTop: 26 },
+  note: { ...typography.caption, color: colors.subtle, marginTop: 24 },
 });

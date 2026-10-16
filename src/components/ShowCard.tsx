@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
+  Platform,
 } from "react-native";
 import { Heart, Clock3, Radio } from "lucide-react-native";
 import { router } from "@/utils/navigation";
@@ -33,7 +34,9 @@ export const ShowCard = memo(function ShowCard({
   const presenterHeight = Math.ceil(17 * fontScale * 2);
   const scheduleHeight = Math.ceil(55 * fontScale);
   const dayPrefix = `${show.day} • `;
-  const times = show.schedule.startsWith(dayPrefix) ? show.schedule.slice(dayPrefix.length) : show.schedule;
+  const times = show.schedule.startsWith(dayPrefix)
+    ? show.schedule.slice(dayPrefix.length)
+    : show.schedule;
   const listeners = listenerCount?.toLocaleString("en-ZA");
   const showListenerCount =
     listeners !== undefined && width >= 150 && fontScale <= 1.3;
@@ -89,9 +92,13 @@ export const ShowCard = memo(function ShowCard({
           <View style={[styles.time, { height: scheduleHeight }]}>
             <View style={styles.dayRow}>
               <Clock3 size={12} color={colors.muted} />
-              <Text style={styles.day} numberOfLines={1}>{show.day || "Schedule"}</Text>
+              <Text style={styles.day} numberOfLines={1}>
+                {show.day || "Schedule"}
+              </Text>
             </View>
-            <Text style={styles.meta} numberOfLines={2}>{times}</Text>
+            <Text style={styles.meta} numberOfLines={2}>
+              {times}
+            </Text>
           </View>
         </View>
       </Pressable>
@@ -105,6 +112,7 @@ export const ShowCard = memo(function ShowCard({
             : `Save ${show.title} to favourites`
         }
         accessibilityState={{ selected: liked }}
+        {...(Platform.OS === "web" ? { "aria-pressed": liked } : {})}
         style={({ pressed }) => [styles.like, pressed && styles.likePressed]}
       >
         <Heart

@@ -7,6 +7,8 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
+  Platform,
 } from "react-native";
 import { PageScrollView } from "@/components/PageScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -32,8 +34,14 @@ import { openVerifiedLink } from "@/services/links";
 import { useRadio } from "@/context/RadioContext";
 import { STATION } from "@/config/station";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
+import { typography } from "@/theme/typography";
+import { PageHeading } from "@/components/PageHeading";
+import { usePageContentStyle } from "@/hooks/usePageContentStyle";
 const timerOptions = [null, 15, 30, 45, 60] as const;
 export default function SettingsScreen() {
+  const contentStyle = usePageContentStyle();
+  const { fontScale } = useWindowDimensions();
   const [notifications, setNotifications] = useState(false);
   const [busy, setBusy] = useState(false);
   const { sleepMinutes, setSleepTimer } = useRadio();
@@ -68,15 +76,24 @@ export default function SettingsScreen() {
       <ScreenHeader />
       <PageScrollView
         testID="settings-scroll"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.eyebrow}>MAKE IT YOURS</Text>
-        <Text style={styles.title}>
-          Settings<Text style={{ color: colors.green }}>.</Text>
+        <PageHeading
+          eyebrow="MAKE IT YOURS"
+          title={
+            <>
+              Settings<Text style={{ color: colors.green }}>.</Text>
+            </>
+          }
+          subtitle="Tune AceRadio to your everyday."
+        />
+        <Text
+          accessibilityRole="header"
+          style={[styles.section, styles.firstSection]}
+        >
+          Notifications
         </Text>
-        <Text style={styles.sub}>Tune AceRadio to your everyday.</Text>
-        <Text style={styles.section}>NOTIFICATIONS</Text>
         <View style={styles.panel}>
           <View style={styles.row}>
             <View style={styles.icon}>
@@ -84,17 +101,22 @@ export default function SettingsScreen() {
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Show & station updates</Text>
-              <Text style={styles.rowSub}>Get notified when your favourite shows are live</Text>
+              <Text style={styles.rowSub}>
+                Save your preference for future show updates
+              </Text>
             </View>
             {busy ? (
-              <ActivityIndicator color={colors.green} />
+              <ActivityIndicator
+                style={styles.switchLoading}
+                color={colors.green}
+              />
             ) : (
               <Switch
-                accessibilityLabel="Demo notification preference"
+                accessibilityLabel="Show and station updates preference"
                 value={notifications}
                 onValueChange={(v) => void updateNotifications(v)}
-                trackColor={{ false: "#2D3D33", true: "#286C43" }}
-                thumbColor={notifications ? colors.green : "#C2C9C4"}
+                trackColor={{ false: colors.border, true: "#286C43" }}
+                thumbColor={notifications ? colors.green : colors.muted}
               />
             )}
           </View>
@@ -102,7 +124,9 @@ export default function SettingsScreen() {
             Station notifications are coming soon.
           </Text>
         </View>
-        <Text style={styles.section}>PLAYBACK</Text>
+        <Text accessibilityRole="header" style={styles.section}>
+          Playback
+        </Text>
         <View style={styles.panel}>
           <View style={styles.row}>
             <View style={styles.icon}>
@@ -110,15 +134,32 @@ export default function SettingsScreen() {
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Sleep timer</Text>
-              <Text style={styles.rowSub}>Automatically pause live radio after a set time</Text>
+              <Text style={styles.rowSub}>
+                Automatically pause live radio after a set time
+              </Text>
             </View>
           </View>
           <View style={styles.pills}>
             {timerOptions.map((m) => (
               <Pressable
                 key={m ?? "off"}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  m === null
+                    ? "Turn off sleep timer"
+                    : `Set sleep timer to ${m} minutes`
+                }
+                accessibilityState={{ selected: sleepMinutes === m }}
+                {...(Platform.OS === "web"
+                  ? { "aria-pressed": sleepMinutes === m }
+                  : {})}
                 onPress={() => setSleepTimer(m)}
-                style={[styles.pill, sleepMinutes === m && styles.pillActive]}
+                style={({ pressed }) => [
+                  styles.pill,
+                  { minWidth: 44 * Math.max(1, fontScale) },
+                  sleepMinutes === m && styles.pillActive,
+                  pressed && styles.pillPressed,
+                ]}
               >
                 <Text
                   style={[
@@ -132,11 +173,16 @@ export default function SettingsScreen() {
             ))}
           </View>
         </View>
-        <Text style={styles.section}>CONNECT WITH US</Text>
+        <Text accessibilityRole="header" style={styles.section}>
+          Connect with us
+        </Text>
         <View style={styles.panel}>
           <Pressable
-            style={styles.row}
-            onPress={() => { void openVerifiedLink("WhatsApp", STATION.whatsapp); }}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            onPress={() => {
+              void openVerifiedLink("WhatsApp", STATION.whatsapp);
+            }}
           >
             <View style={styles.icon}>
               <MessageCircle size={20} color={colors.green} />
@@ -149,21 +195,27 @@ export default function SettingsScreen() {
           </Pressable>
           <View style={styles.divider} />
           <Pressable
-            style={styles.row}
-            onPress={() => { void openVerifiedLink("website", STATION.website); }}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            onPress={() => {
+              void openVerifiedLink("website", STATION.website);
+            }}
           >
             <View style={styles.icon}>
               <LinkIcon size={20} color={colors.green} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Official website</Text>
-              <Text style={styles.rowSub}>{STATION.website.replace(/^https:\/\//, "")}</Text>
+              <Text style={styles.rowSub}>
+                {STATION.website.replace(/^https:\/\//, "")}
+              </Text>
             </View>
             <ChevronRight size={19} color={colors.subtle} />
           </Pressable>
           <View style={styles.divider} />
           <Pressable
-            style={styles.row}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             onPress={() =>
               void openVerifiedLink("email", `mailto:${STATION.email}`)
             }
@@ -178,11 +230,13 @@ export default function SettingsScreen() {
             <ChevronRight size={19} color={colors.subtle} />
           </Pressable>
         </View>
-        <Text style={[styles.section, { marginBottom: 14 }]}>
-          FOLLOW ACE RADIO
+        <Text accessibilityRole="header" style={styles.section}>
+          Follow AceRadio
         </Text>
         <SocialLinks />
-        <Text style={styles.section}>APP INFORMATION</Text>
+        <Text accessibilityRole="header" style={styles.section}>
+          App information
+        </Text>
         <View style={styles.panel}>
           <View style={styles.row}>
             <View style={styles.icon}>
@@ -212,9 +266,7 @@ export default function SettingsScreen() {
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>AceRadio</Text>
-              <Text style={styles.rowSub}>
-                Version 0.1.0
-              </Text>
+              <Text style={styles.rowSub}>Version 0.1.0</Text>
             </View>
           </View>
         </View>
@@ -227,73 +279,80 @@ export default function SettingsScreen() {
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingBottom: 180 },
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 2,
-    color: colors.green,
-    marginTop: 14,
-  },
-  title: {
-    color: colors.white,
-    fontWeight: "900",
-    fontSize: 37,
-    letterSpacing: -1.2,
-    marginTop: 8,
-  },
-  sub: { fontSize: 14, color: colors.muted, marginTop: 5 },
   section: {
-    marginTop: 28,
+    marginTop: 24,
     marginBottom: 13,
-    fontSize: 11,
-    color: colors.green,
-    fontWeight: "900",
-    letterSpacing: 1.5,
+    ...typography.sectionTitle,
   },
+  firstSection: { marginTop: 0 },
   panel: {
     backgroundColor: colors.surface,
-    borderRadius: 17,
+    borderRadius: layout.cardRadius,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingVertical: 4,
   },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 73 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    minHeight: 76,
+    paddingVertical: 16,
+    borderRadius: layout.controlRadius,
+  },
   icon: {
-    backgroundColor: "#143422",
+    backgroundColor: colors.greenDeep,
     height: 40,
     width: 40,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  rowBody: { flex: 1 },
-  rowName: { color: colors.white, fontSize: 13, fontWeight: "800" },
-  rowSub: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 5 },
+  rowBody: { flex: 1, minWidth: 0 },
+  rowName: {
+    color: colors.white,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "600",
+  },
+  rowSub: { ...typography.caption, marginTop: 4 },
+  switchLoading: { width: 44 },
+  pressed: { backgroundColor: colors.surface2 },
+  pillPressed: { opacity: 0.75 },
   notice: {
     color: colors.subtle,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 18,
     marginBottom: 12,
     paddingHorizontal: 2,
   },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: 52 },
   pills: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 7,
+    gap: 6,
     paddingBottom: 16,
   },
   pill: {
-    paddingVertical: 9,
-    flex: 1,
-    borderRadius: 9,
-    backgroundColor: "#223027",
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    flexGrow: 1,
+    flexBasis: 44,
+    minHeight: 44,
+    borderRadius: 10,
+    backgroundColor: colors.surface2,
     alignItems: "center",
+    justifyContent: "center",
   },
   pillActive: { backgroundColor: colors.green },
-  pillLabel: { color: colors.white, fontSize: 12, fontWeight: "800" },
+  pillLabel: {
+    color: colors.white,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "600",
+  },
   pillTextActive: { color: colors.background },
   footer: {
     fontSize: 11,

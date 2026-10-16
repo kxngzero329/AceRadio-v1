@@ -15,7 +15,12 @@ import { openVerifiedLink } from "@/services/links";
 import { ABOUT } from "@/data/about";
 import { STATION } from "@/config/station";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
+import { typography } from "@/theme/typography";
+import { PageHeading } from "@/components/PageHeading";
+import { usePageContentStyle } from "@/hooks/usePageContentStyle";
 export default function AboutScreen() {
+  const contentStyle = usePageContentStyle();
   const { founders, milestones } = ABOUT;
   return (
     <SafeAreaView edges={["top"]} style={styles.root}>
@@ -23,13 +28,17 @@ export default function AboutScreen() {
       <PageScrollView
         testID="about-scroll"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={contentStyle}
       >
-        <Text style={styles.eyebrow}>OUR STORY</Text>
-        <Text style={styles.title}>
-          More than a <Text style={{ color: colors.green }}>station.</Text>
-        </Text>
-        <Text style={styles.sub}>{ABOUT.intro}</Text>
+        <PageHeading
+          eyebrow="OUR STORY"
+          title={
+            <>
+              More than a <Text style={{ color: colors.green }}>station.</Text>
+            </>
+          }
+          subtitle={ABOUT.intro}
+        />
         <View style={styles.founders}>
           <Text style={styles.h2}>Founded by</Text>
           <View style={styles.people}>
@@ -37,7 +46,12 @@ export default function AboutScreen() {
               <Fragment key={member.id}>
                 {index > 0 && <Text style={styles.and}>&</Text>}
                 <View style={styles.person}>
-                  <Image source={member.photo} style={styles.face} resizeMode="contain" accessibilityLabel={member.name} />
+                  <Image
+                    source={member.photo}
+                    style={styles.face}
+                    resizeMode="contain"
+                    accessibilityLabel={member.name}
+                  />
                   <Text style={styles.personName}>{member.name}</Text>
                   <Text style={styles.role}>{member.role}</Text>
                 </View>
@@ -53,10 +67,14 @@ export default function AboutScreen() {
                 <View
                   style={[
                     styles.point,
-                    i === milestones.length - 1 && { backgroundColor: colors.green },
+                    i === milestones.length - 1 && {
+                      backgroundColor: colors.green,
+                    },
                   ]}
                 />
-                {i < milestones.length - 1 ? <View style={styles.stem} /> : null}
+                {i < milestones.length - 1 ? (
+                  <View style={styles.stem} />
+                ) : null}
               </View>
               <View style={styles.milestoneText}>
                 <Text style={styles.date}>{event.date}</Text>
@@ -70,9 +88,7 @@ export default function AboutScreen() {
             <Lightbulb size={25} color={colors.green} />
           </View>
           <Text style={styles.visionHeading}>{ABOUT.visionTitle}</Text>
-          <Text style={styles.visionText}>
-            {ABOUT.visionBody}
-          </Text>
+          <Text style={styles.visionText}>{ABOUT.visionBody}</Text>
         </View>
         <View style={styles.highlights}>
           <View style={styles.highlight}>
@@ -88,11 +104,9 @@ export default function AboutScreen() {
         </View>
         <View style={styles.location}>
           <MapPin size={20} color={colors.green} />
-          <View>
+          <View style={styles.locationCopy}>
             <Text style={styles.locationTitle}>{STATION.location}</Text>
-            <Text style={styles.locationDesc}>
-              {ABOUT.locationDetail}
-            </Text>
+            <Text style={styles.locationDesc}>{ABOUT.locationDetail}</Text>
           </View>
         </View>
         <Text style={styles.h2}>Stay connected</Text>
@@ -101,44 +115,25 @@ export default function AboutScreen() {
         </Text>
         <SocialLinks />
         <Pressable
-          style={styles.website}
-          onPress={() => { void openVerifiedLink("website", STATION.website); }}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.website, pressed && styles.pressed]}
+          onPress={() => {
+            void openVerifiedLink("website", STATION.website);
+          }}
         >
           <Text style={styles.websiteText}>Official website</Text>
           <ArrowUpRight color={colors.green} size={19} />
         </Pressable>
-        <Text style={styles.foot}>
-          {ABOUT.footer}
-        </Text>
+        <Text style={styles.foot}>{ABOUT.footer}</Text>
       </PageScrollView>
     </SafeAreaView>
   );
 }
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 21, paddingBottom: 178 },
-  eyebrow: {
-    color: colors.green,
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 2,
-    marginTop: 14,
-  },
-  title: {
-    fontSize: 35,
-    fontWeight: "900",
-    color: colors.white,
-    letterSpacing: -1.2,
-    marginTop: 9,
-    lineHeight: 40,
-  },
-  sub: { color: colors.muted, fontSize: 15, marginTop: 8 },
-  founders: { marginTop: 34 },
+  founders: { marginTop: 0 },
   h2: {
-    fontSize: 21,
-    color: colors.white,
-    fontWeight: "900",
-    letterSpacing: -0.5,
+    ...typography.sectionTitle,
     marginBottom: 16,
   },
   people: {
@@ -151,18 +146,19 @@ const styles = StyleSheet.create({
   personName: {
     color: colors.white,
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "600",
     textAlign: "center",
     marginTop: 7,
   },
   role: {
-    fontSize: 9,
-    color: colors.green,
-    letterSpacing: 1.2,
-    fontWeight: "800",
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.muted,
+    textAlign: "center",
+    fontWeight: "600",
   },
   and: { fontSize: 22, color: colors.subtle },
-  timeline: { marginTop: 34 },
+  timeline: { marginTop: 28 },
   milestone: { flexDirection: "row", minHeight: 72 },
   line: { width: 33, alignItems: "center" },
   point: {
@@ -172,66 +168,87 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginTop: 7,
   },
-  stem: { width: 1, backgroundColor: "#466650", flex: 1, marginVertical: 4 },
-  milestoneText: { paddingLeft: 10 },
-  date: { fontSize: 17, color: colors.white, fontWeight: "800" },
-  desc: { fontSize: 13, color: colors.muted, marginTop: 4 },
+  stem: {
+    width: 1,
+    backgroundColor: colors.border,
+    flex: 1,
+    marginVertical: 4,
+  },
+  milestoneText: { flex: 1, paddingLeft: 10, paddingBottom: 22 },
+  date: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.white,
+    fontWeight: "600",
+  },
+  desc: { ...typography.body, marginTop: 4 },
   vision: {
     marginTop: 20,
-    padding: 24,
-    backgroundColor: "#0D2418",
+    padding: 20,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#1D4E32",
-    borderRadius: 21,
+    borderColor: colors.border,
+    borderRadius: layout.cardRadius,
     alignItems: "center",
   },
   visionIcon: {
-    width: 53,
-    height: 53,
-    borderRadius: 20,
-    backgroundColor: "#163C25",
+    width: 44,
+    height: 44,
+    borderRadius: layout.controlRadius,
+    backgroundColor: colors.greenDeep,
     alignItems: "center",
     justifyContent: "center",
   },
   visionHeading: {
-    fontSize: 21,
-    color: colors.white,
-    fontWeight: "900",
+    ...typography.sectionTitle,
+    textAlign: "center",
     marginTop: 14,
   },
   visionText: {
     fontSize: 14,
     lineHeight: 22,
-    color: "#BCD0C2",
+    color: colors.muted,
     textAlign: "center",
     marginTop: 9,
   },
-  highlights: { flexDirection: "row", gap: 11, marginTop: 15 },
+  highlights: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 12,
+  },
   highlight: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 140,
     padding: 16,
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 18,
+    borderRadius: layout.cardRadius,
     gap: 7,
-    minHeight: 139,
+    minHeight: 126,
   },
   highlightTitle: {
     color: colors.white,
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "600",
     marginTop: 4,
   },
-  highlightSub: { fontSize: 11, color: colors.muted, lineHeight: 16 },
+  highlightSub: { ...typography.caption },
   location: {
     marginVertical: 28,
     flexDirection: "row",
     gap: 11,
     alignItems: "center",
   },
-  locationTitle: { color: colors.white, fontWeight: "800", fontSize: 13 },
-  locationDesc: { color: colors.muted, fontSize: 11, marginTop: 4 },
+  locationCopy: { flex: 1 },
+  locationTitle: {
+    color: colors.white,
+    fontWeight: "600",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  locationDesc: { ...typography.caption, marginTop: 4 },
   connect: {
     fontSize: 13,
     color: colors.muted,
@@ -246,12 +263,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 18,
     paddingVertical: 17,
-    borderRadius: 14,
+    borderRadius: layout.controlRadius,
     borderColor: colors.border,
     borderWidth: 1,
     backgroundColor: colors.surface,
   },
-  websiteText: { color: colors.white, fontWeight: "800" },
+  websiteText: { color: colors.white, fontWeight: "600", fontSize: 14 },
+  pressed: { backgroundColor: colors.surface2 },
   foot: {
     marginTop: 28,
     color: colors.subtle,

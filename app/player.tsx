@@ -7,9 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   ChevronDown,
   Pause,
@@ -24,6 +24,8 @@ import { useRadio } from "@/context/RadioContext";
 import { AceLogo } from "@/components/AceLogo";
 import { STATION_STREAM_SHOW_ID } from "@/data/stationShow";
 import { colors } from "@/theme/colors";
+import { layout } from "@/theme/layout";
+import { typography } from "@/theme/typography";
 import { useModalTransition } from "@/hooks/useModalTransition";
 import { useShowTransition } from "@/hooks/useShowTransition";
 
@@ -47,6 +49,18 @@ export default function PlayerScreen() {
     isTransitioning,
     style: slideStyle,
   } = useModalTransition();
+  const { width, height } = useWindowDimensions();
+  const coverSize = Math.min(width - 40, 320, Math.max(180, height * 0.37));
+  const canSkip = liveShowCount > 1;
+  const status = buffering
+    ? "Connecting to AceRadio…"
+    : error
+      ? "Connection interrupted"
+      : playing
+        ? "You’re listening live"
+        : currentShow
+          ? "Paused · Ready when you are"
+          : "Ready to listen live";
   return (
     <Animated.View
       testID="full-player-sheet"
@@ -59,18 +73,20 @@ export default function PlayerScreen() {
       <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
         <View style={styles.header}>
           <Pressable
-            style={styles.close}
+            style={({ pressed }) => [styles.close, pressed && styles.pressed]}
             onPress={close}
             disabled={isClosing}
             accessibilityRole="button"
             accessibilityLabel="Close player"
+            accessibilityState={{ disabled: isClosing }}
           >
-            <ChevronDown color={colors.white} size={27} />
+            <ChevronDown color={colors.white} size={25} />
           </Pressable>
-          <Text style={styles.headerLabel}>NOW PLAYING</Text>
-          <View style={{ width: 40 }} />
+          <Text style={styles.headerLabel}>Live radio</Text>
+          <View style={styles.headerSpacer} />
         </View>
         <ScrollView
+          testID="full-player-scroll"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
@@ -78,10 +94,7 @@ export default function PlayerScreen() {
             testID="full-player-show"
             style={[styles.show, { opacity: fade }]}
           >
-            <LinearGradient
-              colors={["#215736", "#0B2114", "#050A07"]}
-              style={styles.cover}
-            >
+            <View style={[styles.cover, { width: coverSize }]}>
               {displayedShow?.id === STATION_STREAM_SHOW_ID ? (
                 <Image
                   source={require("../assets/shows/Live_Radio_Bg.png")}
@@ -93,54 +106,58 @@ export default function PlayerScreen() {
                 <Image
                   source={displayedShow.image}
                   style={styles.artwork}
-                  resizeMode="cover"
-                  accessibilityLabel={displayedShow.presenter}
+                  resizeMode="contain"
+                  accessibilityLabel={`${displayedShow.title} artwork`}
                 />
               ) : (
-                <>
-                  <View style={styles.ring1} />
-                  <View style={styles.ring2} />
-                  <AceLogo width={210} />
-                </>
+                <AceLogo width={150} />
               )}
-            </LinearGradient>
+            </View>
             <View style={styles.tagRow}>
               <View style={styles.tag}>
                 <View style={styles.dot} />
-                <Text style={styles.tagText}>ACE RADIO · LIVE</Text>
+                <Text style={styles.tagText}>LIVE BROADCAST</Text>
               </View>
               <View style={styles.listeners}>
-                <Headphones size={14} color={colors.green} />
+                <Headphones size={14} color={colors.muted} />
                 <Text style={styles.listenerText}>
-                  {listenerCount === null ? "Live radio" : `${listenerCount.toLocaleString("en-ZA")} listeners`}
+                  {listenerCount === null
+                    ? "Live radio"
+                    : `${listenerCount.toLocaleString("en-ZA")} ${listenerCount === 1 ? "listener" : "listeners"}`}
                 </Text>
               </View>
             </View>
-            <Text style={styles.title}>
-              {displayedShow?.title ?? "Hear the difference."}
+            <Text accessibilityRole="header" style={styles.title}>
+              {displayedShow?.title ?? "AceRadio Live"}
             </Text>
             <Text style={styles.byline}>
-              {displayedShow?.presenter ?? "AceRadio · Cape Town, South Africa"}
+              {displayedShow?.presenter ?? "Cape Town, South Africa"}
             </Text>
           </Animated.View>
-          <View style={styles.rule} />
           <View style={styles.controls}>
             <Pressable
-              style={styles.skip}
+              style={({ pressed }) => [
+                styles.skip,
+                !canSkip && styles.disabled,
+                pressed && styles.pressed,
+              ]}
               onPress={previous}
-              disabled={liveShowCount < 2}
+              disabled={!canSkip || isClosing}
               accessibilityRole="button"
               accessibilityLabel="Previous live show"
-              accessibilityState={{ disabled: liveShowCount < 2 }}
+              accessibilityState={{ disabled: !canSkip || isClosing }}
             >
-              <SkipBack
-                size={25}
-                color={liveShowCount > 1 ? colors.white : colors.subtle}
-              />
+              <SkipBack size={25} color={colors.white} />
             </Pressable>
             <Pressable
-              style={styles.play}
+              testID="full-player-toggle"
+              style={({ pressed }) => [
+                styles.play,
+                buffering && styles.playLoading,
+                pressed && styles.playPressed,
+              ]}
               onPress={toggle}
+              disabled={isClosing}
               accessibilityRole="button"
               accessibilityLabel={
                 buffering
@@ -149,58 +166,63 @@ export default function PlayerScreen() {
                     ? "Pause live show"
                     : "Play live show"
               }
-              accessibilityState={{ busy: buffering }}
+              accessibilityState={{ busy: buffering, disabled: isClosing }}
+              aria-busy={buffering}
             >
               {buffering ? (
                 <ActivityIndicator color={colors.background} size="large" />
               ) : playing ? (
                 <Pause
-                  size={31}
+                  size={30}
                   color={colors.background}
                   fill={colors.background}
                 />
               ) : (
                 <Play
-                  size={31}
+                  size={30}
                   color={colors.background}
                   fill={colors.background}
                 />
               )}
             </Pressable>
             <Pressable
-              style={styles.skip}
+              style={({ pressed }) => [
+                styles.skip,
+                !canSkip && styles.disabled,
+                pressed && styles.pressed,
+              ]}
               onPress={next}
-              disabled={liveShowCount < 2}
+              disabled={!canSkip || isClosing}
               accessibilityRole="button"
               accessibilityLabel="Next live show"
-              accessibilityState={{ disabled: liveShowCount < 2 }}
+              accessibilityState={{ disabled: !canSkip || isClosing }}
             >
-              <SkipForward
-                size={25}
-                color={liveShowCount > 1 ? colors.white : colors.subtle}
-              />
+              <SkipForward size={25} color={colors.white} />
             </Pressable>
           </View>
-          <Text style={styles.status} accessibilityLiveRegion="polite">
-            {buffering
-              ? "Connecting to AceRadio…"
-              : error
-                ? "Stream unavailable · Try again below"
-                : playing
-                  ? "You are listening live"
-                  : currentShow
-                    ? "Paused · Ready when you are"
-                    : "Your next favourite show is one tap away"}
-          </Text>
+          <View style={styles.statusRow} accessibilityLiveRegion="polite">
+            <View
+              style={[
+                styles.statusDot,
+                playing && !buffering && !error && styles.dotLive,
+                error && styles.dotError,
+              ]}
+            />
+            <Text style={styles.status}>{status}</Text>
+          </View>
           <Pressable
-            style={styles.retry}
+            style={({ pressed }) => [
+              styles.retry,
+              pressed && styles.pressed,
+              buffering && styles.disabled,
+            ]}
             onPress={retry}
-            disabled={buffering}
+            disabled={buffering || isClosing}
             accessibilityRole="button"
             accessibilityLabel="Reload live show"
-            accessibilityState={{ disabled: buffering }}
+            accessibilityState={{ disabled: buffering || isClosing }}
           >
-            <RotateCcw size={16} color={colors.muted} />
+            <RotateCcw size={15} color={colors.muted} />
             <Text style={styles.retryText}>
               {error ? "Try again" : "Reload stream"}
             </Text>
@@ -223,176 +245,145 @@ const styles = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: colors.background },
   root: { flex: 1, backgroundColor: colors.background },
   header: {
-    height: 61,
+    width: "100%",
+    maxWidth: layout.contentWidth,
+    alignSelf: "center",
+    minHeight: 60,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
-  headerLabel: {
-    color: colors.muted,
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 2,
-  },
+  headerLabel: { color: colors.muted, fontSize: 13, fontWeight: "600" },
+  headerSpacer: { width: 44 },
   close: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    borderRadius: layout.controlRadius,
     alignItems: "center",
     justifyContent: "center",
   },
   content: {
-    paddingHorizontal: 26,
-    paddingTop: 19,
-    paddingBottom: 35,
+    width: "100%",
+    maxWidth: 480,
+    alignSelf: "center",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
     alignItems: "center",
   },
   show: { width: "100%", alignItems: "center" },
   cover: {
-    width: "100%",
     aspectRatio: 1,
-    borderRadius: 27,
+    borderRadius: 22,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#225534",
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   artwork: { width: "100%", height: "100%" },
-  ring1: {
-    width: "92%",
-    height: "92%",
-    borderRadius: 500,
-    borderWidth: 2,
-    borderColor: "#4B9C6130",
-    position: "absolute",
-  },
-  ring2: {
-    width: "72%",
-    height: "72%",
-    borderRadius: 500,
-    borderWidth: 31,
-    borderColor: "#4B9C6130",
-    position: "absolute",
+  tagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 20,
   },
   tag: {
     flexDirection: "row",
-    gap: 9,
+    gap: 6,
     alignItems: "center",
-    backgroundColor: "#173924",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: colors.greenDeep,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
   },
-  tagRow: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    marginTop: 27,
-  },
-  dot: { height: 7, width: 7, borderRadius: 4, backgroundColor: colors.green },
+  dot: { height: 6, width: 6, borderRadius: 3, backgroundColor: colors.green },
   tagText: {
     color: colors.green,
-    fontWeight: "900",
+    fontWeight: "700",
     fontSize: 10,
-    letterSpacing: 1.3,
+    letterSpacing: 0.8,
   },
+  listeners: { flexDirection: "row", alignItems: "center", gap: 6 },
+  listenerText: { ...typography.caption, fontVariant: ["tabular-nums"] },
   title: {
-    fontSize: 29,
+    fontSize: 30,
+    lineHeight: 36,
     color: colors.white,
-    fontWeight: "900",
-    letterSpacing: -1.1,
-    marginTop: 17,
+    fontWeight: "700",
+    letterSpacing: -0.8,
+    marginTop: 14,
     textAlign: "center",
   },
-  byline: {
-    fontSize: 13,
-    color: colors.muted,
-    marginTop: 6,
-    textAlign: "center",
-  },
-  schedule: {
-    fontSize: 11,
-    color: colors.muted,
-    marginTop: 8,
-    textAlign: "center",
-  },
-  listeners: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    backgroundColor: "#101A14",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  listenerText: {
-    fontSize: 12,
-    color: colors.green,
-    fontVariant: ["tabular-nums"],
-  },
-  rule: {
-    marginTop: 28,
-    width: "100%",
-    height: 2,
-    backgroundColor: colors.border,
-  },
+  byline: { ...typography.body, marginTop: 5, textAlign: "center" },
   controls: {
     width: "100%",
+    maxWidth: 300,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 27,
+    marginTop: 24,
   },
   play: {
-    width: 87,
-    height: 87,
-    borderRadius: 44,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: colors.green,
     alignItems: "center",
     justifyContent: "center",
   },
+  playLoading: { backgroundColor: "#72D99A" },
+  playPressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
   skip: {
-    width: 60,
-    height: 60,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.surface,
   },
+  pressed: { backgroundColor: colors.surface2 },
+  disabled: { opacity: 0.4 },
+  statusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    marginTop: 18,
+  },
+  statusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.subtle,
+  },
+  dotLive: { backgroundColor: colors.green },
+  dotError: { backgroundColor: colors.red },
+  status: { ...typography.caption, flexShrink: 1, textAlign: "center" },
   retry: {
     minHeight: 44,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    marginTop: 6,
+    marginTop: 4,
+    paddingHorizontal: 14,
+    borderRadius: layout.controlRadius,
   },
-  retryText: { color: colors.muted, fontSize: 11 },
-  status: {
-    fontSize: 12,
-    color: colors.muted,
-    marginTop: 16,
-    textAlign: "center",
-  },
+  retryText: { ...typography.caption },
   error: {
+    width: "100%",
     flexDirection: "row",
     gap: 10,
     alignItems: "flex-start",
-    marginTop: 22,
+    marginTop: 12,
     backgroundColor: "#30221A",
-    borderRadius: 12,
+    borderRadius: layout.controlRadius,
     padding: 14,
   },
-  errorText: { flex: 1, color: "#F4CDB7", fontSize: 12, lineHeight: 18 },
-  info: {
-    marginTop: 23,
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    padding: 14,
-    borderRadius: 13,
-  },
-  infoText: { flex: 1, fontSize: 11, color: colors.muted, lineHeight: 17 },
+  errorText: { flex: 1, color: "#F4CDB7", fontSize: 13, lineHeight: 20 },
 });
