@@ -1,20 +1,52 @@
-import { useEffect } from "react";
-import { Tabs } from "expo-router";
-import { Home, Radio, Heart, Info, Settings2, type LucideIcon } from "lucide-react-native";
-import { Easing, Platform, StyleSheet, View, type ColorValue } from "react-native";
+import { useEffect, useState } from "react";
+import { Tabs, usePathname } from "expo-router";
+import {
+  Home,
+  Radio,
+  Heart,
+  MessagesSquare,
+  Settings2,
+  type LucideIcon,
+} from "lucide-react-native";
+import {
+  Easing,
+  Keyboard,
+  Platform,
+  StyleSheet,
+  View,
+  type ColorValue,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MiniPlayer } from "@/components/MiniPlayer";
+import { ChatOptionsModal } from "@/components/ChatOptionsModal";
 import { colors } from "@/theme/colors";
 import { blurWebFocus, router } from "@/utils/navigation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { tabBarHeight } from "@/theme/layout";
 
-function TabIcon({ icon: Icon, color, focused }: { icon: LucideIcon; color: ColorValue; focused: boolean }) {
-  return <View style={[styles.icon, focused && styles.iconActive]}><Icon size={22} color={color} strokeWidth={focused ? 2.3 : 1.8} /></View>;
+function TabIcon({
+  icon: Icon,
+  color,
+  focused,
+}: {
+  icon: LucideIcon;
+  color: ColorValue;
+  focused: boolean;
+}) {
+  return (
+    <View style={[styles.icon, focused && styles.iconActive]}>
+      <Icon size={22} color={color} strokeWidth={focused ? 2.3 : 1.8} />
+    </View>
+  );
 }
 export default function TabLayout() {
   const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+  const [chatVisible, setChatVisible] = useState(false);
+  useEffect(() => {
+    setChatVisible(false);
+  }, [pathname]);
   useEffect(() => {
     if (Platform.OS === "web") return;
     const warmPlayer = setTimeout(() => router.prefetch("/player"), 700);
@@ -24,7 +56,11 @@ export default function TabLayout() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Tabs
         detachInactiveScreens={Platform.OS === "web"}
-        screenListeners={{ tabPress: blurWebFocus }}
+        screenListeners={({ route }) => ({
+          tabPress: () => {
+            if (route.name !== "chat") blurWebFocus();
+          },
+        })}
         screenOptions={{
           headerShown: false,
           lazy: Platform.OS === "web",
@@ -39,7 +75,12 @@ export default function TabLayout() {
           },
           tabBarActiveTintColor: colors.green,
           tabBarInactiveTintColor: colors.muted,
-          tabBarLabelStyle: { fontSize: 11, fontWeight: "600", lineHeight: 14, marginTop: 3 },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: "600",
+            lineHeight: 14,
+            marginTop: 3,
+          },
           tabBarItemStyle: { paddingHorizontal: 2 },
           tabBarIconStyle: { width: 44, height: 30 },
           tabBarAllowFontScaling: true,
@@ -57,7 +98,9 @@ export default function TabLayout() {
           name="index"
           options={{
             title: "Home",
-            tabBarIcon: ({ color, focused }) => <TabIcon icon={Home} color={color} focused={focused} />,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon icon={Home} color={color} focused={focused} />
+            ),
           }}
         />
         <Tabs.Screen
@@ -79,12 +122,22 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="about"
+          name="chat"
+          listeners={{
+            tabPress: (event) => {
+              event.preventDefault();
+              Keyboard.dismiss();
+              setChatVisible(true);
+            },
+          }}
           options={{
-            title: "About",
-            tabBarIcon: ({ color, focused }) => <TabIcon icon={Info} color={color} focused={focused} />,
+            title: "Chat",
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon icon={MessagesSquare} color={color} focused={focused} />
+            ),
           }}
         />
+        <Tabs.Screen name="about" options={{ title: "About", href: null }} />
         <Tabs.Screen
           name="settings"
           options={{
@@ -96,11 +149,21 @@ export default function TabLayout() {
         />
       </Tabs>
       <MiniPlayer />
+      <ChatOptionsModal
+        visible={chatVisible}
+        onClose={() => setChatVisible(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  icon: { width: 44, height: 30, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  icon: {
+    width: 44,
+    height: 30,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   iconActive: { backgroundColor: colors.greenDeep },
 });

@@ -36,6 +36,8 @@ Expo Go plays the station stream in the foreground. It skips this app's backgrou
 
 Searchable show grid, show details and posters, locally saved favourites, founder profiles and station story, contact links, and official social links. Existing show IDs and favourite storage are preserved.
 
+The bottom bar's Chat action opens a compact chooser. In-app chat is marked Coming soon and shows a development notice when tapped; WhatsApp opens the studio's official chat. About remains available through Home's Our story link. See [chat chooser and future scope](docs/chat.md).
+
 Home, Shows and Favourites use the same show card: square artwork, independent heart at the top-right, content-width live badge at the top-left, and matching text slots. Narrow cards show just LIVE in the badge to keep the heart clear; its accessibility label still includes listeners.
 
 Home uses a compact hero and schedule, restrained dark surfaces, clearer schedule text and a single spotlight counter. The tab bar and mini-player share safe-area spacing, and large system fonts use a single-column show layout. See [homepage refinement and visual checks](docs/homepage.md).
