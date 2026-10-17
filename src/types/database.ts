@@ -212,6 +212,30 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id: string
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       show_presenters: {
         Row: {
           position: number
@@ -361,15 +385,114 @@ export type Database = {
           },
         ]
       }
+      user_favorites: {
+        Row: {
+          is_favorite: boolean
+          revision: number
+          show_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          is_favorite?: boolean
+          revision?: number
+          show_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          is_favorite?: boolean
+          revision?: number
+          show_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_show_id_fkey"
+            columns: ["show_id"]
+            isOneToOne: false
+            referencedRelation: "shows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_favorites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_settings: {
+        Row: {
+          notifications_enabled: boolean
+          revision: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          notifications_enabled?: boolean
+          revision?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          notifications_enabled?: boolean
+          revision?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      apply_account_changes: { Args: { changes: Json }; Returns: Json }
+      assert_account_deletion_allowed: { Args: never; Returns: boolean }
+      get_account_data: { Args: never; Returns: Json }
       get_app_content: { Args: never; Returns: Json }
       get_app_content_v2: { Args: never; Returns: Json }
       get_app_content_v3: { Args: never; Returns: Json }
+      is_account_admin: { Args: never; Returns: boolean }
       is_content_editor: { Args: never; Returns: boolean }
+      is_verified_account: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

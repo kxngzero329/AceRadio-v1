@@ -1,5 +1,9 @@
 # AceRadio mobile preview
 
+For an end-to-end map of the screens, playback, content flow, deployed database and CLI setup, see the [codebase overview](docs/codebase-overview.md), reviewed on 16 October 2026.
+
+Accounts, the two-role permission system, MFA for admin writes, and cached favourites/settings sync are implemented. See [account setup and release checks](docs/accounts.md). Public email-code registration/recovery stays gated until a production SMTP sender and templates are configured; listening and guest favourites remain available.
+
 Expo SDK 57 / React Native / TypeScript app using the supplied AceRadio artwork and branding.
 
 Listening uses AceRadio's public live stream, `https://studio.ace.radio/stream`. Every show plays that same station stream. Supabase is deployed and enabled for local use and the EAS development, preview and production environments, with reproducible migrations, verified API imports, Storage, RLS and a persisted catalogue cache. A fresh build includes this integration; later published content updates arrive without another release. Supabase mode uses only a public URL/key. Unconfigured checkouts default to bundled content. See [backend setup and deployment status](docs/supabase.md).
@@ -49,6 +53,8 @@ Shows has All shows, Live now, Weekdays and Weekend filters below search. Search
 Audio connects to the public station stream only when listening starts and works independently of Supabase availability. Contact/social actions open links only when tapped. Supabase mode reads published shows, presenters, structured schedules, banners and announcements, with cached content available offline. About copy, founder profiles/photos, history, vision, station identity and contact/social links are local frontend content. The three station tables have been removed by migration; compatible API responses remain available for older installed builds. Favourites and notification preferences remain on the device.
 
 ## Verify
+
+The approved black-and-white app icon and splash artwork, Android adaptive/themed icons, notification symbol and Play Store icon are installed. See [branding assets and native preview checks](docs/branding.md) for the sources, exports and device checklist. Native branding changes require new installed builds.
 
 ```sh
 npm run typecheck

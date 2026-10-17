@@ -8,6 +8,8 @@ import { PageScrollView } from "@/components/PageScrollView";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useContent } from "@/context/ContentContext";
 import { ContentStatus } from "@/components/ContentStatus";
+import { AccountSyncStatus } from "@/components/AccountSyncStatus";
+import { useAccountData } from "@/context/AccountDataContext";
 import { colors } from "@/theme/colors";
 import { layout } from "@/theme/layout";
 import { typography } from "@/theme/typography";
@@ -17,6 +19,7 @@ export default function FavoritesScreen() {
   const contentStyle = usePageContentStyle();
   const { shows, loading, error } = useContent();
   const { favorites, ready } = useFavorites();
+  const { signedIn, canEdit, error: accountError } = useAccountData();
   const selected = shows.filter((s) => favorites.includes(s.id));
   return (
     <SafeAreaView edges={["top"]} style={styles.root}>
@@ -36,16 +39,18 @@ export default function FavoritesScreen() {
           subtitle="The voices you keep coming back to."
         />
         <ContentStatus showLoading={false} />
+        <AccountSyncStatus showGuest />
         {!ready || (loading && !shows.length) ? (
           <ShowGrid shows={[]} loading />
         ) : selected.length ? (
           <View style={styles.grid}>
             <ShowGrid shows={selected} />
           </View>
-        ) : error && !shows.length ? null : favorites.length > 0 ? (
+        ) : (signedIn && !canEdit && accountError) ||
+          (error && !shows.length) ? null : favorites.length > 0 ? (
           <Text style={styles.emptyDesc}>
             Your saved shows are currently unavailable. Your favourites are
-            still saved on this device.
+            still saved{signedIn ? " to your account." : " on this device."}
           </Text>
         ) : (
           <View testID="favorites-empty" style={styles.empty}>
@@ -54,8 +59,10 @@ export default function FavoritesScreen() {
             </View>
             <Text style={styles.emptyTitle}>Make it yours.</Text>
             <Text style={styles.emptyDesc}>
-              Tap the heart on a show to save it here. Your favourites stay on
-              this device.
+              Tap the heart on a show to save it here.{" "}
+              {signedIn
+                ? "Your favourites sync across your devices."
+                : "Your favourites stay on this device until you add them to an account."}
             </Text>
             <Pressable
               testID="favorites-discover"

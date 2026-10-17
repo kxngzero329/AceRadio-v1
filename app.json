@@ -6,13 +6,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
     "icon": "./assets/icons/icon.png",
     "android": {
       "package": "com.aceradio.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "monochromeImage": "./assets/icons/monochrome-icon.png",
+        "backgroundColor": "#000000"
       },
       "permissions": [
         "POST_NOTIFICATIONS",
@@ -23,6 +25,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.aceradio.app",
+      "icon": "./assets/icons/icon.png",
       "supportsTablet": true
     },
     "web": {
@@ -35,8 +38,15 @@
         {
           "backgroundColor": "#000000",
           "image": "./assets/splash/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain"
+          "imageWidth": 320,
+          "resizeMode": "contain",
+          "android": {
+            "imageWidth": 224,
+            "dark": {
+              "backgroundColor": "#000000",
+              "image": "./assets/splash/splash-icon.png"
+            }
+          }
         }
       ],
       [
@@ -50,10 +60,12 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/icons/notification-icon.png",
           "color": "#36d57a",
           "defaultChannel": "ace-radio-updates"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

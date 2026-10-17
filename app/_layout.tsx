@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 import { DarkTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -8,7 +8,8 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { RadioProvider } from "@/context/RadioContext";
 import { ContentProvider } from "@/context/ContentContext";
-import { FavoritesProvider } from "@/context/FavoritesContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { AccountDataProvider } from "@/context/AccountDataContext";
 import { colors } from "@/theme/colors";
 import { FittedImage } from "@/components/FittedImage";
 import { blurWebFocus } from "@/utils/navigation";
@@ -39,13 +40,16 @@ const sheetOptions = {
 
 // Keep the native splash visible until the social icon fonts are ready.
 SplashScreen.preventAutoHideAsync().catch(console.warn);
+SplashScreen.setOptions({ duration: 200, fade: true });
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FontAwesome6.font);
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) SplashScreen.hideAsync().catch(console.warn);
-  }, [fontsLoaded, fontError]);
+  // Wait for the ready navigation view to lay out before revealing it.
+  // Network requests and account restoration never hold the native splash open.
+  const onReadyLayout = useCallback(() => {
+    SplashScreen.hideAsync().catch(console.warn);
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return (
@@ -62,26 +66,29 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ContentProvider>
-        <FavoritesProvider>
-          <RadioProvider>
-            <StatusBar style="light" />
-            <ThemeProvider value={aceTheme}>
-              <View style={styles.navigation}>
-                <Stack
-                  screenListeners={{ beforeRemove: blurWebFocus }}
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: colors.background },
-                  }}
-                >
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="player" options={sheetOptions} />
-                  <Stack.Screen name="show/[id]" options={sheetOptions} />
-                </Stack>
-              </View>
-            </ThemeProvider>
-          </RadioProvider>
-        </FavoritesProvider>
+        <AuthProvider>
+          <AccountDataProvider>
+            <RadioProvider>
+              <StatusBar style="light" />
+              <ThemeProvider value={aceTheme}>
+                <View style={styles.navigation} onLayout={onReadyLayout}>
+                  <Stack
+                    screenListeners={{ beforeRemove: blurWebFocus }}
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: colors.background },
+                    }}
+                  >
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="player" options={sheetOptions} />
+                    <Stack.Screen name="show/[id]" options={sheetOptions} />
+                    <Stack.Screen name="account" />
+                  </Stack>
+                </View>
+              </ThemeProvider>
+            </RadioProvider>
+          </AccountDataProvider>
+        </AuthProvider>
       </ContentProvider>
     </SafeAreaProvider>
   );

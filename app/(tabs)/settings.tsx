@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -25,11 +25,9 @@ import {
 } from "lucide-react-native";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SocialLinks } from "@/components/SocialLinks";
-import {
-  getNotificationsEnabled,
-  enableNotifications,
-  disableNotifications,
-} from "@/services/notifications";
+import { useAccountData } from "@/context/AccountDataContext";
+import { AccountSyncStatus } from "@/components/AccountSyncStatus";
+import { router } from "@/utils/navigation";
 import { openVerifiedLink } from "@/services/links";
 import { useRadio } from "@/context/RadioContext";
 import { STATION } from "@/config/station";
@@ -42,25 +40,26 @@ const timerOptions = [null, 15, 30, 45, 60] as const;
 export default function SettingsScreen() {
   const contentStyle = usePageContentStyle();
   const { fontScale } = useWindowDimensions();
-  const [notifications, setNotifications] = useState(false);
+  const {
+    notificationsEnabled: notifications,
+    setNotifications,
+    canEdit,
+    signedIn,
+    displayName,
+  } = useAccountData();
   const [busy, setBusy] = useState(false);
   const { sleepMinutes, setSleepTimer } = useRadio();
-  useEffect(() => {
-    getNotificationsEnabled().then(setNotifications).catch(console.warn);
-  }, []);
   const updateNotifications = async (value: boolean) => {
     setBusy(true);
     try {
+      await setNotifications(value);
       if (value) {
-        await enableNotifications();
-        setNotifications(true);
         Alert.alert(
           "Preference saved",
-          "Show updates are coming soon. Your preference is saved on this device for this preview.",
+          signedIn
+            ? "Show updates are coming soon. Your preference will sync with your account."
+            : "Show updates are coming soon. Your preference is saved on this device.",
         );
-      } else {
-        await disableNotifications();
-        setNotifications(false);
       }
     } catch (e) {
       Alert.alert(
@@ -92,6 +91,37 @@ export default function SettingsScreen() {
           accessibilityRole="header"
           style={[styles.section, styles.firstSection]}
         >
+          Account
+        </Text>
+        <View style={styles.panel}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              signedIn ? "Manage your account" : "Sign in or create an account"
+            }
+            onPress={() => router.push("/account")}
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+          >
+            <View style={styles.icon}>
+              <ShieldCheck size={20} color={colors.green} />
+            </View>
+            <View style={styles.rowBody}>
+              <Text style={styles.rowName}>
+                {signedIn ? displayName : "Sign in or create an account"}
+              </Text>
+              <Text style={styles.rowSub}>
+                {signedIn
+                  ? "Manage your profile and account"
+                  : "Keep favourites and preferences across devices"}
+              </Text>
+            </View>
+            <ChevronRight size={19} color={colors.subtle} />
+          </Pressable>
+        </View>
+        <View style={{ marginTop: 12 }}>
+          <AccountSyncStatus />
+        </View>
+        <Text accessibilityRole="header" style={styles.section}>
           Notifications
         </Text>
         <View style={styles.panel}>
@@ -114,6 +144,7 @@ export default function SettingsScreen() {
               <Switch
                 accessibilityLabel="Show and station updates preference"
                 value={notifications}
+                disabled={!canEdit}
                 onValueChange={(v) => void updateNotifications(v)}
                 trackColor={{ false: colors.border, true: "#286C43" }}
                 thumbColor={notifications ? colors.green : colors.muted}

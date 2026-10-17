@@ -56,7 +56,8 @@ before(async () => {
     grant select,insert,update,delete on storage.objects to anon,authenticated,service_role;
     grant select on storage.buckets to anon,authenticated,service_role;
   `);
-  const migrations = fs.readdirSync(path.join(root,'supabase/migrations')).filter(name => name.endsWith('.sql')).sort();
+  // Rehearse the original content upgrade here; accounts.test.cjs tests the next upgrade.
+  const migrations = fs.readdirSync(path.join(root,'supabase/migrations')).filter(name => name.startsWith('20261015') && name.endsWith('.sql')).sort();
   for (const file of migrations.filter(name => !name.endsWith('_remove_station_tables.sql'))) await db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
   await db.exec(buildSeed());
   // Rehearse the actual upgrade from the original populated station tables.

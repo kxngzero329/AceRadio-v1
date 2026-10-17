@@ -1,5 +1,9 @@
 # Supabase content backend
 
+**Accounts update, 16 October 2026:** two subsequent migrations add private account profiles/roles/preferences/favourites, indexed sync lookups and MFA-aware deletion. They replace the old `content_staff` authority with `user_roles` (`user`/`admin`). Admin catalogue/Storage writes now require MFA. The account-deletion function is deployed; SMTP delivery remains to be configured before public email-code signup/recovery. See [accounts and sync](accounts.md). The deployment history below describes the original content rollout.
+
+**16 October 2026 review:** CLI 2.84.2 is successfully linked to the project below, all four remote migrations match this checkout, and live schema/RLS/Storage inspection confirms the deployed structure. The local `.env.local` currently selects **bundled** content; the earlier deployment notes below describe its previous Supabase setting. CLI linkage does not switch that value. See the [codebase overview](codebase-overview.md) for the current environment snapshot, Windows tooling notes and the config-version fix (`[inbucket]`, with the empty `db.orioledb_version` removed).
+
 ## Deployment status
 
 The linked project is **aceradio_db** (`dbgpfqyighcaquxwzkfe`). After the read-only audit and the user's explicit approval on 15 October 2026, both migrations were applied, the verified content was imported, and Supabase content was enabled. The initial audit found no public tables, migrations or Storage buckets; the deployment did not replace existing production content.
