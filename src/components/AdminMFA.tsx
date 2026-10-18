@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -103,6 +104,8 @@ export function AdminMFA() {
             autoComplete="one-time-code"
             placeholder="Six-digit authenticator code"
             placeholderTextColor={colors.subtle}
+            selectionColor={colors.selection}
+            cursorColor={colors.accent}
             style={styles.input}
             editable={!busy}
           />
@@ -168,7 +171,7 @@ export function AdminMFA() {
           <Text style={styles.buttonText}>Set up two-step verification</Text>
         </Pressable>
       )}
-      {busy && <ActivityIndicator color={colors.green} />}
+      {busy && <ActivityIndicator color={colors.accent} />}
       {error && (
         <Text accessibilityRole="alert" style={styles.error}>
           {error}
@@ -186,27 +189,28 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  title: { color: colors.white, fontWeight: "700", fontSize: 15 },
-  text: { color: colors.muted, fontSize: 12, lineHeight: 19 },
+  title: { color: colors.white, fontFamily: fonts.displayBold, fontSize: 15 },
+  text: { color: colors.muted, fontSize: 12, lineHeight: 19, fontFamily: fonts.regular },
   qr: { alignSelf: "center", backgroundColor: "#FFFFFF", padding: 12 },
-  secret: { color: colors.white, fontSize: 13 },
+  secret: { color: colors.white, fontSize: 13, fontFamily: fonts.regular },
   input: {
     minHeight: 48,
     color: colors.white,
+    outlineColor: colors.accent,
     backgroundColor: colors.surface2,
     padding: 12,
     borderRadius: 10,
-    fontSize: 16,
+    fontSize: 16, fontFamily: fonts.regular,
   },
   button: {
     minHeight: 46,
-    backgroundColor: colors.greenDeep,
+    backgroundColor: colors.accentSoft,
     padding: 12,
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
-  buttonText: { color: colors.green, fontWeight: "700", fontSize: 13 },
+  buttonText: { color: colors.accent, fontFamily: fonts.semibold, fontSize: 13 },
   disabled: { opacity: 0.5 },
-  error: { color: "#FFB6B6", fontSize: 12, lineHeight: 18 },
+  error: { color: colors.error, fontSize: 12, lineHeight: 18, fontFamily: fonts.regular },
 });

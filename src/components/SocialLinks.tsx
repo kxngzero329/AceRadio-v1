@@ -1,4 +1,5 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { fonts } from "@/theme/fonts";
+import { View, Text, Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { STATION } from "@/config/station";
 import { openVerifiedLink } from "@/services/links";
@@ -22,7 +23,7 @@ const socials = [
   },
   { key: "x", label: "X (Twitter)", icon: "x-twitter" },
 ] as const;
-export function SocialLinks() {
+export function SocialLinks({ cardStyle }: { cardStyle?: StyleProp<ViewStyle> } = {}) {
   return (
     <View style={styles.wrap}>
       {socials.map((s) => (
@@ -33,7 +34,7 @@ export function SocialLinks() {
           }}
           accessibilityLabel={`AceRadio on ${s.label}`}
           accessibilityRole="button"
-          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.button, cardStyle, pressed && styles.pressed]}
         >
           <FontAwesome6 name={s.icon} size={21} color={colors.white} />
           <Text style={styles.label}>{s.label}</Text>
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     textAlign: "center",
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
   pressed: { backgroundColor: colors.surface2 },
 });

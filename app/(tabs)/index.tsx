@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { PageScrollView } from "@/components/PageScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -77,7 +78,7 @@ export default function HomeScreen() {
             style={({ pressed }) => [styles.learn, pressed && styles.pressed]}
           >
             <Text style={styles.learnText}>Our story</Text>
-            <ArrowUpRight size={16} color={colors.green} />
+            <ArrowUpRight size={16} color={colors.accent} />
           </Pressable>
         </View>
       </PageScrollView>
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: layout.sectionGap,
   },
-  noteText: { color: colors.muted, fontSize: 12, lineHeight: 18 },
+  noteText: { color: colors.muted, fontSize: 12, lineHeight: 18, fontFamily: fonts.medium },
   noteDot: {
     width: 3,
     height: 3,
@@ -119,14 +120,14 @@ const styles = StyleSheet.create({
   footerTitle: {
     color: colors.white,
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
     lineHeight: 20,
   },
   footerSub: {
     color: colors.muted,
     fontSize: 12,
     lineHeight: 18,
-    marginTop: 2,
+    marginTop: 2, fontFamily: fonts.regular,
   },
   learn: {
     minHeight: 44,
@@ -136,6 +137,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: layout.controlRadius,
   },
-  learnText: { color: colors.green, fontWeight: "700", fontSize: 12 },
+  learnText: { color: colors.accent, fontFamily: fonts.semibold, fontSize: 12 },
   pressed: { backgroundColor: colors.surface2 },
 });

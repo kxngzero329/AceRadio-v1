@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { useEffect, useState } from "react";
 import { Tabs, usePathname } from "expo-router";
 import {
@@ -23,6 +24,7 @@ import { colors } from "@/theme/colors";
 import { blurWebFocus, router } from "@/utils/navigation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { tabBarHeight } from "@/theme/layout";
+import { motion } from "@/theme/motion";
 
 function TabIcon({
   icon: Icon,
@@ -69,15 +71,15 @@ export default function TabLayout() {
           transitionSpec: {
             animation: "timing",
             config: {
-              duration: reducedMotion ? 0 : 200,
+              duration: reducedMotion ? 0 : motion.tab,
               easing: Easing.out(Easing.cubic),
             },
           },
-          tabBarActiveTintColor: colors.green,
+          tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.muted,
           tabBarLabelStyle: {
             fontSize: 11,
-            fontWeight: "600",
+            fontFamily: fonts.semibold,
             lineHeight: 14,
             marginTop: 3,
           },
@@ -165,5 +167,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  iconActive: { backgroundColor: colors.greenDeep },
+  iconActive: { backgroundColor: colors.accentSoft },
 });

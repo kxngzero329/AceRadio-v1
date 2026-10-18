@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 import { colors } from "@/theme/colors";
@@ -28,7 +29,7 @@ export function SectionTitle({
           accessibilityRole="button"
         >
           <Text style={styles.link}>{action}</Text>
-          <ChevronRight size={16} color={colors.green} />
+          <ChevronRight size={16} color={colors.accent} />
         </Pressable>
       ) : null}
     </View>
@@ -45,13 +46,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     lineHeight: 28,
-    fontWeight: "700",
+    fontFamily: fonts.displayBold,
     color: colors.white,
     letterSpacing: -0.5,
   },
-  sub: { fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: 4 },
+  sub: { fontSize: 13, lineHeight: 19, color: colors.muted, marginTop: 4, fontFamily: fonts.medium },
   action: { flexDirection: "row", alignItems: "center", gap: 2, minHeight: 44, paddingHorizontal: 8, borderRadius: 10 },
   pressed: { backgroundColor: colors.surface2 },
   disabled: { opacity: 0.45 },
-  link: { color: colors.green, fontSize: 13, fontWeight: "700" },
+  link: { color: colors.accent, fontSize: 13, fontFamily: fonts.semibold },
 });

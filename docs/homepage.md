@@ -7,9 +7,10 @@ managed home banners still render from the existing Supabase catalogue.
 
 ## Shared design
 
-- `src/theme/colors.ts` provides the dark surfaces, emerald accent and readable
-  secondary text. Measured text contrast against the card surface is 9.05:1 for
-  muted text and 5.91:1 for subtle text; the CTA label measures 10.28:1.
+- `src/theme/colors.ts` provides black and charcoal surfaces, soft-white accents
+  and neutral grey secondary text. Against `surface2`, muted text measures
+  8.87:1 and subtle text 5.64:1; dark text on the primary action measures 17.37:1.
+  See [the monochrome theme](theme.md) for the complete palette and checks.
 - `src/theme/layout.ts` centralises the content width, gutter, section spacing,
   card/control radii and safe-area tab-bar height. Home is centred and constrained
   to 640 px, with 16 px gutters on small phones and 20 px otherwise.
@@ -17,9 +18,17 @@ managed home banners still render from the existing Supabase catalogue.
   outline, shorter spacing and stronger artwork overlays for the playing state.
   Existing image/text transitions remain native-driven on iOS/Android and respect
   reduced motion. Their duration and movement have been reduced.
+  When connecting to or playing the default station between shows, the hero
+  shows only the station artwork, badges and action; named live shows retain
+  their details. Connection errors remain visible.
+  Station and show artwork use the same load-aware crossfade; the previous image
+  stays visible while its replacement loads. See [motion](motion.md).
 - The schedule uses clearer current-show/presenter typography, readable times,
-  one timezone note and a distinct next-show state. Between shows is not labelled
-  as a station outage. Existing SAST scheduling logic is unchanged.
+  separate Live right now and Coming up next sections, and SAST next-show times.
+  Between shows it identifies the AceRadio stream. A Remind me switch replaces
+  the timezone footer as a frontend preview, labelled Notifications coming soon;
+  no subscription or push notification is created. Existing SAST scheduling
+  logic is unchanged. See [listening refinements](listening-refinement.md).
 - Show artwork keeps a square frame. Shared cards separate the day from the time
   range, preserve complete schedule text in accessibility labels, and retain
   independent favourite buttons. Large system fonts switch the grid/carousel to
@@ -28,7 +37,7 @@ managed home banners still render from the existing Supabase catalogue.
   reduced-motion/screen-reader behaviour. One counter replaces the duplicate
   dots/counter display, alongside 44 px previous/next controls and accessible
   increment/decrement actions.
-- Navigation uses clearer inactive labels and a quiet emerald active icon
+- Navigation uses clearer inactive labels and a quiet charcoal active icon
   background. The tab bar and mini-player share the bottom safe-area calculation.
 - First content load has static show-card placeholders and the schedule loading
   state. Existing errors/retry/empty states remain. No animated shimmer or new

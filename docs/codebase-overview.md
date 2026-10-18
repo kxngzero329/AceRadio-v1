@@ -22,7 +22,7 @@ This is a TypeScript Expo Router application for Android, iOS and web. `package.
 | `/show/[id]` | Finds the selected content ID, shows schedule/artwork/bios/poster, saves favourites; Listen Live is enabled only while that show is scheduled |
 | `/player` | Full controls for the same shared station player; errors/retry and current listener count |
 
-`ShowCard` is reused by Home, Shows and Saved. `ShowGrid`/`ShowCarousel` adjust columns for width and large text. The mini-player stacks controls on phones and the pages reserve clearance above it. `ShowSpotlight` mounts three neighbouring slides, advances every 5.5 seconds, and pauses for interaction, lost focus, backgrounding, reduced motion or detected screen-reader use.
+`ShowCard` is reused by Home, Shows and Saved. `ShowGrid`/`ShowCarousel` adjust columns for width and large text. The mini-player keeps play/pause and stop beside its metadata in one compact row, and the pages reserve clearance above it. `ShowSpotlight` mounts three neighbouring slides, advances every 5.5 seconds, and pauses for interaction, lost focus, backgrounding, reduced motion or detected screen-reader use.
 
 `useModalTransition` owns sheet entry/exit and waits for exit before route removal. It guards Android Back, close taps and browser history. `PageScrollView` resets on tab entry/reselection while preserving the page under a modal. `useShowTransition` crossfades selected artwork/text; accessibility reduced motion disables these animations.
 

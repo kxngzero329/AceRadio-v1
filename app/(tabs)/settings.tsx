@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { useState } from "react";
 import {
   View,
@@ -22,6 +23,7 @@ import {
   ShieldCheck,
   Mail,
   Info,
+  Share2,
 } from "lucide-react-native";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { SocialLinks } from "@/components/SocialLinks";
@@ -48,6 +50,7 @@ export default function SettingsScreen() {
     displayName,
   } = useAccountData();
   const [busy, setBusy] = useState(false);
+  const [shareNoticeVisible, setShareNoticeVisible] = useState(false);
   const { sleepMinutes, setSleepTimer } = useRadio();
   const updateNotifications = async (value: boolean) => {
     setBusy(true);
@@ -82,7 +85,7 @@ export default function SettingsScreen() {
           eyebrow="MAKE IT YOURS"
           title={
             <>
-              Settings<Text style={{ color: colors.green }}>.</Text>
+              Settings<Text style={{ color: colors.accent }}>.</Text>
             </>
           }
           subtitle="Tune AceRadio to your everyday."
@@ -103,7 +106,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
           >
             <View style={styles.icon}>
-              <ShieldCheck size={20} color={colors.green} />
+              <ShieldCheck size={20} color={colors.accent} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>
@@ -119,7 +122,7 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
         <View style={{ marginTop: 12 }}>
-          <AccountSyncStatus />
+          <AccountSyncStatus style={styles.cardSurface} />
         </View>
         <Text accessibilityRole="header" style={styles.section}>
           Notifications
@@ -127,7 +130,7 @@ export default function SettingsScreen() {
         <View style={styles.panel}>
           <View style={styles.row}>
             <View style={styles.icon}>
-              <Bell color={colors.green} size={20} />
+              <Bell color={colors.accent} size={20} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Show & station updates</Text>
@@ -138,7 +141,7 @@ export default function SettingsScreen() {
             {busy ? (
               <ActivityIndicator
                 style={styles.switchLoading}
-                color={colors.green}
+                color={colors.accent}
               />
             ) : (
               <Switch
@@ -146,8 +149,10 @@ export default function SettingsScreen() {
                 value={notifications}
                 disabled={!canEdit}
                 onValueChange={(v) => void updateNotifications(v)}
-                trackColor={{ false: colors.border, true: "#286C43" }}
-                thumbColor={notifications ? colors.green : colors.muted}
+                trackColor={{ false: colors.borderStrong, true: colors.accent }}
+                thumbColor={notifications ? colors.onAccent : colors.accentPressed}
+                ios_backgroundColor={colors.borderStrong}
+                {...(Platform.OS === "web" ? { activeThumbColor: colors.onAccent } : {})}
               />
             )}
           </View>
@@ -161,7 +166,7 @@ export default function SettingsScreen() {
         <View style={styles.panel}>
           <View style={styles.row}>
             <View style={styles.icon}>
-              <Timer color={colors.green} size={20} />
+              <Timer color={colors.accent} size={20} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Sleep timer</Text>
@@ -209,6 +214,38 @@ export default function SettingsScreen() {
         </Text>
         <View style={styles.panel}>
           <Pressable
+            testID="settings-share-app"
+            accessibilityRole="button"
+            accessibilityLabel="Share AceRadio"
+            accessibilityHint="App sharing is coming soon, after the store launch."
+            accessibilityState={{ expanded: shareNoticeVisible }}
+            {...(Platform.OS === "web"
+              ? { "aria-expanded": shareNoticeVisible }
+              : {})}
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            onPress={() => setShareNoticeVisible(true)}
+          >
+            <View style={styles.icon}>
+              <Share2 size={20} color={colors.accent} />
+            </View>
+            <View style={styles.rowBody}>
+              <Text style={styles.rowName}>Share AceRadio</Text>
+              <Text style={styles.rowSub}>Invite your friends · Coming soon</Text>
+            </View>
+            <ChevronRight size={19} color={colors.subtle} />
+          </Pressable>
+          {shareNoticeVisible && (
+            <Text
+              testID="settings-share-notice"
+              style={styles.notice}
+              accessibilityLiveRegion="polite"
+            >
+              App sharing will be available once AceRadio launches on Google Play
+              and the App Store.
+            </Text>
+          )}
+          <View style={styles.divider} />
+          <Pressable
             accessibilityRole="button"
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             onPress={() => {
@@ -216,7 +253,7 @@ export default function SettingsScreen() {
             }}
           >
             <View style={styles.icon}>
-              <MessageCircle size={20} color={colors.green} />
+              <MessageCircle size={20} color={colors.accent} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>WhatsApp</Text>
@@ -233,7 +270,7 @@ export default function SettingsScreen() {
             }}
           >
             <View style={styles.icon}>
-              <LinkIcon size={20} color={colors.green} />
+              <LinkIcon size={20} color={colors.accent} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Official website</Text>
@@ -252,7 +289,7 @@ export default function SettingsScreen() {
             }
           >
             <View style={styles.icon}>
-              <Mail size={20} color={colors.green} />
+              <Mail size={20} color={colors.accent} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Studio email</Text>
@@ -264,14 +301,14 @@ export default function SettingsScreen() {
         <Text accessibilityRole="header" style={styles.section}>
           Follow AceRadio
         </Text>
-        <SocialLinks />
+        <SocialLinks cardStyle={styles.cardSurface} />
         <Text accessibilityRole="header" style={styles.section}>
           App information
         </Text>
         <View style={styles.panel}>
           <View style={styles.row}>
             <View style={styles.icon}>
-              <Radio size={20} color={colors.green} />
+              <Radio size={20} color={colors.accent} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Live stream</Text>
@@ -283,7 +320,7 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           <View style={styles.row}>
             <View style={styles.icon}>
-              <ShieldCheck size={20} color={colors.green} />
+              <ShieldCheck size={20} color={colors.accent} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>Privacy-first listening</Text>
@@ -293,7 +330,7 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           <View style={styles.row}>
             <View style={styles.icon}>
-              <Info size={20} color={colors.green} />
+              <Info size={20} color={colors.accent} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>AceRadio</Text>
@@ -317,13 +354,14 @@ const styles = StyleSheet.create({
   },
   firstSection: { marginTop: 0 },
   panel: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     borderRadius: layout.cardRadius,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 4,
   },
+  cardSurface: { backgroundColor: colors.background },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -333,7 +371,7 @@ const styles = StyleSheet.create({
     borderRadius: layout.controlRadius,
   },
   icon: {
-    backgroundColor: colors.greenDeep,
+    backgroundColor: colors.accentSoft,
     height: 40,
     width: 40,
     borderRadius: 12,
@@ -345,7 +383,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
   rowSub: { ...typography.caption, marginTop: 4 },
   switchLoading: { width: 44 },
@@ -356,7 +394,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     marginBottom: 12,
-    paddingHorizontal: 2,
+    paddingHorizontal: 2, fontFamily: fonts.regular,
   },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: 52 },
   pills: {
@@ -377,18 +415,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pillActive: { backgroundColor: colors.green },
+  pillActive: { backgroundColor: colors.accent },
   pillLabel: {
     color: colors.white,
     fontSize: 12,
     lineHeight: 18,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
-  pillTextActive: { color: colors.background },
+  pillTextActive: { color: colors.onAccent },
   footer: {
     fontSize: 11,
     color: colors.subtle,
     textAlign: "center",
-    marginTop: 28,
+    marginTop: 28, fontFamily: fonts.medium,
   },
 });

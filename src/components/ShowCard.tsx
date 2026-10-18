@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { memo } from "react";
 import {
   Pressable,
@@ -52,7 +53,7 @@ export const ShowCard = memo(function ShowCard({
         accessibilityRole="button"
         accessibilityLabel={`View ${show.title}, ${show.presenter}. ${show.schedule}`}
       >
-        <View style={[styles.image, { backgroundColor: show.accent }]}>
+        <View style={styles.image}>
           {show.image ? (
             <FittedImage
               source={show.image}
@@ -116,8 +117,8 @@ export const ShowCard = memo(function ShowCard({
         style={({ pressed }) => [styles.like, pressed && styles.likePressed]}
       >
         <Heart
-          color={liked ? colors.green : colors.white}
-          fill={liked ? colors.green : "transparent"}
+          color={liked ? colors.accent : colors.white}
+          fill={liked ? colors.accent : "transparent"}
           size={20}
         />
       </Pressable>
@@ -140,6 +141,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: colors.surface2,
   },
   liveBadge: {
     position: "absolute",
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 5,
     alignItems: "center",
-    backgroundColor: "#08110CEB",
+    backgroundColor: colors.artworkScrim,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 6,
@@ -158,14 +160,14 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: colors.green,
+    backgroundColor: colors.accent,
     flexShrink: 0,
   },
   liveText: {
     flexShrink: 1,
-    color: colors.green,
+    color: colors.accent,
     fontSize: 10,
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     fontVariant: ["tabular-nums"],
   },
   body: { padding: 12 },
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     includeFontPadding: false,
-    fontWeight: "700",
+    fontFamily: fonts.displayBold,
     color: colors.white,
   },
   presenter: {
@@ -181,19 +183,19 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     includeFontPadding: false,
     color: colors.muted,
-    marginTop: 3,
+    marginTop: 3, fontFamily: fonts.medium,
   },
   time: {
     gap: 4,
     marginTop: 8,
   },
   dayRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  day: { flex: 1, fontSize: 11, lineHeight: 15, color: colors.muted },
+  day: { flex: 1, fontSize: 11, lineHeight: 15, color: colors.muted, fontFamily: fonts.medium },
   meta: {
     fontSize: 12,
     lineHeight: 18,
     includeFontPadding: false,
-    color: colors.white,
+    color: colors.white, fontFamily: fonts.medium,
   },
   like: {
     position: "absolute",
@@ -202,9 +204,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#08110CEB",
+    backgroundColor: colors.artworkScrim,
     alignItems: "center",
     justifyContent: "center",
   },
-  likePressed: { backgroundColor: "#173D28", transform: [{ scale: 0.96 }] },
+  likePressed: { backgroundColor: colors.accentSoft, transform: [{ scale: 0.96 }] },
 });

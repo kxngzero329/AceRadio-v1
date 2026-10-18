@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useContent } from "@/context/ContentContext";
 import { openVerifiedLink } from "@/services/links";
@@ -16,7 +17,7 @@ export function StationAnnouncements() {
 const styles = StyleSheet.create({
   list: { gap: 10, marginBottom: 16 },
   card: { padding: 16, borderRadius: 14, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-  title: { color: colors.white, fontWeight: "800", fontSize: 15 },
-  body: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 6 },
+  title: { color: colors.white, fontFamily: fonts.displayBold, fontSize: 15 },
+  body: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 6, fontFamily: fonts.regular },
   pressed: { backgroundColor: colors.surface2 },
 });

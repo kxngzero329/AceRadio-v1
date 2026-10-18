@@ -1,5 +1,7 @@
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { ArrowUpRight, Clock3, Radio } from "lucide-react-native";
+import { fonts } from "@/theme/fonts";
+import { useState } from "react";
+import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { ArrowUpRight, Bell, Radio } from "lucide-react-native";
 import { router } from "@/utils/navigation";
 import { useRadio } from "@/context/RadioContext";
 import { useContent } from "@/context/ContentContext";
@@ -33,7 +35,7 @@ function ShowNotice({ show, detail }: { show: Show; detail: string }) {
           {detail}
         </Text>
       </View>
-      <ArrowUpRight size={18} color={colors.green} />
+      <ArrowUpRight size={18} color={colors.accent} />
     </Pressable>
   );
 }
@@ -42,7 +44,12 @@ export function LiveNoticeBoard() {
   const { shows, loading, error } = useContent();
   const unavailable = !!error && !shows.length;
   const { liveShows } = useRadio();
-  const next = liveShows.length ? null : getNextScheduledShow(shows);
+  const next = getNextScheduledShow(shows);
+  const occurrence = next ? `${next.show.id}:${next.startsAt.toISOString()}` : null;
+  // A UI preview only, scoped to this upcoming occurrence. No permission request,
+  // persisted subscription, account write or notification is created.
+  const [reminderFor, setReminderFor] = useState<string | null>(null);
+  const remindMe = occurrence !== null && reminderFor === occurrence;
   const nextTime = next
     ? new Intl.DateTimeFormat("en-ZA", {
         timeZone: SAST_TIME_ZONE,
@@ -60,17 +67,18 @@ export function LiveNoticeBoard() {
     >
       <View style={styles.header}>
         <View style={styles.heading}>
-          <Radio size={17} color={colors.green} />
+          <Radio size={17} color={colors.accent} />
           <Text style={styles.headingText}>Live schedule</Text>
         </View>
         <View style={[styles.status, !liveShows.length && styles.statusOff]}>
           <View style={[styles.dot, !liveShows.length && styles.dotOff]} />
           <Text style={[styles.statusText, !liveShows.length && styles.statusTextOff]}>
-            {liveShows.length ? "ON AIR" : loading ? "UPDATING" : unavailable ? "UNAVAILABLE" : next ? "UP NEXT" : "LIVE MUSIC"}
+            {liveShows.length ? "ON AIR" : loading ? "UPDATING" : "LIVE RADIO"}
           </Text>
         </View>
       </View>
 
+      <Text accessibilityRole="header" style={styles.sectionLabel}>Live right now</Text>
       {liveShows.length ? (
         <View style={styles.list}>
           {liveShows.map((show) => (
@@ -78,25 +86,54 @@ export function LiveNoticeBoard() {
           ))}
         </View>
       ) : (
-        <View style={styles.offAir}>
-          <View style={styles.offAirCopy} accessibilityLiveRegion="polite">
-            {loading && <ActivityIndicator size="small" color={colors.green} />}
-            <Text style={styles.offAirTitle}>
-              {loading ? "Checking the schedule…" : unavailable ? "Schedule unavailable" : next ? "Live music between shows" : "No shows scheduled"}
-            </Text>
-            <Text style={styles.offAirDescription}>
-              {loading || unavailable ? "You can still listen to the live station." : next ? "Here’s what’s coming up next." : "Check back for the next broadcast."}
+        loading ? <View style={styles.loading} accessibilityLiveRegion="polite">
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={styles.offAirDescription}>Checking who’s on air…</Text>
+        </View> : <Pressable
+          testID="schedule-station-live"
+          accessibilityRole="button"
+          accessibilityLabel="Open AceRadio live player"
+          onPress={() => router.navigate("/player")}
+          style={({ pressed }) => [styles.show, pressed && styles.pressed]}
+        >
+          <Image source={require("../../assets/icons/icon.png")} style={styles.artwork} resizeMode="contain" accessible={false} />
+          <View style={styles.showCopy}>
+            <Text style={styles.showTitle}>AceRadio</Text>
+            <Text style={styles.presenter}>Live radio, around the clock</Text>
+            <Text style={styles.schedule}>{unavailable ? "Schedule temporarily unavailable" : "Live music between shows"}</Text>
+          </View>
+          <ArrowUpRight size={18} color={colors.accent} />
+        </Pressable>
+      )}
+      <View testID="schedule-up-next" style={styles.nextSection}>
+        <Text accessibilityRole="header" style={styles.nextLabel}>Coming up next</Text>
+        {next ? <ShowNotice show={next.show} detail={`${nextTime} SAST`} /> : (
+          <Text style={styles.offAirDescription}>
+            {loading ? "Checking the next show…" : unavailable ? "The next show will appear when the schedule is available." : "Check back for the next broadcast."}
+          </Text>
+        )}
+        <View style={styles.reminder}>
+          <Bell size={17} color={colors.muted} />
+          <View style={styles.reminderCopy}>
+            <Text style={styles.reminderTitle}>Remind me</Text>
+            <Text style={styles.reminderHint} accessibilityLiveRegion="polite">
+              {!next ? "No upcoming show to remind you about." : remindMe ? "Preview on · Notifications coming soon." : "Notifications coming soon."}
             </Text>
           </View>
-          {next ? (
-            <ShowNotice
-              show={next.show}
-              detail={`Next up · ${nextTime} SAST`}
-            />
-          ) : null}
+          <Switch
+            testID="schedule-reminder-switch"
+            accessibilityLabel="Remind me about the next show"
+            accessibilityHint="Preview only. Push reminders will be available in a future update."
+            value={remindMe}
+            disabled={!next}
+            onValueChange={value => setReminderFor(value ? occurrence : null)}
+            trackColor={{ false: colors.borderStrong, true: colors.accent }}
+            thumbColor={remindMe ? colors.onAccent : colors.accentPressed}
+            ios_backgroundColor={colors.borderStrong}
+            {...(Platform.OS === "web" ? { activeThumbColor: colors.onAccent } : {})}
+          />
         </View>
-      )}
-      <View style={styles.timezone}><Clock3 size={11} color={colors.subtle} /><Text style={styles.timezoneText}>All times in South Africa · SAST</Text></View>
+      </View>
     </View>
   );
 }
@@ -106,7 +143,7 @@ const styles = StyleSheet.create({
     borderRadius: layout.cardRadius,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     padding: 16,
     marginBottom: 14,
     overflow: "hidden",
@@ -123,34 +160,37 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     color: colors.white,
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: fonts.displayBold,
   },
   status: {
     borderRadius: 8,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: colors.greenDeep,
+    backgroundColor: colors.accentSoft,
     paddingHorizontal: 9,
     paddingVertical: 6,
   },
   statusOff: { backgroundColor: colors.surface2 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.green },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
   dotOff: { backgroundColor: colors.subtle },
   statusText: {
-    color: colors.green,
+    color: colors.accent,
     fontSize: 9,
-    fontWeight: "700",
+    fontFamily: fonts.semibold,
     letterSpacing: 0.7,
   },
   statusTextOff: { color: colors.muted },
   list: { gap: 8, marginTop: 14 },
-  offAir: { marginTop: 13 },
-  offAirCopy: { marginBottom: 12, gap: 4 },
-  offAirTitle: { color: colors.white, fontSize: 15, lineHeight: 21, fontWeight: "600" },
-  offAirDescription: { color: colors.muted, fontSize: 12, lineHeight: 18 },
-  timezone: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12 },
-  timezoneText: { color: colors.subtle, fontSize: 11, lineHeight: 16 },
+  sectionLabel: { color: colors.muted, fontSize: 12, fontFamily: fonts.semibold, marginTop: 16 },
+  nextLabel: { color: colors.muted, fontSize: 12, fontFamily: fonts.semibold, marginBottom: 4 },
+  nextSection: { borderTopWidth: 1, borderColor: colors.border, paddingTop: 14, marginTop: 10 },
+  loading: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 18 },
+  offAirDescription: { color: colors.muted, fontSize: 12, lineHeight: 18, paddingVertical: 6, fontFamily: fonts.regular },
+  reminder: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 60, marginTop: 4, paddingTop: 8 },
+  reminderCopy: { flex: 1, minWidth: 0, gap: 4 },
+  reminderTitle: { color: colors.white, fontSize: 13, fontFamily: fonts.semibold },
+  reminderHint: { color: colors.subtle, fontSize: 11, lineHeight: 16, fontFamily: fonts.medium },
   show: {
     minHeight: 84,
     borderRadius: 12,
@@ -169,7 +209,7 @@ const styles = StyleSheet.create({
   },
   showCopy: { flex: 1, minWidth: 0 },
   artworkPlaceholder: { alignItems: "center", justifyContent: "center" },
-  showTitle: { color: colors.white, fontSize: 17, lineHeight: 23, fontWeight: "700" },
-  presenter: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 3 },
-  schedule: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 5 },
+  showTitle: { color: colors.white, fontSize: 17, lineHeight: 23, fontFamily: fonts.displayBold },
+  presenter: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 3, fontFamily: fonts.medium },
+  schedule: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 5, fontFamily: fonts.medium },
 });

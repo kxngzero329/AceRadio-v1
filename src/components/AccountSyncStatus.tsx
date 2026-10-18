@@ -1,9 +1,12 @@
+import { fonts } from "@/theme/fonts";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { router } from "@/utils/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -12,15 +15,17 @@ import { colors } from "@/theme/colors";
 
 export function AccountSyncStatus({
   showGuest = false,
+  style,
 }: {
   showGuest?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   const auth = useAuth();
   const data = useAccountData();
   if (auth.loading)
     return (
-      <View style={styles.box}>
-        <ActivityIndicator color={colors.green} />
+      <View style={[styles.box, style]}>
+        <ActivityIndicator color={colors.accent} />
         <Text style={styles.text}>Restoring your account…</Text>
       </View>
     );
@@ -29,10 +34,10 @@ export function AccountSyncStatus({
     <View
       testID="account-sync-status"
       role="status"
-      style={styles.box}
+      style={[styles.box, style]}
       accessibilityLiveRegion="polite"
     >
-      {data.syncing && <ActivityIndicator size="small" color={colors.green} />}
+      {data.syncing && <ActivityIndicator size="small" color={colors.accent} />}
       <View style={styles.copy}>
         <Text style={styles.text}>
           {data.error ??
@@ -85,7 +90,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   copy: { flex: 1, gap: 6 },
-  text: { color: colors.muted, fontSize: 12, lineHeight: 18 },
+  text: { color: colors.muted, fontSize: 12, lineHeight: 18, fontFamily: fonts.regular },
   action: { minHeight: 44, justifyContent: "center", paddingHorizontal: 8 },
-  link: { color: colors.green, fontWeight: "700", fontSize: 13 },
+  link: { color: colors.accent, fontFamily: fonts.semibold, fontSize: 13 },
 });

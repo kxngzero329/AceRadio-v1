@@ -11,22 +11,32 @@ import { ContentProvider } from "@/context/ContentContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { AccountDataProvider } from "@/context/AccountDataContext";
 import { colors } from "@/theme/colors";
+import { applyWebTheme } from "@/theme/applyWebTheme";
 import { FittedImage } from "@/components/FittedImage";
 import { blurWebFocus } from "@/utils/navigation";
 import { prepareModalHistory } from "@/utils/modalHistory";
+import { fonts } from "@/theme/fonts";
+import { fontAssets } from "@/theme/fontAssets";
 
 prepareModalHistory();
+applyWebTheme();
 
 const aceTheme = {
   ...DarkTheme,
+  fonts: {
+    regular: { fontFamily: fonts.regular, fontWeight: "normal" as const },
+    medium: { fontFamily: fonts.semibold, fontWeight: "normal" as const },
+    bold: { fontFamily: fonts.displayBold, fontWeight: "normal" as const },
+    heavy: { fontFamily: fonts.displayExtraBold, fontWeight: "normal" as const },
+  },
   colors: {
     ...DarkTheme.colors,
     background: colors.background,
     card: colors.surface,
     text: colors.white,
     border: colors.border,
-    primary: colors.green,
-    notification: colors.green,
+    primary: colors.accent,
+    notification: colors.accent,
   },
 };
 // The sheet owns its UI-thread slide. Keep the underlying page until it finishes closing.
@@ -38,12 +48,12 @@ const sheetOptions = {
   contentStyle: { backgroundColor: "transparent" },
 };
 
-// Keep the native splash visible until the social icon fonts are ready.
+// Load bundled typefaces and social icons before revealing the interface.
 SplashScreen.preventAutoHideAsync().catch(console.warn);
 SplashScreen.setOptions({ duration: 200, fade: true });
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts(FontAwesome6.font);
+  const [fontsLoaded, fontError] = useFonts({ ...FontAwesome6.font, ...fontAssets });
 
   // Wait for the ready navigation view to lay out before revealing it.
   // Network requests and account restoration never hold the native splash open.

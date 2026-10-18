@@ -13,6 +13,6 @@ export function usePageContentStyle(): ViewStyle {
     paddingHorizontal: width < 360 ? 16 : layout.gutter,
     paddingTop: 8,
     paddingBottom:
-      hasPlayed && currentShow ? miniPlayerClearance(width, fontScale) : 28,
+      hasPlayed && currentShow ? miniPlayerClearance(fontScale) : 28,
   };
 }

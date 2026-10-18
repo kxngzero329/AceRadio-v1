@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -15,9 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Play,
   Pause,
-  ChevronUp,
-  SkipBack,
-  SkipForward,
   X,
 } from "lucide-react-native";
 import { router } from "@/utils/navigation";
@@ -25,25 +23,25 @@ import { useRadio } from "@/context/RadioContext";
 import { useShowTransition } from "@/hooks/useShowTransition";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { colors } from "@/theme/colors";
-import { layout, stackedMiniPlayer, tabBarHeight } from "@/theme/layout";
+import { layout, miniPlayerHeight, tabBarHeight } from "@/theme/layout";
+import { STATION_STREAM_SHOW_ID } from "@/data/stationShow";
+import { motion } from "@/theme/motion";
+import { PlaybackButton } from "@/components/PlaybackButton";
 
 export function MiniPlayer() {
   const insets = useSafeAreaInsets();
   const { width, fontScale } = useWindowDimensions();
-  const stacked = stackedMiniPlayer(width, fontScale);
+  const showArtwork = width >= 360 && fontScale <= 1.3;
   const horizontalInset = Math.max(12, (width - layout.contentWidth) / 2);
   const {
     playing,
     hasPlayed,
     buffering,
     currentShow,
-    liveShowCount,
     error,
     toggle,
     stop,
     clearCurrentShow,
-    previous,
-    next,
   } = useRadio();
   const { displayedShow, fade } = useShowTransition(currentShow);
   const reducedMotion = useReducedMotion();
@@ -51,16 +49,40 @@ export function MiniPlayer() {
   const clearingRef = useRef(false);
   const wasClearedRef = useRef(true);
   const opacity = useRef(new Animated.Value(1)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
-  const canSkip = liveShowCount > 1;
+  const translateY = useRef(new Animated.Value(0)).current;
+  const animation = useRef<Animated.CompositeAnimation | null>(null);
+  const latestShow = useRef(currentShow);
+  latestShow.current = currentShow;
+
+  useEffect(() => () => animation.current?.stop(), []);
 
   useEffect(() => {
     if (!currentShow) {
+      animation.current?.stop();
       wasClearedRef.current = true;
       clearingRef.current = false;
       setClearing(false);
       opacity.setValue(0);
-      translateX.setValue(24);
+      translateY.setValue(8);
+      return;
+    }
+    // A fresh Play during dismissal takes ownership; an old exit must not
+    // clear a newly selected stream when its completion callback runs.
+    if (clearingRef.current && (playing || buffering)) {
+      animation.current?.stop();
+      wasClearedRef.current = true;
+      clearingRef.current = false;
+      setClearing(false);
+    }
+    if (reducedMotion) {
+      animation.current?.stop();
+      if (clearingRef.current) {
+        clearCurrentShow();
+        return;
+      }
+      opacity.setValue(1);
+      translateY.setValue(0);
+      if (hasPlayed) wasClearedRef.current = false;
       return;
     }
     if (!hasPlayed || !wasClearedRef.current) return;
@@ -68,44 +90,57 @@ export function MiniPlayer() {
     wasClearedRef.current = false;
     clearingRef.current = false;
     setClearing(false);
-    Animated.parallel([
+    animation.current?.stop();
+    animation.current = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: reducedMotion ? 0 : 260,
+        duration: motion.miniIn,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: Platform.OS !== "web",
+        isInteraction: false,
       }),
-      Animated.timing(translateX, {
+      Animated.timing(translateY, {
         toValue: 0,
-        duration: reducedMotion ? 0 : 260,
+        duration: motion.miniIn,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: Platform.OS !== "web",
+        isInteraction: false,
       }),
-    ]).start();
-  }, [currentShow, hasPlayed, opacity, reducedMotion, translateX]);
+    ]);
+    animation.current.start();
+  }, [buffering, clearCurrentShow, currentShow, hasPlayed, opacity, playing, reducedMotion, translateY]);
 
   if (!hasPlayed || !currentShow) return null;
+
+  const stationStream = displayedShow?.id === STATION_STREAM_SHOW_ID;
+  const title = stationStream ? "AceRadio Live" : displayedShow?.title ?? "AceRadio Live";
+  const status = error ? "Connection interrupted" : buffering ? "Connecting…" : !playing
+    ? "Paused" : stationStream ? "Live radio" : `Live · ${displayedShow?.presenter ?? "AceRadio"}`;
 
   const clear = () => {
     if (clearingRef.current) return;
     clearingRef.current = true;
     setClearing(true);
     stop();
-    Animated.parallel([
+    animation.current?.stop();
+    animation.current = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 0,
-        duration: reducedMotion ? 0 : 220,
+        duration: reducedMotion ? 0 : motion.miniOut,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: Platform.OS !== "web",
+        isInteraction: false,
       }),
-      Animated.timing(translateX, {
-        toValue: 24,
-        duration: reducedMotion ? 0 : 220,
+      Animated.timing(translateY, {
+        toValue: 8,
+        duration: reducedMotion ? 0 : motion.miniOut,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: Platform.OS !== "web",
+        isInteraction: false,
       }),
-    ]).start(({ finished }) => {
-      if (finished) clearCurrentShow();
+    ]);
+    animation.current.start(({ finished }) => {
+      if (finished && clearingRef.current && latestShow.current?.id === currentShow.id) clearCurrentShow();
     });
   };
 
@@ -114,13 +149,13 @@ export function MiniPlayer() {
       testID="mini-player"
       style={[
         styles.row,
-        stacked && styles.stacked,
         {
+          minHeight: miniPlayerHeight(fontScale),
           left: horizontalInset,
           right: horizontalInset,
           bottom: tabBarHeight(insets.bottom) + 8,
           opacity,
-          transform: [{ translateX }],
+          transform: [{ translateY }],
         },
       ]}
     >
@@ -129,78 +164,34 @@ export function MiniPlayer() {
         onPress={() => router.navigate("/player")}
         accessibilityRole="button"
         accessibilityLabel="Open live radio player"
+        accessibilityHint={`${title}. ${status}. Opens the full player.`}
         accessibilityState={{ disabled: clearing }}
         style={({ pressed }) => [
           styles.info,
-          stacked && styles.stackedInfo,
           pressed && styles.pressed,
         ]}
       >
         <Animated.View style={[styles.show, { opacity: fade }]}>
-          <Image
+          {showArtwork && <Image
             source={
               displayedShow?.image ?? require("../../assets/icons/icon.png")
             }
             style={styles.art}
             resizeMode={displayedShow ? "cover" : "contain"}
             accessibilityLabel={displayedShow?.presenter ?? "AceRadio"}
-          />
+          />}
           <View style={styles.copy}>
-            <Text style={styles.title} numberOfLines={stacked ? 2 : 1}>
-              {displayedShow?.title ?? "AceRadio Live"}
+            <Text style={styles.title} numberOfLines={fontScale > 1.3 ? 2 : 1}>
+              {title}
             </Text>
             <Text style={[styles.sub, error && styles.error]} numberOfLines={1}>
-              {error
-                ? "Connection interrupted · Tap for details"
-                : buffering
-                  ? "Tuning in…"
-                  : `${!playing && !stacked ? "Paused · " : ""}${displayedShow?.id === "aceradio-live-stream" ? "Streaming from AceRadio" : (displayedShow?.presenter ?? "Your music, your moment")}`}
+              {status}
             </Text>
           </View>
         </Animated.View>
-        <ChevronUp size={14} color={colors.muted} />
       </Pressable>
-      <View style={[styles.controls, stacked && styles.stackedControls]}>
-        {stacked && (
-          <View style={styles.statusRow}>
-            <View
-              style={[
-                styles.statusDot,
-                playing && !buffering && !error && styles.statusLive,
-                error && styles.statusError,
-              ]}
-            />
-            <Text style={styles.statusText} numberOfLines={1}>
-              {error
-                ? "Interrupted"
-                : buffering
-                  ? "Connecting"
-                  : playing
-                    ? "Live"
-                    : "Paused"}
-            </Text>
-          </View>
-        )}
-        <View style={styles.buttons}>
-          <Pressable
-            onPress={previous}
-            disabled={!canSkip || clearing}
-            accessibilityRole="button"
-            accessibilityLabel="Previous live show"
-            accessibilityState={{ disabled: !canSkip || clearing }}
-            style={({ pressed }) => [
-              styles.skip,
-              (!canSkip || clearing) && styles.disabled,
-              pressed && styles.pressed,
-            ]}
-          >
-            <SkipBack
-              size={19}
-              color={canSkip ? colors.white : colors.subtle}
-              fill={canSkip ? colors.white : colors.subtle}
-            />
-          </Pressable>
-          <Pressable
+      <View style={styles.controls}>
+          <PlaybackButton
             accessibilityRole="button"
             accessibilityLabel={
               buffering
@@ -220,39 +211,21 @@ export function MiniPlayer() {
             ]}
           >
             {buffering ? (
-              <ActivityIndicator color={colors.background} size="small" />
+              <ActivityIndicator color={colors.onAccent} size="small" />
             ) : playing ? (
               <Pause
-                color={colors.background}
+                color={colors.onAccent}
                 size={20}
-                fill={colors.background}
+                fill={colors.onAccent}
               />
             ) : (
               <Play
-                color={colors.background}
+                color={colors.onAccent}
                 size={21}
-                fill={colors.background}
+                fill={colors.onAccent}
               />
             )}
-          </Pressable>
-          <Pressable
-            onPress={next}
-            disabled={!canSkip || clearing}
-            accessibilityRole="button"
-            accessibilityLabel="Next live show"
-            accessibilityState={{ disabled: !canSkip || clearing }}
-            style={({ pressed }) => [
-              styles.skip,
-              (!canSkip || clearing) && styles.disabled,
-              pressed && styles.pressed,
-            ]}
-          >
-            <SkipForward
-              size={19}
-              color={canSkip ? colors.white : colors.subtle}
-              fill={canSkip ? colors.white : colors.subtle}
-            />
-          </Pressable>
+          </PlaybackButton>
           <Pressable
             onPress={clear}
             disabled={clearing}
@@ -267,7 +240,6 @@ export function MiniPlayer() {
           >
             <X size={19} color={colors.muted} />
           </Pressable>
-        </View>
       </View>
     </Animated.View>
   );
@@ -277,7 +249,7 @@ const styles = StyleSheet.create({
   row: {
     position: "absolute",
     zIndex: 12,
-    minHeight: 67,
+    minHeight: 62,
     borderRadius: layout.cardRadius,
     flexDirection: "row",
     alignItems: "center",
@@ -285,21 +257,19 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderWidth: 1,
     padding: 8,
-    gap: 4,
+    gap: 8,
     shadowColor: "#000",
     shadowOpacity: 0.22,
     shadowRadius: 10,
     elevation: 8,
   },
-  stacked: { flexDirection: "column", alignItems: "stretch", gap: 4 },
-  stackedInfo: { flex: 0, width: "100%", paddingHorizontal: 2 },
   info: {
     flex: 1,
     minWidth: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    minHeight: 49,
+    minHeight: 44,
     borderRadius: 10,
   },
   show: {
@@ -311,60 +281,28 @@ const styles = StyleSheet.create({
   },
   copy: { flex: 1, minWidth: 0 },
   art: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    backgroundColor: colors.greenDeep,
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    backgroundColor: colors.accentSoft,
   },
   title: {
-    fontWeight: "600",
-    fontSize: 14,
-    lineHeight: 19,
+    fontFamily: fonts.displayBold,
+    fontSize: 13,
+    lineHeight: 18,
     color: colors.white,
   },
-  sub: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 2 },
-  error: { color: "#F4CDB7" },
-  controls: { flexDirection: "row", alignItems: "center" },
-  stackedControls: { width: "100%", justifyContent: "space-between" },
-  buttons: { flexDirection: "row", alignItems: "center" },
-  statusRow: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingLeft: 6,
-    paddingRight: 8,
-  },
-  statusDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.subtle,
-  },
-  statusLive: { backgroundColor: colors.green },
-  statusError: { backgroundColor: colors.red },
-  statusText: {
-    color: colors.muted,
-    fontSize: 11,
-    lineHeight: 16,
-    flexShrink: 1,
-  },
+  sub: { color: colors.muted, fontSize: 11, lineHeight: 16, fontFamily: fonts.medium },
+  error: { color: colors.error },
+  controls: { flexDirection: "row", alignItems: "center", flexShrink: 0, gap: 4 },
   pressed: { backgroundColor: colors.border },
   playPressed: { opacity: 0.8 },
   disabled: { opacity: 0.4 },
-  skip: {
-    width: 44,
-    height: 44,
-    borderRadius: layout.controlRadius,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   play: {
     height: 44,
     width: 44,
     borderRadius: layout.controlRadius,
-    backgroundColor: colors.green,
+    backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import {
   memo,
   useCallback,
@@ -29,6 +30,7 @@ import { openVerifiedLink } from "@/services/links";
 import { useContent } from "@/context/ContentContext";
 import { colors } from "@/theme/colors";
 import { layout } from "@/theme/layout";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const INTERVAL_MS = 5500;
 
@@ -58,7 +60,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
   const [appActive, setAppActive] = useState(
     AppState.currentState === "active",
   );
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotion = useReducedMotion();
   const list = useRef<ScrollView>(null);
   const resetting = useRef(false);
   const target = useRef<number | null>(null);
@@ -105,26 +107,14 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
 
   useEffect(() => {
     let mounted = true;
-    const motionChanged = (enabled: boolean) => {
-      if (!mounted) return;
-      setReduceMotion(enabled);
-      if (enabled) setAutoplay(false);
-    };
     const screenReaderChanged = (enabled: boolean) => {
       if (mounted && enabled) setAutoplay(false);
     };
-    void AccessibilityInfo.isReduceMotionEnabled()
-      .then(motionChanged)
-      .catch(() => {});
     // React Native Web always reports true here; it cannot detect a browser screen reader.
     if (Platform.OS !== "web")
       void AccessibilityInfo.isScreenReaderEnabled()
         .then(screenReaderChanged)
         .catch(() => {});
-    const motion = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      motionChanged,
-    );
     const reader = AccessibilityInfo.addEventListener(
       "screenReaderChanged",
       screenReaderChanged,
@@ -134,11 +124,14 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
     );
     return () => {
       mounted = false;
-      motion.remove();
       reader.remove();
       app.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (reduceMotion) setAutoplay(false);
+  }, [reduceMotion]);
 
   const settle = useCallback((page: number) => {
     if (resetting.current) return;
@@ -329,7 +322,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
 });
 
 const styles = StyleSheet.create({
-  root: { width: "100%", marginBottom: 24 },
+  root: { alignSelf: "stretch", marginHorizontal: -8, marginBottom: 24 },
   artwork: {
     width: "100%",
     borderRadius: layout.cardRadius,
@@ -356,5 +349,5 @@ const styles = StyleSheet.create({
   arrowPressed: { backgroundColor: colors.surface2 },
   arrowDisabled: { opacity: 0.4 },
   progress: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center" },
-  count: { color: colors.muted, fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"], letterSpacing: 1 },
+  count: { color: colors.muted, fontSize: 12, fontFamily: fonts.semibold, fontVariant: ["tabular-nums"], letterSpacing: 1 },
 });

@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -168,12 +169,12 @@ export function ChatOptionsModal({
               >
                 <View style={styles.whatsappIcon}>
                   {openingWhatsApp ? (
-                    <ActivityIndicator color={colors.green} />
+                    <ActivityIndicator color={colors.accent} />
                   ) : (
                     <FontAwesome6
                       name="whatsapp"
                       size={30}
-                      color={colors.green}
+                      color={colors.accent}
                     />
                   )}
                 </View>
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 20,
   },
-  backdrop: { backgroundColor: "#030805B8" },
+  backdrop: { backgroundColor: colors.overlay },
   card: {
     width: "100%",
     maxWidth: 400,
@@ -272,13 +273,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 16,
-    backgroundColor: colors.greenDeep,
+    backgroundColor: colors.accentSoft,
   },
   optionTitle: {
     color: colors.white,
     fontSize: 15,
     lineHeight: 21,
-    fontWeight: "700",
+    fontFamily: fonts.semibold,
     textAlign: "center",
     marginTop: 12,
   },
@@ -295,7 +296,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 10,
     lineHeight: 15,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
     textAlign: "center",
   },
   pressed: { backgroundColor: colors.border },
@@ -309,5 +310,5 @@ const styles = StyleSheet.create({
     borderRadius: layout.controlRadius,
     backgroundColor: colors.background,
   },
-  noticeText: { color: colors.muted, fontSize: 13, lineHeight: 20, flex: 1 },
+  noticeText: { color: colors.muted, fontSize: 13, lineHeight: 20, flex: 1, fontFamily: fonts.regular },
 });

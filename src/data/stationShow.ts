@@ -13,7 +13,7 @@ export function createStationStreamShow(random: () => number = Math.random): Sho
     day: "Live",
     detail: "The AceRadio live station stream.",
     image: require("../../assets/icons/icon.png"),
-    accent: "#0C321C",
+    accent: "#1E1E1E",
     listeners: 50 + Math.floor(value * 1951),
   };
 }

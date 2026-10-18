@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Heart, ArrowRight } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,7 +34,7 @@ export default function FavoritesScreen() {
           eyebrow="YOUR COLLECTION"
           title={
             <>
-              Saved <Text style={{ color: colors.green }}>shows.</Text>
+              Saved <Text style={{ color: colors.accent }}>shows.</Text>
             </>
           }
           subtitle="The voices you keep coming back to."
@@ -55,7 +56,7 @@ export default function FavoritesScreen() {
         ) : (
           <View testID="favorites-empty" style={styles.empty}>
             <View style={styles.heart}>
-              <Heart size={40} color={colors.green} />
+              <Heart size={40} color={colors.accent} />
             </View>
             <Text style={styles.emptyTitle}>Make it yours.</Text>
             <Text style={styles.emptyDesc}>
@@ -74,7 +75,7 @@ export default function FavoritesScreen() {
               onPress={() => router.push("/shows")}
             >
               <Text style={styles.buttonText}>Discover shows</Text>
-              <ArrowRight color={colors.background} size={18} />
+              <ArrowRight color={colors.onAccent} size={18} />
             </Pressable>
           </View>
         )}
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: layout.cardRadius,
-    backgroundColor: colors.greenDeep,
+    backgroundColor: colors.accentSoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -112,12 +113,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 23,
     maxWidth: 275,
-    marginTop: 12,
+    marginTop: 12, fontFamily: fonts.regular,
   },
   button: {
     marginTop: 24,
     minHeight: 48,
-    backgroundColor: colors.green,
+    backgroundColor: colors.accent,
     flexDirection: "row",
     gap: 9,
     alignItems: "center",
@@ -125,6 +126,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 19,
     borderRadius: layout.controlRadius,
   },
-  buttonText: { fontWeight: "700", fontSize: 14, color: colors.background },
+  buttonText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.onAccent },
   pressed: { opacity: 0.8 },
 });

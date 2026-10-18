@@ -1,11 +1,10 @@
+import { fonts } from "@/theme/fonts";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
   Easing,
-  Image,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -25,6 +24,9 @@ import { useRadio } from "@/context/RadioContext";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useShowTransition } from "@/hooks/useShowTransition";
 import { colors } from "@/theme/colors";
+import { PlaybackArtwork } from "@/components/PlaybackArtwork";
+import { PlaybackButton } from "@/components/PlaybackButton";
+import { motion } from "@/theme/motion";
 
 export function LiveRadioHero() {
   const {
@@ -46,8 +48,13 @@ export function LiveRadioHero() {
   const revealed = useRef(false);
   const artwork = displayedShow?.image ?? displayedShow?.poster;
   const isStationStream = displayedShow?.id === STATION_STREAM_SHOW_ID;
+  const stationOnly = currentShow?.id === STATION_STREAM_SHOW_ID && !liveShows.length;
+  // Reserve the live-show space before Play, so revealing metadata doesn't
+  // push the action or the schedule card down during the artwork fade.
+  const showLayout = liveShows.length > 0 || (!!currentShow && currentShow.id !== STATION_STREAM_SHOW_ID);
+  const middleHeight = Math.ceil((showLayout ? 228 : 198) * Math.max(1, fontScale));
   const ready =
-    !!displayedShow && (!artwork || loadedArtwork === displayedShow.id);
+    !!displayedShow && (isStationStream || !artwork || loadedArtwork === displayedShow.id);
   const showOpacity = Animated.multiply(reveal, fade);
 
   useEffect(() => {
@@ -56,7 +63,7 @@ export function LiveRadioHero() {
     if (!displayedShow) revealed.current = false;
     const animation = Animated.timing(reveal, {
       toValue: ready ? 1 : 0,
-      duration: reducedMotion ? 0 : 380,
+      duration: reducedMotion ? 0 : motion.artwork,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: Platform.OS !== "web",
       isInteraction: false,
@@ -73,10 +80,6 @@ export function LiveRadioHero() {
     inputRange: [0, 1],
     outputRange: [10, 0],
   });
-  const artworkScale = reveal.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1.025, 1],
-  });
   const label = buffering
     ? "Connecting…"
     : error
@@ -90,56 +93,14 @@ export function LiveRadioHero() {
   return (
     <LinearGradient
       testID="live-radio-hero"
-      colors={["#15291E", "#101C15"]}
+      colors={[colors.surface2, colors.surface]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.hero}
     >
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        {isStationStream && (
-          <View style={styles.backgroundArtworkFrame}>
-            <Image
-              testID="live-radio-background-artwork"
-              source={require("../../assets/shows/Live_Radio_Bg.png")}
-              style={styles.backgroundArtwork}
-              resizeMode="stretch"
-              accessibilityIgnoresInvertColors
-              accessible={false}
-            />
-          </View>
-        )}
-        <LinearGradient
-          colors={["#05080630", "#05080655", "#0508069C"]}
-          locations={[0, 0.48, 1]}
-          style={StyleSheet.absoluteFill}
-        />
+        <PlaybackArtwork show={currentShow} variant="hero" onReady={setLoadedArtwork} />
         <View style={styles.orbOne} />
-        {displayedShow && (
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              { opacity: showOpacity, transform: [{ scale: artworkScale }] },
-            ]}
-          >
-            {artwork && !isStationStream && (
-              <Animated.Image
-                testID="live-show-artwork"
-                key={displayedShow.id}
-                source={artwork}
-                style={styles.artwork}
-                resizeMode="cover"
-                accessible={false}
-                onLoad={() => setLoadedArtwork(displayedShow.id)}
-                onError={() => setLoadedArtwork(displayedShow.id)}
-              />
-            )}
-            <LinearGradient
-              colors={["#070C0966", "#070C09A6", "#070C09EB"]}
-              locations={[0, 0.4, 1]}
-              style={StyleSheet.absoluteFill}
-            />
-          </Animated.View>
-        )}
       </View>
 
       <View style={styles.topRow}>
@@ -158,7 +119,8 @@ export function LiveRadioHero() {
         </View>
       </View>
 
-      <View style={[styles.middle, { minHeight: Math.ceil((displayedShow ? 228 : 198) * Math.max(1, fontScale)) }]}>
+      <View style={[styles.middle, { minHeight: middleHeight }]}>
+        {!stationOnly && <>
         <Animated.View
           pointerEvents="none"
           accessibilityElementsHidden={!!currentShow}
@@ -167,7 +129,7 @@ export function LiveRadioHero() {
           }
           style={[styles.intro, { opacity: introOpacity }]}
         >
-          <Radio size={28} color={colors.green} />
+          <Radio size={28} color={colors.accent} />
           <Text style={[styles.heroTitle, compact && styles.heroTitleCompact]}>This is{"\n"}AceRadio.</Text>
           <Text style={styles.description}>
             More than a station. It's a whole vibe.
@@ -197,7 +159,7 @@ export function LiveRadioHero() {
               {displayedShow.title}
             </Text>
             <View style={styles.presenterRow}>
-              <Mic2 size={16} color={colors.green} />
+              <Mic2 size={16} color={colors.accent} />
               <Text style={styles.presenter} numberOfLines={2}>
                 {displayedShow.presenter}
               </Text>
@@ -210,9 +172,10 @@ export function LiveRadioHero() {
             </Text>
           </Animated.View>
         )}
+        </>}
       </View>
 
-      <Pressable
+      <PlaybackButton
         testID="live-radio-toggle"
         onPress={error ? retry : toggle}
         disabled={buffering}
@@ -231,25 +194,26 @@ export function LiveRadioHero() {
       >
         <View style={styles.listenIcon}>
           {buffering ? (
-            <ActivityIndicator size="small" color={colors.background} />
+            <ActivityIndicator size="small" color={colors.onAccent} />
           ) : playing ? (
             <Pause
-              fill={colors.background}
-              color={colors.background}
+              fill={colors.onAccent}
+              color={colors.onAccent}
               size={18}
             />
           ) : (
             <Play
-              fill={colors.background}
-              color={colors.background}
+              fill={colors.onAccent}
+              color={colors.onAccent}
               size={18}
             />
           )}
         </View>
         <Text style={styles.listenText}>{label}</Text>
-        <ArrowUpRight size={19} color={colors.background} />
-      </Pressable>
-      <Text style={styles.status} accessibilityLiveRegion="polite">
+        <ArrowUpRight size={19} color={colors.onAccent} />
+      </PlaybackButton>
+      <View style={{ minHeight: Math.ceil(16 * Math.max(1, fontScale)) + 10 }}>
+      {!stationOnly && <Text style={styles.status} accessibilityLiveRegion="polite">
         {buffering
           ? "Connecting to AceRadio…"
           : error
@@ -259,7 +223,8 @@ export function LiveRadioHero() {
               : currentShow
                 ? "Paused · Ready when you are"
                 : "Live from Cape Town"}
-      </Text>
+      </Text>}
+      </View>
       {error && (
         <Text style={styles.error} accessibilityRole="alert">
           {error}
@@ -277,29 +242,18 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#304D3B",
+    borderColor: colors.border,
   },
   orbOne: {
     position: "absolute",
     width: 260,
     height: 260,
     borderWidth: 1,
-    borderColor: "#6EAA8340",
+    borderColor: "#FFFFFF18",
     borderRadius: 140,
     top: -70,
     right: -100,
   },
-  backgroundArtworkFrame: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backgroundArtwork: { width: "100%", height: "100%", opacity: 0.6 },
-  artwork: { width: "100%", height: "100%", opacity: 0.75 },
   topRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -311,23 +265,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 7,
     alignItems: "center",
-    backgroundColor: "#163C28",
+    backgroundColor: colors.accentSoft,
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 10,
   },
-  dot: { backgroundColor: colors.green, width: 7, height: 7, borderRadius: 4 },
+  dot: { backgroundColor: colors.accent, width: 7, height: 7, borderRadius: 4 },
   liveBadgeText: {
-    color: "#B5FFCB",
+    color: colors.accent,
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.semibold,
     letterSpacing: 0.8,
   },
   listeners: {
     flexDirection: "row",
     gap: 6,
     alignItems: "center",
-    backgroundColor: "#050806A6",
+    backgroundColor: "#000000A6",
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 10,
@@ -335,7 +289,7 @@ const styles = StyleSheet.create({
   listenersText: {
     color: colors.white,
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.semibold,
     fontVariant: ["tabular-nums"],
   },
   middle: {
@@ -348,13 +302,13 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 46,
     color: colors.white,
-    fontWeight: "800",
-    letterSpacing: -1.8,
+    fontFamily: fonts.displayExtraBold,
+    letterSpacing: -1.2,
     lineHeight: 48,
     marginTop: 12,
   },
   heroTitleCompact: { fontSize: 40, lineHeight: 43 },
-  description: { color: "#CCD8CF", marginTop: 10, fontSize: 13, lineHeight: 20 },
+  description: { color: colors.muted, marginTop: 10, fontSize: 13, lineHeight: 20, fontFamily: fonts.regular },
   show: {
     position: "absolute",
     top: 0,
@@ -365,8 +319,8 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   overline: {
-    color: colors.green,
-    fontWeight: "800",
+    color: colors.accent,
+    fontFamily: fonts.semibold,
     fontSize: 10,
     letterSpacing: 1.6,
     marginBottom: 7,
@@ -374,8 +328,8 @@ const styles = StyleSheet.create({
   showTitle: {
     fontSize: 34,
     lineHeight: 38,
-    fontWeight: "800",
-    letterSpacing: -1,
+    fontFamily: fonts.displayExtraBold,
+    letterSpacing: -0.6,
     color: colors.white,
   },
   showTitleCompact: { fontSize: 30, lineHeight: 35 },
@@ -390,12 +344,12 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 14,
     lineHeight: 19,
-    fontWeight: "700",
+    fontFamily: fonts.semibold,
   },
-  schedule: { color: "#BDCEC2", fontSize: 12, lineHeight: 17, marginTop: 8 },
+  schedule: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 8, fontFamily: fonts.medium },
   listen: {
     minHeight: 56,
-    backgroundColor: colors.green,
+    backgroundColor: colors.accent,
     borderRadius: 14,
     alignItems: "center",
     paddingHorizontal: 15,
@@ -403,35 +357,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 11,
   },
-  listenLoading: { backgroundColor: "#72D99A" },
+  listenLoading: { backgroundColor: colors.accentPressed },
   pressed: { opacity: 0.86 },
   listenIcon: {
     width: 31,
     height: 31,
-    backgroundColor: "#09211618",
+    backgroundColor: "#00000010",
     borderRadius: 100,
     alignItems: "center",
     justifyContent: "center",
   },
   listenText: {
-    color: colors.background,
+    color: colors.onAccent,
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     letterSpacing: 0.2,
     flex: 1,
   },
   status: {
-    color: "#BDCEC2",
+    color: colors.muted,
     textAlign: "center",
     fontSize: 11,
     lineHeight: 16,
-    marginTop: 10,
+    marginTop: 10, fontFamily: fonts.medium,
   },
   preview: {
-    color: "#B1C6B8",
+    color: colors.subtle,
     textAlign: "center",
     fontSize: 10,
-    marginTop: 5,
+    marginTop: 5, fontFamily: fonts.regular,
   },
-  error: { color: "#F4CDB7", fontSize: 12, lineHeight: 18, marginTop: 10 },
+  error: { color: colors.error, fontSize: 12, lineHeight: 18, marginTop: 10, fontFamily: fonts.regular },
 });

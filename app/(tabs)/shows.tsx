@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { useMemo, useState } from "react";
 import {
   View,
@@ -72,7 +73,7 @@ export default function ShowsScreen() {
           eyebrow="THE LINEUP"
           title={
             <>
-              All shows<Text style={{ color: colors.green }}>.</Text>
+              All shows<Text style={{ color: colors.accent }}>.</Text>
             </>
           }
           subtitle="Discover the voices behind the music."
@@ -84,6 +85,8 @@ export default function ShowsScreen() {
             accessibilityLabel="Search shows or presenters"
             placeholder="Search shows or presenters"
             placeholderTextColor={colors.subtle}
+            selectionColor={colors.selection}
+            cursorColor={colors.accent}
             value={search}
             onChangeText={setSearch}
             style={styles.input}
@@ -176,14 +179,14 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: layout.controlRadius,
     backgroundColor: colors.surface,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     paddingHorizontal: 14,
   },
-  input: { flex: 1, minHeight: 52, color: colors.white, fontSize: 14 },
+  input: { flex: 1, minHeight: 52, color: colors.white, fontSize: 14, outlineColor: colors.accent, fontFamily: fonts.regular },
   filters: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   filter: {
     flexGrow: 1,
@@ -199,16 +202,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
   },
-  filterSelected: { backgroundColor: colors.greenDeep, borderColor: "#31734A" },
-  filterText: { color: colors.muted, fontSize: 12, fontWeight: "700" },
-  filterTextSelected: { color: colors.green },
+  filterSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+  filterText: { color: colors.muted, fontSize: 12, fontFamily: fonts.semibold },
+  filterTextSelected: { color: colors.onAccent },
   liveDot: {
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: colors.green,
+    backgroundColor: colors.accent,
   },
-  liveDotSelected: { backgroundColor: colors.green },
+  liveDotSelected: { backgroundColor: colors.onAccent },
   pressed: { opacity: 0.78 },
   summary: {
     flexDirection: "row",
@@ -238,7 +241,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 8, fontFamily: fonts.regular,
   },
   clearButton: {
     minHeight: 44,
@@ -249,6 +252,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 12,
   },
-  clearText: { color: colors.green, fontSize: 13, fontWeight: "700" },
+  clearText: { color: colors.accent, fontSize: 13, fontFamily: fonts.semibold },
   note: { ...typography.caption, color: colors.subtle, marginTop: 24 },
 });

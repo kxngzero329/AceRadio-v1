@@ -21,7 +21,7 @@ export function ScreenHeader() {
         style={({ pressed }) => [styles.brand, pressed && styles.pressed]}
         onPress={() => router.push("/")}
       >
-        <AceLogo small />
+        <AceLogo width={76} />
       </Pressable>
       <Pressable
         accessibilityRole="button"

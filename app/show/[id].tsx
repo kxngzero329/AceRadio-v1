@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import {
   Animated,
   View,
@@ -28,6 +29,7 @@ import { useModalTransition } from "@/hooks/useModalTransition";
 import { colors } from "@/theme/colors";
 import { layout } from "@/theme/layout";
 import { typography } from "@/theme/typography";
+import { ShowShareButton } from "@/components/ShowShareButton";
 
 export default function ShowDetail() {
   const {
@@ -87,9 +89,9 @@ export default function ShowDetail() {
               ]}
             >
               <Heart
-                color={liked ? colors.green : colors.white}
+                color={liked ? colors.accent : colors.white}
                 size={21}
-                fill={liked ? colors.green : "transparent"}
+                fill={liked ? colors.accent : "transparent"}
               />
             </Pressable>
           ) : (
@@ -126,7 +128,7 @@ export default function ShowDetail() {
                     accessibilityLabel={`${show.title} artwork`}
                   />
                 ) : (
-                  <Radio color={colors.green} size={64} />
+                  <Radio color={colors.accent} size={64} />
                 )}
               </View>
               <View style={styles.overlineRow}>
@@ -146,11 +148,11 @@ export default function ShowDetail() {
                 {show.title}
               </Text>
               <View style={styles.presenter}>
-                <Mic2 size={16} color={colors.green} />
+                <Mic2 size={16} color={colors.accent} />
                 <Text style={styles.presenterName}>{show.presenter}</Text>
               </View>
               <View style={styles.schedule}>
-                <CalendarDays size={18} color={colors.green} />
+                <CalendarDays size={18} color={colors.accent} />
                 <View style={styles.scheduleCopy}>
                   <Text style={styles.scheduleText}>{show.schedule}</Text>
                   <Text style={styles.timezone}>
@@ -177,8 +179,8 @@ export default function ShowDetail() {
               >
                 <Play
                   size={20}
-                  color={isOnAir ? colors.background : colors.muted}
-                  fill={isOnAir ? colors.background : colors.muted}
+                  color={isOnAir ? colors.onAccent : colors.muted}
+                  fill={isOnAir ? colors.onAccent : colors.muted}
                 />
                 <Text
                   style={[
@@ -194,6 +196,7 @@ export default function ShowDetail() {
                   Tune in when this show is on air.
                 </Text>
               )}
+              <ShowShareButton show={show} disabled={isClosing} />
               <View style={styles.about}>
                 <Text
                   accessibilityRole="header"
@@ -266,10 +269,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  favoriteActive: { backgroundColor: colors.greenDeep },
+  favoriteActive: { backgroundColor: colors.accentSoft },
   pressed: { backgroundColor: colors.surface2 },
   headerSpacer: { width: 44 },
-  topTitle: { color: colors.muted, fontSize: 13, fontWeight: "600" },
+  topTitle: { color: colors.muted, fontSize: 13, fontFamily: fonts.semibold },
   scroll: {
     width: "100%",
     maxWidth: layout.contentWidth,
@@ -309,21 +312,21 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: colors.surface2,
   },
-  airOn: { backgroundColor: colors.greenDeep },
+  airOn: { backgroundColor: colors.accentSoft },
   airDot: {
     width: 5,
     height: 5,
     borderRadius: 3,
     backgroundColor: colors.subtle,
   },
-  airDotOn: { backgroundColor: colors.green },
-  airText: { fontSize: 11, fontWeight: "600", color: colors.muted },
-  airTextOn: { color: colors.green },
+  airDotOn: { backgroundColor: colors.accent },
+  airText: { fontSize: 11, fontFamily: fonts.semibold, color: colors.muted },
+  airTextOn: { color: colors.accent },
   title: {
     color: colors.white,
     fontSize: 30,
     lineHeight: 36,
-    fontWeight: "700",
+    fontFamily: fonts.displayBold,
     letterSpacing: -0.8,
     marginTop: 10,
   },
@@ -350,14 +353,14 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 13,
     lineHeight: 20,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
   timezone: { ...typography.caption, color: colors.subtle },
   listen: {
     minHeight: 54,
     padding: 14,
     marginTop: 16,
-    backgroundColor: colors.green,
+    backgroundColor: colors.accent,
     borderRadius: layout.controlRadius,
     flexDirection: "row",
     alignItems: "center",
@@ -370,7 +373,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   listenPressed: { opacity: 0.8 },
-  listenText: { color: colors.background, fontWeight: "700", fontSize: 15 },
+  listenText: { color: colors.onAccent, fontFamily: fonts.semibold, fontSize: 15 },
   listenTextDisabled: { color: colors.muted },
   listenHint: { ...typography.caption, textAlign: "center", marginTop: 8 },
   about: {
@@ -392,7 +395,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: "600",
+    fontFamily: fonts.displayBold,
   },
   poster: { marginTop: 24, gap: 14 },
   posterFrame: {

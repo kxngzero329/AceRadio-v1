@@ -9,6 +9,10 @@ const filename = path.join(__dirname, '..', 'src/hooks/useModalTransition.ts');
 const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
+const motionExports = {};
+new vm.Script(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/theme/motion.ts'), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS },
+}).outputText).runInNewContext({ exports: motionExports });
 
 // Run the production hook with controlled focus, navigation and animation callbacks.
 // This checks lifecycle/race behavior; device animation frame rate needs a phone.
@@ -114,6 +118,7 @@ function harness({ focused = true, reducedMotion = false, canGoBack = true, plat
     },
   };
   const imports = {
+    '@/theme/motion': motionExports,
     react,
     'react-native': {
       Animated, Platform: { OS: platform }, useWindowDimensions: () => ({ height: 800 }),

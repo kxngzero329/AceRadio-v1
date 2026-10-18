@@ -143,9 +143,10 @@ test('About renders its story, portraits and website without any content provide
   const container = ({children})=>React.createElement('div',null,children);
   const icon = ()=>null;
   const native = {View:container,Text:container,Pressable:container,Image:({source})=>React.createElement('img',{src:source}),StyleSheet:{create:value=>value}};
-  const typography = load('src/theme/typography.ts', {'react-native':native,'./colors':{colors:{}}});
+  const fonts = load('src/theme/fonts.ts');
+  const typography = load('src/theme/typography.ts', {'react-native':native,'./colors':{colors:{}},'./fonts':fonts});
   const heading = load('src/components/PageHeading.tsx', {
-    'react/jsx-runtime':require('react/jsx-runtime'), 'react-native':native, '@/theme/typography':typography,
+    'react/jsx-runtime':require('react/jsx-runtime'), 'react-native':native, '@/theme/typography':typography, '@/theme/fonts':fonts,
   });
   const screen = load('app/(tabs)/about.tsx', {
     react:React, 'react/jsx-runtime':require('react/jsx-runtime'),
@@ -159,7 +160,7 @@ test('About renders its story, portraits and website without any content provide
     '@/hooks/usePageContentStyle':{usePageContentStyle:()=>({})},
     '@/theme/layout':load('src/theme/layout.ts'), '@/theme/typography':typography,
     '@/services/links':{openVerifiedLink:()=>{}},
-    '@/data/about':about, '@/config/station':station, '@/theme/colors':{colors:{}},
+    '@/data/about':about, '@/config/station':station, '@/theme/colors':{colors:{}}, '@/theme/fonts':fonts,
   }).default;
   const html = renderToStaticMarkup(React.createElement(screen));
   for (const text of ['Luke Henwood','Christopher Marshall','July 2025','3 October 2025','Radio. Reimagined.','bundled/luke.png','bundled/christopher.png','Official website']) assert.ok(html.includes(text),text);

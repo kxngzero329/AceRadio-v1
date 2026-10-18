@@ -1,8 +1,8 @@
+import { fonts } from "@/theme/fonts";
 import {
   Animated,
   View,
   Text,
-  Image,
   Pressable,
   StyleSheet,
   ActivityIndicator,
@@ -17,12 +17,10 @@ import {
   RotateCcw,
   Headphones,
   CircleAlert,
-  SkipBack,
-  SkipForward,
 } from "lucide-react-native";
 import { useRadio } from "@/context/RadioContext";
-import { AceLogo } from "@/components/AceLogo";
-import { STATION_STREAM_SHOW_ID } from "@/data/stationShow";
+import { PlaybackArtwork } from "@/components/PlaybackArtwork";
+import { PlaybackButton } from "@/components/PlaybackButton";
 import { colors } from "@/theme/colors";
 import { layout } from "@/theme/layout";
 import { typography } from "@/theme/typography";
@@ -35,12 +33,9 @@ export default function PlayerScreen() {
     buffering,
     currentShow,
     listenerCount,
-    liveShowCount,
     error,
     toggle,
     retry,
-    previous,
-    next,
   } = useRadio();
   const { displayedShow, fade } = useShowTransition(currentShow);
   const {
@@ -51,7 +46,6 @@ export default function PlayerScreen() {
   } = useModalTransition();
   const { width, height } = useWindowDimensions();
   const coverSize = Math.min(width - 40, 320, Math.max(180, height * 0.37));
-  const canSkip = liveShowCount > 1;
   const status = buffering
     ? "Connecting to AceRadio…"
     : error
@@ -90,28 +84,9 @@ export default function PlayerScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
         >
-          <Animated.View
-            testID="full-player-show"
-            style={[styles.show, { opacity: fade }]}
-          >
+          <View testID="full-player-show" style={styles.show}>
             <View style={[styles.cover, { width: coverSize }]}>
-              {displayedShow?.id === STATION_STREAM_SHOW_ID ? (
-                <Image
-                  source={require("../assets/shows/Live_Radio_Bg.png")}
-                  style={styles.artwork}
-                  resizeMode="cover"
-                  accessibilityLabel="AceRadio live broadcast artwork"
-                />
-              ) : displayedShow?.image ? (
-                <Image
-                  source={displayedShow.image}
-                  style={styles.artwork}
-                  resizeMode="contain"
-                  accessibilityLabel={`${displayedShow.title} artwork`}
-                />
-              ) : (
-                <AceLogo width={150} />
-              )}
+              <PlaybackArtwork show={currentShow} variant="cover" />
             </View>
             <View style={styles.tagRow}>
               <View style={styles.tag}>
@@ -127,29 +102,15 @@ export default function PlayerScreen() {
                 </Text>
               </View>
             </View>
-            <Text accessibilityRole="header" style={styles.title}>
+            <Animated.Text accessibilityRole="header" style={[styles.title, { opacity: fade }]}>
               {displayedShow?.title ?? "AceRadio Live"}
-            </Text>
-            <Text style={styles.byline}>
+            </Animated.Text>
+            <Animated.Text style={[styles.byline, { opacity: fade }]}>
               {displayedShow?.presenter ?? "Cape Town, South Africa"}
-            </Text>
-          </Animated.View>
+            </Animated.Text>
+          </View>
           <View style={styles.controls}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.skip,
-                !canSkip && styles.disabled,
-                pressed && styles.pressed,
-              ]}
-              onPress={previous}
-              disabled={!canSkip || isClosing}
-              accessibilityRole="button"
-              accessibilityLabel="Previous live show"
-              accessibilityState={{ disabled: !canSkip || isClosing }}
-            >
-              <SkipBack size={25} color={colors.white} />
-            </Pressable>
-            <Pressable
+            <PlaybackButton
               testID="full-player-toggle"
               style={({ pressed }) => [
                 styles.play,
@@ -170,35 +131,21 @@ export default function PlayerScreen() {
               aria-busy={buffering}
             >
               {buffering ? (
-                <ActivityIndicator color={colors.background} size="large" />
+                <ActivityIndicator color={colors.onAccent} size="large" />
               ) : playing ? (
                 <Pause
                   size={30}
-                  color={colors.background}
-                  fill={colors.background}
+                  color={colors.onAccent}
+                  fill={colors.onAccent}
                 />
               ) : (
                 <Play
                   size={30}
-                  color={colors.background}
-                  fill={colors.background}
+                  color={colors.onAccent}
+                  fill={colors.onAccent}
                 />
               )}
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.skip,
-                !canSkip && styles.disabled,
-                pressed && styles.pressed,
-              ]}
-              onPress={next}
-              disabled={!canSkip || isClosing}
-              accessibilityRole="button"
-              accessibilityLabel="Next live show"
-              accessibilityState={{ disabled: !canSkip || isClosing }}
-            >
-              <SkipForward size={25} color={colors.white} />
-            </Pressable>
+            </PlaybackButton>
           </View>
           <View style={styles.statusRow} accessibilityLiveRegion="polite">
             <View
@@ -229,7 +176,7 @@ export default function PlayerScreen() {
           </Pressable>
           {error && (
             <View style={styles.error}>
-              <CircleAlert size={18} color="#F4B18B" />
+              <CircleAlert size={18} color={colors.error} />
               <Text style={styles.errorText} accessibilityRole="alert">
                 {error}
               </Text>
@@ -254,7 +201,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
   },
-  headerLabel: { color: colors.muted, fontSize: 13, fontWeight: "600" },
+  headerLabel: { color: colors.muted, fontSize: 13, fontFamily: fonts.semibold },
   headerSpacer: { width: 44 },
   close: {
     width: 44,
@@ -283,7 +230,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  artwork: { width: "100%", height: "100%" },
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -296,15 +242,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     alignItems: "center",
-    backgroundColor: colors.greenDeep,
+    backgroundColor: colors.accentSoft,
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 8,
   },
-  dot: { height: 6, width: 6, borderRadius: 3, backgroundColor: colors.green },
+  dot: { height: 6, width: 6, borderRadius: 3, backgroundColor: colors.accent },
   tagText: {
-    color: colors.green,
-    fontWeight: "700",
+    color: colors.accent,
+    fontFamily: fonts.semibold,
     fontSize: 10,
     letterSpacing: 0.8,
   },
@@ -314,7 +260,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
     lineHeight: 36,
     color: colors.white,
-    fontWeight: "700",
+    fontFamily: fonts.displayExtraBold,
     letterSpacing: -0.8,
     marginTop: 14,
     textAlign: "center",
@@ -325,27 +271,19 @@ const styles = StyleSheet.create({
     maxWidth: 300,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     marginTop: 24,
   },
   play: {
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: colors.green,
+    backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
   },
-  playLoading: { backgroundColor: "#72D99A" },
-  playPressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
-  skip: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
+  playLoading: { backgroundColor: colors.accentPressed },
+  playPressed: { opacity: 0.8 },
   pressed: { backgroundColor: colors.surface2 },
   disabled: { opacity: 0.4 },
   statusRow: {
@@ -361,8 +299,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: colors.subtle,
   },
-  dotLive: { backgroundColor: colors.green },
-  dotError: { backgroundColor: colors.red },
+  dotLive: { backgroundColor: colors.accent },
+  dotError: { backgroundColor: colors.error },
   status: { ...typography.caption, flexShrink: 1, textAlign: "center" },
   retry: {
     minHeight: 44,
@@ -381,9 +319,11 @@ const styles = StyleSheet.create({
     gap: 10,
     alignItems: "flex-start",
     marginTop: 12,
-    backgroundColor: "#30221A",
+    backgroundColor: colors.errorSurface,
+    borderWidth: 1,
+    borderColor: colors.errorBorder,
     borderRadius: layout.controlRadius,
     padding: 14,
   },
-  errorText: { flex: 1, color: "#F4CDB7", fontSize: 13, lineHeight: 20 },
+  errorText: { flex: 1, color: colors.error, fontSize: 13, lineHeight: 20, fontFamily: fonts.regular },
 });

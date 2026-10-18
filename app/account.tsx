@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -51,6 +52,8 @@ function Field({
           {...props}
           accessibilityLabel={label}
           placeholderTextColor={colors.subtle}
+          selectionColor={colors.selection}
+          cursorColor={colors.accent}
           style={styles.input}
           secureTextEntry={secret && !visible}
         />
@@ -107,7 +110,7 @@ function Button({
     >
       {busy ? (
         <ActivityIndicator
-          color={secondary ? colors.green : colors.background}
+          color={secondary || danger ? colors.accent : colors.onAccent}
         />
       ) : (
         <Text
@@ -309,7 +312,7 @@ export default function AccountScreen() {
                       : "Radio is always free to listen to. Sign in to make it yours."}
           </Text>
           {auth.loading ? (
-            <ActivityIndicator color={colors.green} style={styles.loader} />
+            <ActivityIndicator color={colors.accent} style={styles.loader} />
           ) : !auth.available ? (
             <Text style={styles.error}>
               Accounts are currently unavailable. You can still listen and save
@@ -342,7 +345,7 @@ export default function AccountScreen() {
                   <AccountSyncStatus />
                   {data.role === "admin" && <AdminMFA />}
                   <View style={styles.identity}>
-                    <ShieldCheck size={22} color={colors.green} />
+                    <ShieldCheck size={22} color={colors.accent} />
                     <View style={styles.grow}>
                       <Text style={styles.identityName}>
                         {data.displayName}
@@ -775,7 +778,7 @@ const styles = StyleSheet.create({
   headerText: {
     color: colors.muted,
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.semibold,
     letterSpacing: 1,
   },
   content: {
@@ -791,23 +794,24 @@ const styles = StyleSheet.create({
   body: { ...typography.body },
   small: { ...typography.caption },
   field: { gap: 7 },
-  label: { color: colors.white, fontSize: 13, fontWeight: "600" },
+  label: { color: colors.white, fontSize: 13, fontFamily: fonts.semibold },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: layout.controlRadius,
     backgroundColor: colors.surface,
   },
   input: {
     color: colors.white,
+    outlineColor: colors.accent,
     minHeight: 52,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
     flex: 1,
-    minWidth: 0,
+    minWidth: 0, fontFamily: fonts.regular,
   },
   eye: {
     width: 48,
@@ -819,15 +823,15 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderRadius: layout.controlRadius,
     padding: 13,
-    backgroundColor: colors.green,
+    backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
   },
   buttonText: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "700",
-    color: colors.background,
+    fontFamily: fonts.semibold,
+    color: colors.onAccent,
     textAlign: "center",
   },
   secondary: {
@@ -837,18 +841,18 @@ const styles = StyleSheet.create({
   },
   secondaryText: { color: colors.white },
   danger: {
-    backgroundColor: "#371D1D",
+    backgroundColor: colors.errorSurface,
     borderWidth: 1,
-    borderColor: "#7B3E3E",
+    borderColor: colors.errorBorder,
   },
-  dangerText: { color: "#FFB6B6", fontSize: 13, fontWeight: "600" },
+  dangerText: { color: colors.error, fontSize: 13, fontFamily: fonts.semibold },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
   link: {
-    color: colors.green,
+    color: colors.accent,
     fontSize: 13,
     lineHeight: 19,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
   linkRow: {
     flexDirection: "row",
@@ -861,8 +865,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     alignItems: "center",
   },
-  error: { color: "#FFB6B6", fontSize: 13, lineHeight: 20 },
-  success: { color: colors.green, fontSize: 13, lineHeight: 20 },
+  error: {
+    color: colors.error,
+    fontSize: 13,
+    lineHeight: 20,
+    padding: 12,
+    backgroundColor: colors.errorSurface,
+    borderLeftWidth: 2,
+    borderColor: colors.errorBorder,
+    borderRadius: 8, fontFamily: fonts.regular,
+  },
+  success: { color: colors.accent, fontSize: 13, lineHeight: 20, fontFamily: fonts.regular },
   loader: { marginVertical: 24 },
   notice: {
     padding: 14,
@@ -877,12 +890,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   grow: { flex: 1 },
-  identityName: { color: colors.white, fontSize: 20, fontWeight: "700" },
+  identityName: { color: colors.white, fontSize: 20, fontFamily: fonts.displayBold },
   footer: {
     color: colors.subtle,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 12,
-    textAlign: "center",
+    textAlign: "center", fontFamily: fonts.medium,
   },
 });

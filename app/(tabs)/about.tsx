@@ -1,3 +1,4 @@
+import { fonts } from "@/theme/fonts";
 import { Fragment } from "react";
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import { PageScrollView } from "@/components/PageScrollView";
@@ -34,7 +35,7 @@ export default function AboutScreen() {
           eyebrow="OUR STORY"
           title={
             <>
-              More than a <Text style={{ color: colors.green }}>station.</Text>
+              More than a <Text style={{ color: colors.accent }}>station.</Text>
             </>
           }
           subtitle={ABOUT.intro}
@@ -68,7 +69,7 @@ export default function AboutScreen() {
                   style={[
                     styles.point,
                     i === milestones.length - 1 && {
-                      backgroundColor: colors.green,
+                      backgroundColor: colors.accent,
                     },
                   ]}
                 />
@@ -85,25 +86,25 @@ export default function AboutScreen() {
         </View>
         <View style={styles.vision}>
           <View style={styles.visionIcon}>
-            <Lightbulb size={25} color={colors.green} />
+            <Lightbulb size={25} color={colors.accent} />
           </View>
           <Text style={styles.visionHeading}>{ABOUT.visionTitle}</Text>
           <Text style={styles.visionText}>{ABOUT.visionBody}</Text>
         </View>
         <View style={styles.highlights}>
           <View style={styles.highlight}>
-            <RadioTower size={23} color={colors.green} />
+            <RadioTower size={23} color={colors.accent} />
             <Text style={styles.highlightTitle}>Digital first</Text>
             <Text style={styles.highlightSub}>Radio wherever you go</Text>
           </View>
           <View style={styles.highlight}>
-            <InfinityIcon size={26} color={colors.green} />
+            <InfinityIcon size={26} color={colors.accent} />
             <Text style={styles.highlightTitle}>No limits</Text>
             <Text style={styles.highlightSub}>Music and connection</Text>
           </View>
         </View>
         <View style={styles.location}>
-          <MapPin size={20} color={colors.green} />
+          <MapPin size={20} color={colors.accent} />
           <View style={styles.locationCopy}>
             <Text style={styles.locationTitle}>{STATION.location}</Text>
             <Text style={styles.locationDesc}>{ABOUT.locationDetail}</Text>
@@ -122,7 +123,7 @@ export default function AboutScreen() {
           }}
         >
           <Text style={styles.websiteText}>Official website</Text>
-          <ArrowUpRight color={colors.green} size={19} />
+          <ArrowUpRight color={colors.accent} size={19} />
         </Pressable>
         <Text style={styles.foot}>{ABOUT.footer}</Text>
       </PageScrollView>
@@ -146,7 +147,7 @@ const styles = StyleSheet.create({
   personName: {
     color: colors.white,
     fontSize: 13,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
     textAlign: "center",
     marginTop: 7,
   },
@@ -155,9 +156,9 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: colors.muted,
     textAlign: "center",
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
-  and: { fontSize: 22, color: colors.subtle },
+  and: { fontSize: 22, color: colors.subtle, fontFamily: fonts.displayBold },
   timeline: { marginTop: 28 },
   milestone: { flexDirection: "row", minHeight: 72 },
   line: { width: 33, alignItems: "center" },
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     color: colors.white,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
   desc: { ...typography.body, marginTop: 4 },
   vision: {
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: layout.controlRadius,
-    backgroundColor: colors.greenDeep,
+    backgroundColor: colors.accentSoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: colors.muted,
     textAlign: "center",
-    marginTop: 9,
+    marginTop: 9, fontFamily: fonts.regular,
   },
   highlights: {
     flexDirection: "row",
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
   highlightTitle: {
     color: colors.white,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
     marginTop: 4,
   },
   highlightSub: { ...typography.caption },
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
   locationCopy: { flex: 1 },
   locationTitle: {
     color: colors.white,
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
     lineHeight: 19,
     marginTop: -5,
-    marginBottom: 18,
+    marginBottom: 18, fontFamily: fonts.regular,
   },
   website: {
     marginTop: 22,
@@ -268,12 +269,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: colors.surface,
   },
-  websiteText: { color: colors.white, fontWeight: "600", fontSize: 14 },
+  websiteText: { color: colors.white, fontFamily: fonts.semibold, fontSize: 14 },
   pressed: { backgroundColor: colors.surface2 },
   foot: {
     marginTop: 28,
     color: colors.subtle,
     fontSize: 11,
-    textAlign: "center",
+    textAlign: "center", fontFamily: fonts.medium,
   },
 });

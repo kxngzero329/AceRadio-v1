@@ -21,6 +21,12 @@ Expo Go plays the station stream in the foreground. It skips this app's backgrou
 
 ## Listening and show previews
 
+Playback artwork and app transitions respect reduced motion, preserve decoded
+images during changes and share consistent timings. See [motion and verification](docs/motion.md).
+
+The app uses bundled Outfit headings and Manrope interface text across native
+and web. See [typography, font sources and checks](docs/typography.md).
+
 - Home's “Listen Live” selects the show scheduled at the current time in South African Standard Time (SAST), then starts the real station audio. Outside a listed show slot, it still starts the station stream. The public source is configured in `src/config/station.ts`.
 - The hero crossfades into the selected presenter artwork with a gentle zoom and text entrance. It shows the title, presenter, subtitle, schedule and listener count.
 - Live badges, the Home notice board, the Shows “Live now” filter, and playback's live lineup follow each show's printed SAST day and time slot. Schedule checks use the Africa/Johannesburg time zone and refresh automatically.
@@ -46,7 +52,7 @@ Home, Shows and Favourites use the same show card: square artwork, independent h
 
 Home uses a compact hero and schedule, restrained dark surfaces, clearer schedule text and a single spotlight counter. The tab bar and mini-player share safe-area spacing, and large system fonts use a single-column show layout. See [homepage refinement and visual checks](docs/homepage.md).
 
-The full player, Show Details and remaining tabs share the same typography and page spacing. On phones, the mini-player uses two rows to keep the show title, presenter, playback status and controls readable. Shows and Saved share static loading placeholders. See [app design and interaction checks](docs/app-design.md).
+The full player, Show Details and remaining tabs share the same typography and page spacing. The compact mini-player keeps play/pause and stop beside the show title and status in one row. The full player uses a centred play/pause control. Show details offers client-only sharing through the existing app scheme, with browser copy fallbacks. Shows and Saved share static loading placeholders. See [app design and interaction checks](docs/app-design.md) and [listening refinements](docs/listening-refinement.md).
 
 Shows has All shows, Live now, Weekdays and Weekend filters below search. Search and filters combine; an empty result offers a reset. Weekdays includes Monday-Friday shows, including evening shows. Pages start at the top when switching tabs, and tapping the current tab smoothly returns to the top. Closing the player or show details preserves the underlying page's scroll position. Tab changes use an eased fade, with native pages kept mounted and the player prefetched to avoid first-navigation mounting work. The navigation theme and its backing views use AceRadio's dark background.
 
@@ -54,7 +60,7 @@ Audio connects to the public station stream only when listening starts and works
 
 ## Verify
 
-The approved black-and-white app icon and splash artwork, Android adaptive/themed icons, notification symbol and Play Store icon are installed. See [branding assets and native preview checks](docs/branding.md) for the sources, exports and device checklist. Native branding changes require new installed builds.
+The interface uses black backgrounds, charcoal panels, soft-white controls and grey secondary text throughout. See [the monochrome theme](docs/theme.md) for the palette and visual checks. The approved black-and-white app icon and splash artwork, Android adaptive/themed icons, notification symbol and Play Store icon are installed. See [branding assets and native preview checks](docs/branding.md) for the sources, exports and device checklist. Native branding changes require new installed builds.
 
 ```sh
 npm run typecheck
@@ -77,7 +83,7 @@ AceRadio uses Expo Audio's native Android Media3 foreground service and iOS AVAu
 
 The controls show the selected show title, presenter and artwork. Packaged Android drawable artwork is copied through Expo Asset to a readable file. Unsupported artwork URIs are omitted until resolved, so artwork cannot prevent the entire media notification from appearing. Metadata updates use the existing media session and do not reconnect or interrupt audible playback.
 
-Play/pause works through the notification, Lock Screen, Control Center and supported headset controls. Previous/next use the same currently live lineup as the app's buttons. They are available only when at least two shows are live; the current schedule usually has one. Every show uses the same live station URL, so these commands change show selection/metadata, not songs or archived episodes. Live playback has no seek bar or ten-second seek buttons.
+Play/pause works through the notification, Lock Screen, Control Center and supported headset controls. System previous/next commands cycle through the currently live lineup and are available only when at least two shows are live; the in-app players expose play/pause without skip buttons. The current schedule usually has one live show. Every show uses the same live station URL, so system skip commands change show selection/metadata, not songs or archived episodes. Live playback has no seek bar or ten-second seek buttons.
 
 `expo-audio` is pinned to **57.0.5**, with native additions in `patches/expo-audio+57.0.5.patch`. The patch adds show-navigation commands and their shared-player event, keeps Android's internal service binding separate from the system Media3 binder, forwards command availability correctly, reacquires audio focus for remote play, reconnects live audio on remote resume, and removes iOS block-based remote command targets correctly. It also supports local iOS artwork and fixes Android metadata/listener cleanup. Keep this patch with the lockfile; the existing `postinstall` applies it during EAS builds. Upgrading Expo Audio requires reviewing and regenerating the patch.
 

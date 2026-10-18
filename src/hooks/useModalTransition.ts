@@ -5,6 +5,7 @@ import { usePreventRemove } from "expo-router/react-navigation";
 import { blurWebFocus, router } from "@/utils/navigation";
 import { registerModalHistoryListener } from "@/utils/modalHistory";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { motion } from "@/theme/motion";
 
 /** One slide on the native UI thread; remove the route only after the sheet is offscreen. */
 export function useModalTransition() {
@@ -39,7 +40,7 @@ export function useModalTransition() {
       setIsTransitioning(!reducedMotion);
       const entering = Animated.timing(progress, {
         toValue: 1,
-        duration: reducedMotion ? 0 : 380,
+        duration: reducedMotion ? 0 : motion.sheetIn,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: native,
         isInteraction: false,
@@ -86,7 +87,7 @@ export function useModalTransition() {
       }
       animation.current = Animated.timing(progress, {
         toValue: 0,
-        duration: 300,
+        duration: motion.sheetOut,
         easing: Easing.inOut(Easing.cubic),
         useNativeDriver: native,
         isInteraction: false,
@@ -124,7 +125,7 @@ export function useModalTransition() {
           setIsTransitioning(!reducedMotion);
           animation.current = Animated.timing(progress, {
             toValue: 1,
-            duration: reducedMotion ? 0 : 300,
+            duration: reducedMotion ? 0 : motion.sheetIn,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: false,
             isInteraction: false,
