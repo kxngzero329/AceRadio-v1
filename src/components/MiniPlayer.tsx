@@ -28,7 +28,7 @@ import { STATION_STREAM_SHOW_ID } from "@/data/stationShow";
 import { motion } from "@/theme/motion";
 import { PlaybackButton } from "@/components/PlaybackButton";
 
-export function MiniPlayer() {
+export function MiniPlayer({ placement = "tabs" }: { placement?: "tabs" | "sheet" } = {}) {
   const insets = useSafeAreaInsets();
   const { width, fontScale } = useWindowDimensions();
   const showArtwork = width >= 360 && fontScale <= 1.3;
@@ -146,14 +146,14 @@ export function MiniPlayer() {
 
   return (
     <Animated.View
-      testID="mini-player"
+      testID={placement === "sheet" ? "show-detail-mini-player" : "mini-player"}
       style={[
         styles.row,
         {
           minHeight: miniPlayerHeight(fontScale),
           left: horizontalInset,
           right: horizontalInset,
-          bottom: tabBarHeight(insets.bottom) + 8,
+          bottom: placement === "sheet" ? Math.max(insets.bottom, 12) : tabBarHeight(insets.bottom) + 8,
           opacity,
           transform: [{ translateY }],
         },

@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { Info, MessagesSquare, X } from "lucide-react-native";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { openVerifiedLink } from "@/services/links";
+import { openWhatsAppChat } from "@/services/links";
 import { STATION } from "@/config/station";
 import { colors } from "@/theme/colors";
 import { layout } from "@/theme/layout";
@@ -48,7 +48,7 @@ export function ChatOptionsModal({
     setNotice(null);
     setOpeningWhatsApp(true);
     try {
-      if (await openVerifiedLink("WhatsApp", STATION.whatsapp)) onClose();
+      if (await openWhatsAppChat(STATION.whatsapp)) onClose();
       else setNotice("link-error");
     } finally {
       openingRef.current = false;

@@ -12,8 +12,10 @@ The chooser contains two distinct options:
   development.” It deliberately remains tappable for that explanation rather
   than using a native disabled button that would prevent the notice.
 - **WhatsApp** uses the Font Awesome WhatsApp brand icon and the existing
-  `STATION.whatsapp` URL, `https://wa.me/27730676204`. The shared link helper now
-  reports success/failure while preserving its existing alerts and callers.
+  `STATION.whatsapp` URL, `https://wa.me/27730676204`. The shared launcher tries
+  `whatsapp://send?phone=27730676204` directly on native, then falls back to
+  the HTTPS link if opening fails. Web opens HTTPS in the original user gesture.
+  There is no `canOpenURL` gate, which can fail under native visibility rules.
   A successful launch dismisses the chooser; a failure keeps it open with a
   retryable inline error. Repeated taps during a pending launch are ignored.
 

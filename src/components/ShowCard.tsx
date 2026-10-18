@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: layout.cardRadius,
     overflow: "hidden",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.background,
   },
   liveBadge: {
     position: "absolute",

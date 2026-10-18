@@ -28,8 +28,12 @@ See [the monochrome theme](theme.md) for the current palette and validation.
   sheet/tab/mini-player timings and playback-button feedback. See [motion](motion.md).
 - Show Details groups the actual published schedule with its SAST timezone,
   places Listen Live before the description, and keeps favourite access in the
-  header. The button remains disabled outside that show's schedule. “Scheduled”
-  is the visual label for a show that is not currently on air.
+  header. Its playback action reflects the shared selected stream: Pause,
+  Resume, Connecting/cancel or Retry. Off-air shows cannot start a new selection;
+  an already selected stream remains controllable after its slot ends.
+  “Scheduled” is the visual label for a show that is not currently on air.
+  Details retains the mini-player above the device bottom safe area, reserves
+  scroll clearance for it, and stays open during playback actions.
   Share show sits below Listen Live and opens the native share sheet with show
   details and an `aceradio://show/<id>` link. Web uses sharing where supported,
   then clipboard or selectable text if browser sharing is unavailable. No
@@ -39,11 +43,14 @@ See [the monochrome theme](theme.md) for the current palette and validation.
   notice. It opens no share sheet or external link and writes no preference.
 - Shows and Saved reuse static card placeholders. Existing error/retry and empty
   states remain, and Saved's discover action sits inside a compact empty card.
+  Shared show-grid cards use Home's black background and one-pixel border.
 - Filters, favourites and sleep-timer options expose their selected state on
   native and web. Busy playback controls also expose their loading state.
 - About's story, founder images, timeline and links remain local. Settings keeps
   the same sleep timer, locally saved notification preference and contact links.
   Notification copy describes the future feature accurately.
+  Settings and Chat share the direct WhatsApp launcher; Studio email has been
+  removed from Settings. See [phone playback and contact fixes](phone-fixes.md).
 
 ## Validation
 

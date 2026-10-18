@@ -1,5 +1,5 @@
 import { fonts } from "@/theme/fonts";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -21,7 +21,6 @@ import {
   Radio,
   MessageCircle,
   ShieldCheck,
-  Mail,
   Info,
   Share2,
 } from "lucide-react-native";
@@ -30,7 +29,7 @@ import { SocialLinks } from "@/components/SocialLinks";
 import { useAccountData } from "@/context/AccountDataContext";
 import { AccountSyncStatus } from "@/components/AccountSyncStatus";
 import { router } from "@/utils/navigation";
-import { openVerifiedLink } from "@/services/links";
+import { openVerifiedLink, openWhatsAppChat } from "@/services/links";
 import { useRadio } from "@/context/RadioContext";
 import { STATION } from "@/config/station";
 import { colors } from "@/theme/colors";
@@ -51,6 +50,15 @@ export default function SettingsScreen() {
   } = useAccountData();
   const [busy, setBusy] = useState(false);
   const [shareNoticeVisible, setShareNoticeVisible] = useState(false);
+  const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
+  const whatsappOpening = useRef(false);
+  const openStudioChat = async () => {
+    if (whatsappOpening.current) return;
+    whatsappOpening.current = true;
+    setOpeningWhatsApp(true);
+    try { await openWhatsAppChat(STATION.whatsapp); }
+    finally { whatsappOpening.current = false; setOpeningWhatsApp(false); }
+  };
   const { sleepMinutes, setSleepTimer } = useRadio();
   const updateNotifications = async (value: boolean) => {
     setBusy(true);
@@ -246,20 +254,22 @@ export default function SettingsScreen() {
           )}
           <View style={styles.divider} />
           <Pressable
+            testID="settings-whatsapp"
             accessibilityRole="button"
+            accessibilityLabel="Open AceRadio on WhatsApp"
+            accessibilityState={{ disabled: openingWhatsApp, busy: openingWhatsApp }}
+            disabled={openingWhatsApp}
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-            onPress={() => {
-              void openVerifiedLink("WhatsApp", STATION.whatsapp);
-            }}
+            onPress={() => void openStudioChat()}
           >
             <View style={styles.icon}>
               <MessageCircle size={20} color={colors.accent} />
             </View>
             <View style={styles.rowBody}>
               <Text style={styles.rowName}>WhatsApp</Text>
-              <Text style={styles.rowSub}>Message the studio</Text>
+              <Text style={styles.rowSub}>{openingWhatsApp ? "Opening WhatsApp…" : "Message the studio"}</Text>
             </View>
-            <ChevronRight size={19} color={colors.subtle} />
+            {openingWhatsApp ? <ActivityIndicator size="small" color={colors.accent} /> : <ChevronRight size={19} color={colors.subtle} />}
           </Pressable>
           <View style={styles.divider} />
           <Pressable
@@ -277,23 +287,6 @@ export default function SettingsScreen() {
               <Text style={styles.rowSub}>
                 {STATION.website.replace(/^https:\/\//, "")}
               </Text>
-            </View>
-            <ChevronRight size={19} color={colors.subtle} />
-          </Pressable>
-          <View style={styles.divider} />
-          <Pressable
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-            onPress={() =>
-              void openVerifiedLink("email", `mailto:${STATION.email}`)
-            }
-          >
-            <View style={styles.icon}>
-              <Mail size={20} color={colors.accent} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={styles.rowName}>Studio email</Text>
-              <Text style={styles.rowSub}>{STATION.email}</Text>
             </View>
             <ChevronRight size={19} color={colors.subtle} />
           </Pressable>

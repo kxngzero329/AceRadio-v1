@@ -36,7 +36,7 @@ and web. See [typography, font sources and checks](docs/typography.md).
 - The mini player appears after station audio has actually started and remains available while paused. Previous / Play-Pause / Next use the currently scheduled live lineup; its close button stops playback and fades the mini player away.
 - Show changes fade the previous artwork and metadata out before showing the next selection across the hero and players.
 - The full player and show details use one slide up/down transition. Android/iOS run transforms on the native UI thread and retain the dark underlying page until the reverse slide completes. The down arrow, Android Back and browser Back share guarded dismissal. Direct player links can close to Home.
-- “Listen Live” in show details selects the scheduled show and plays the same station stream. Selecting a show never pauses already-playing audio.
+- Show details selects the scheduled show through the shared station player, then reflects Pause, Resume, Connecting/cancel and Retry states. The page stays open, and its mini-player controls the same audio session. Off-air shows cannot start a new selection; an already selected stream remains controllable. See [phone playback and contact fixes](docs/phone-fixes.md).
 - Loading, pause and playback states follow actual audio events. Connection failures show a message with a retry action. Cancelled or replaced connections cannot restart playback.
 - The sleep timer pauses the shared audio session. Notification preferences remain saved locally without permissions, tokens or remote registration.
 - The spotlight loops through all 11 posters while mounting only the previous, current and next slides. Autoplay pauses during interaction, away from Home, in the background and for reduced motion. The only controls are previous/next arrows; the slideshow play/pause button is removed.
@@ -110,6 +110,10 @@ Before shipping, test a fresh Android build and a physical iPhone build:
 Automated tests exercise the actual TypeScript transport/controller with native API doubles; bundle exports and config introspection do not compile Swift/Kotlin or replace these device checks.
 
 ## Source layout
+
+Startup keeps the native logo, animates subtle equalizer bars while local fonts
+load, then fades into the ready app. It respects reduced motion and does not wait
+for network requests. See [animated startup and device checks](docs/startup.md).
 
 - `app/`: five tabs, full player modal and show details.
 - `src/components/LiveRadioHero.tsx`: artwork and show transition.

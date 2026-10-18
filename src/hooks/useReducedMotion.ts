@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { AccessibilityInfo, Platform } from "react-native";
 
-export function useReducedMotion() {
+export function useReducedMotion(initiallyReduced = false) {
   const [reduced, setReduced] = useState(() =>
     Platform.OS === "web" && typeof window !== "undefined" && typeof window.matchMedia === "function"
       ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false,
+      : initiallyReduced,
   );
   useEffect(() => {
     let mounted = true;

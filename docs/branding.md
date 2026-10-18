@@ -13,7 +13,7 @@ The two supplied black-and-white designs were installed on 17 October 2026. The 
 | `assets/icons/monochrome-icon.png` | White alpha silhouette for Android themed launcher icons |
 | `assets/icons/notification-icon.png` | 96 × 96 white-on-transparent `ace` wordmark for ordinary Android notifications |
 | `assets/icons/favicon.png` | 48 × 48 web favicon |
-| `assets/splash/splash.png` | Exact supplied portrait image for the responsive loading fallback |
+| `assets/splash/splash.png` | Exact supplied portrait image, retained as a source export |
 | `assets/splash/splash-icon.png` | 1024 × 1024 native splash export; only the portrait's empty black margins are cropped |
 | `assets/store/google-play-icon.png` | Opaque 512 × 512 Google Play listing icon |
 
@@ -33,7 +33,9 @@ On PowerShell, use `npm.cmd` if execution policy blocks `npm.ps1`. This uses the
 
 The `expo-splash-screen` plugin uses the supplied splash on a black background in both system appearances. iOS uses a 320-point image canvas. Android uses a 224-dp image canvas within its native splash area to keep the full wordmark inside the circular mask. These are platform-specific presentations of the same supplied artwork; the portrait poster is not stretched to fill Android's native launch window. Expo generates the density-specific resources. `expo-system-ui` enables the configured dark appearance and black native root background.
 
-The splash stays visible while the bundled social-icon font loads. Once the navigation view lays out, the native splash hides with the configured short fade where supported. Font errors can proceed to the app. Catalogue requests, account restoration and network availability do not hold the splash open. There is no added minimum display delay.
+The native launch screen hands off to `StartupSplash` once the in-app overlay has laid out and its bundled logo has loaded (or reported an error). Both screens use the same square artwork and platform-specific canvas widths. The overlay adds five subtle grey equalizer bars on black while the bundled fonts load. The navigation mounts behind it, then its first layout starts a 380 ms fade into the current route. The overlay owns this fade on both iOS and Android; the separate native fade is disabled to avoid stacking animations.
+
+Startup never waits for catalogue requests, account restoration or network availability, and has no artificial minimum loading time. Font and logo errors can proceed to the app. Reduced motion shows static bars and skips the exit fade; the native preference defaults to static until read. Backgrounding stops the bars and releases any ready screen without waiting on an invisible animation. Startup does not replay on resume or tab changes. Covered controls cannot receive touches, keyboard focus or screen-reader focus. See [animated startup](startup.md) for implementation and checks.
 
 ## Required release checks
 

@@ -1,4 +1,4 @@
-import { Alert, Linking } from "react-native";
+import { Alert, Linking, Platform } from "react-native";
 export async function openVerifiedLink(
   label: string,
   url: string,
@@ -11,7 +11,8 @@ export async function openVerifiedLink(
     return false;
   }
   try {
-    if (!(await Linking.canOpenURL(url))) throw new Error("Unsupported URL");
+    // Availability queries can fail under native package-visibility rules even
+    // when opening the URL works. Let the OS handle the link directly.
     await Linking.openURL(url);
     return true;
   } catch {
@@ -21,4 +22,22 @@ export async function openVerifiedLink(
     );
     return false;
   }
+}
+
+/** Open the installed WhatsApp chat first, with its official HTTPS fallback. */
+export async function openWhatsAppChat(url: string): Promise<boolean> {
+  const match = /^https:\/\/wa\.me\/([1-9]\d{6,14})\/?$/.exec(url);
+  if (!match) {
+    Alert.alert("WhatsApp unavailable", "The studio’s WhatsApp link is not configured correctly.");
+    return false;
+  }
+  if (Platform.OS !== "web") {
+    try {
+      await Linking.openURL(`whatsapp://send?phone=${match[1]}`);
+      return true;
+    } catch {
+      // WhatsApp may not be installed. HTTPS can open its web/install flow.
+    }
+  }
+  return openVerifiedLink("WhatsApp", url);
 }

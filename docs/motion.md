@@ -38,6 +38,11 @@ the same preference and disables autoplay when reduced motion is requested.
 
 ## Verification
 
+Startup uses a matching black logo overlay with subtle equalizer bars and a
+380 ms exit fade, without an artificial loading delay. It respects reduced
+motion and background state. See [animated startup](startup.md) and
+`npm run test:startup` for its lifecycle and regression coverage.
+
 `npm run test:animations` exercises the production metadata hook with controlled
 animation completions, cancellation, first play, same-show refreshes, rapid
 changes, a return to the outgoing selection, cleanup, native/web drivers and

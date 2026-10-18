@@ -8,6 +8,8 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
+  ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
@@ -17,6 +19,7 @@ import {
   CalendarDays,
   Mic2,
   Play,
+  Pause,
   Radio,
 } from "lucide-react-native";
 import { ShowPoster } from "@/components/ShowPoster";
@@ -27,9 +30,11 @@ import { useFavorites } from "@/context/FavoritesContext";
 import { useRadio } from "@/context/RadioContext";
 import { useModalTransition } from "@/hooks/useModalTransition";
 import { colors } from "@/theme/colors";
-import { layout } from "@/theme/layout";
+import { layout, miniPlayerClearance } from "@/theme/layout";
 import { typography } from "@/theme/typography";
 import { ShowShareButton } from "@/components/ShowShareButton";
+import { MiniPlayer } from "@/components/MiniPlayer";
+import { PlaybackButton } from "@/components/PlaybackButton";
 
 export default function ShowDetail() {
   const {
@@ -42,9 +47,16 @@ export default function ShowDetail() {
   const { shows, presenters, loading, error } = useContent();
   const show = shows.find((item) => item.id === id);
   const { isFavorite, toggleFavorite } = useFavorites();
-  const { listenLive, liveShows } = useRadio();
+  const { listenLive, liveShows, currentShow, playing, buffering, error: playbackError, hasPlayed, toggle, retry } = useRadio();
+  const { fontScale } = useWindowDimensions();
   const liked = show ? isFavorite(show.id) : false;
   const isOnAir = liveShows.some((liveShow) => liveShow.id === show?.id);
+  const selected = !!show && currentShow?.id === show.id;
+  const canControl = isOnAir || selected;
+  const connecting = selected && buffering;
+  const listening = selected && playing;
+  const streamError = selected ? playbackError : null;
+  const playbackLabel = connecting ? "Connecting…" : streamError ? "Try again" : listening ? "Pause Live" : selected ? "Resume Live" : "Listen Live";
   const showPresenters = (show?.presenterIds ?? []).flatMap((presenterId) => {
     const presenter = presenters.find((item) => item.id === presenterId);
     return presenter?.bio ? [presenter] : [];
@@ -100,7 +112,7 @@ export default function ShowDetail() {
         </View>
         <ScrollView
           testID="show-detail-scroll"
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, hasPlayed && currentShow && { paddingBottom: miniPlayerClearance(fontScale) }]}
           showsVerticalScrollIndicator={false}
         >
           {!show ? (
@@ -160,38 +172,43 @@ export default function ShowDetail() {
                   </Text>
                 </View>
               </View>
-              <Pressable
+              <PlaybackButton
                 testID="show-listen-live"
                 accessibilityRole="button"
-                accessibilityState={{ disabled: !isOnAir || isClosing }}
-                disabled={!isOnAir || isClosing}
+                accessibilityState={{ disabled: !canControl || isClosing, busy: connecting }}
+                disabled={!canControl || isClosing}
                 style={({ pressed }) => [
                   styles.listen,
-                  !isOnAir && styles.listenDisabled,
+                  !canControl && styles.listenDisabled,
                   pressed && styles.listenPressed,
                 ]}
-                accessibilityLabel="Listen to live radio"
+                accessibilityLabel={connecting ? `Cancel connecting to ${show.title}` : streamError ? `Retry ${show.title} live stream` : listening ? `Pause ${show.title}` : selected ? `Resume ${show.title} live stream` : `Listen live to ${show.title}`}
+                accessibilityHint={connecting ? "Tap to cancel the connection." : undefined}
                 onPress={() => {
-                  if (!isOnAir) return;
-                  listenLive(show.id);
-                  close();
+                  if (!canControl || isClosing) return;
+                  if (selected) {
+                    if (streamError) retry();
+                    else toggle();
+                  } else listenLive(show.id);
                 }}
               >
-                <Play
+                {connecting ? <ActivityIndicator size="small" color={colors.onAccent} /> : listening ? <Pause size={20} color={colors.onAccent} fill={colors.onAccent} /> : <Play
                   size={20}
-                  color={isOnAir ? colors.onAccent : colors.muted}
-                  fill={isOnAir ? colors.onAccent : colors.muted}
-                />
+                  color={canControl ? colors.onAccent : colors.muted}
+                  fill={canControl ? colors.onAccent : colors.muted}
+                />}
                 <Text
                   style={[
                     styles.listenText,
-                    !isOnAir && styles.listenTextDisabled,
+                    !canControl && styles.listenTextDisabled,
                   ]}
                 >
-                  Listen Live
+                  {playbackLabel}
                 </Text>
-              </Pressable>
-              {!isOnAir && (
+              </PlaybackButton>
+              {streamError && <Text testID="show-playback-error" style={styles.streamError} accessibilityRole="alert">{streamError}</Text>}
+              {connecting && <Text style={styles.listenHint}>Tap to cancel the connection.</Text>}
+              {!canControl && (
                 <Text style={styles.listenHint}>
                   Tune in when this show is on air.
                 </Text>
@@ -244,6 +261,7 @@ export default function ShowDetail() {
             </>
           )}
         </ScrollView>
+        <MiniPlayer placement="sheet" />
       </SafeAreaView>
     </Animated.View>
   );
@@ -376,6 +394,7 @@ const styles = StyleSheet.create({
   listenText: { color: colors.onAccent, fontFamily: fonts.semibold, fontSize: 15 },
   listenTextDisabled: { color: colors.muted },
   listenHint: { ...typography.caption, textAlign: "center", marginTop: 8 },
+  streamError: { ...typography.caption, color: colors.error, textAlign: "center", marginTop: 8 },
   about: {
     borderTopWidth: 1,
     borderTopColor: colors.border,

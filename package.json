@@ -17,6 +17,8 @@
     "test:radio": "node --test scripts/radio.test.cjs",
     "test:navigation": "node --test scripts/navigation.test.cjs",
     "test:animations": "node --test scripts/animations.test.cjs",
+    "test:startup": "node --test scripts/startup.test.cjs",
+    "test:listening-ui": "node --test scripts/listening-ui.test.cjs",
     "test:content": "node --test scripts/content.test.cjs",
     "test:listeners": "node --test scripts/listeners.test.cjs",
     "test:accounts": "node --test scripts/accounts.test.cjs",

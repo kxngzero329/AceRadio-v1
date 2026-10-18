@@ -8,4 +8,5 @@ export const motion = {
   tab: 180,
   miniIn: 220,
   miniOut: 180,
+  startupOut: 380,
 } as const;

@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
+import { useCallback, useState } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import { DarkTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
@@ -12,7 +12,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { AccountDataProvider } from "@/context/AccountDataContext";
 import { colors } from "@/theme/colors";
 import { applyWebTheme } from "@/theme/applyWebTheme";
-import { FittedImage } from "@/components/FittedImage";
+import { StartupSplash } from "@/components/StartupSplash";
+import { useStartupTransition } from "@/hooks/useStartupTransition";
 import { blurWebFocus } from "@/utils/navigation";
 import { prepareModalHistory } from "@/utils/modalHistory";
 import { fonts } from "@/theme/fonts";
@@ -48,63 +49,68 @@ const sheetOptions = {
   contentStyle: { backgroundColor: "transparent" },
 };
 
-// Load bundled typefaces and social icons before revealing the interface.
+// Hand the native screen to our matching overlay before revealing the interface.
 SplashScreen.preventAutoHideAsync().catch(console.warn);
-SplashScreen.setOptions({ duration: 200, fade: true });
+SplashScreen.setOptions({ duration: 0, fade: false });
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({ ...FontAwesome6.font, ...fontAssets });
-
-  // Wait for the ready navigation view to lay out before revealing it.
-  // Network requests and account restoration never hold the native splash open.
-  const onReadyLayout = useCallback(() => {
-    SplashScreen.hideAsync().catch(console.warn);
-  }, []);
-
-  if (!fontsLoaded && !fontError) {
-    return (
-      <View style={styles.loading}>
-        <StatusBar style="light" />
-        <FittedImage
-          source={require("../assets/splash/splash.png")}
-          accessibilityLabel="AceRadio is loading"
-        />
-      </View>
-    );
-  }
+  const [appReady, setAppReady] = useState(false);
+  const startup = useStartupTransition(appReady);
+  const onReadyLayout = useCallback(() => setAppReady(true), []);
+  const setNavigationRef = useCallback((view: View | null) => {
+    // Also block keyboard focus on web while the overlay covers the app.
+    if (Platform.OS === "web" && view) {
+      (view as unknown as HTMLElement).inert = startup.visible;
+    }
+  }, [startup.visible]);
 
   return (
-    <SafeAreaProvider>
-      <ContentProvider>
-        <AuthProvider>
-          <AccountDataProvider>
-            <RadioProvider>
-              <StatusBar style="light" />
-              <ThemeProvider value={aceTheme}>
-                <View style={styles.navigation} onLayout={onReadyLayout}>
-                  <Stack
-                    screenListeners={{ beforeRemove: blurWebFocus }}
-                    screenOptions={{
-                      headerShown: false,
-                      contentStyle: { backgroundColor: colors.background },
-                    }}
-                  >
-                    <Stack.Screen name="(tabs)" />
-                    <Stack.Screen name="player" options={sheetOptions} />
-                    <Stack.Screen name="show/[id]" options={sheetOptions} />
-                    <Stack.Screen name="account" />
-                  </Stack>
-                </View>
-              </ThemeProvider>
-            </RadioProvider>
-          </AccountDataProvider>
-        </AuthProvider>
-      </ContentProvider>
-    </SafeAreaProvider>
+    <View style={styles.root}>
+      <StatusBar style="light" />
+      <View
+        ref={setNavigationRef}
+        style={styles.navigation}
+        pointerEvents={startup.visible ? "none" : "auto"}
+        accessibilityElementsHidden={startup.visible}
+        importantForAccessibility={startup.visible ? "no-hide-descendants" : "auto"}
+        aria-hidden={startup.visible}
+      >
+        {(fontsLoaded || fontError) && (
+          <SafeAreaProvider>
+            <ContentProvider>
+              <AuthProvider>
+                <AccountDataProvider>
+                  <RadioProvider>
+                    <ThemeProvider value={aceTheme}>
+                      <View style={styles.navigation} onLayout={onReadyLayout}>
+                        <Stack
+                          screenListeners={{ beforeRemove: blurWebFocus }}
+                          screenOptions={{
+                            headerShown: false,
+                            contentStyle: { backgroundColor: colors.background },
+                          }}
+                        >
+                          <Stack.Screen name="(tabs)" />
+                          <Stack.Screen name="player" options={sheetOptions} />
+                          <Stack.Screen name="show/[id]" options={sheetOptions} />
+                          <Stack.Screen name="account" />
+                        </Stack>
+                      </View>
+                    </ThemeProvider>
+                  </RadioProvider>
+                </AccountDataProvider>
+              </AuthProvider>
+            </ContentProvider>
+          </SafeAreaProvider>
+        )}
+      </View>
+      {startup.visible && <StartupSplash {...startup} />}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, backgroundColor: "#000000" },
+  root: { flex: 1, backgroundColor: colors.background },
   navigation: { flex: 1, backgroundColor: colors.background },
 });
