@@ -10,6 +10,12 @@ Listening uses AceRadio's public live stream, `https://studio.ace.radio/stream`.
 
 ## Run
 
+Show reminders support guest phone favourites and synced account favourites,
+all-show/favourite modes, advance timing, one-time reminders and opening a show
+with live audio from a notification. The backend is deployed with sending off
+until Firebase/Apple/Expo credentials and device testing are complete. Follow
+the [step-by-step notification setup](docs/push-notifications.md).
+
 ```sh
 npm install
 npm run start:go -- --clear
@@ -89,7 +95,7 @@ React Native Web `0.21.4` uses the existing `patch-package` responder fix. Keep 
 
 ## Background audio and phone controls
 
-AceRadio uses Expo Audio's native Android Media3 foreground service and iOS AVAudioSession / Now Playing integration. Android shows a media notification; iOS shows the player on the Lock Screen and in Control Center. This media session is independent of the Settings toggle for future show notifications. Android media-session notifications do not require the ordinary notification permission. [Android media notification exemption](https://developer.android.com/develop/ui/views/notifications/notification-permission#media-sessions).
+AceRadio uses Expo Audio's native Android Media3 foreground service and iOS AVAudioSession / Now Playing integration. Android shows a media notification; iOS shows the player on the Lock Screen and in Control Center. This media session is independent of the Settings controls for show reminders. Android media-session notifications do not require the ordinary notification permission. [Android media notification exemption](https://developer.android.com/develop/ui/views/notifications/notification-permission#media-sessions).
 
 The controls show the selected show title, presenter and artwork. Packaged Android drawable artwork is copied through Expo Asset to a readable file. Unsupported artwork URIs are omitted until resolved, so artwork cannot prevent the entire media notification from appearing. Metadata updates use the existing media session and do not reconnect or interrupt audible playback.
 
@@ -149,7 +155,9 @@ for network requests. See [animated startup and device checks](docs/startup.md).
 - `src/data/shows.ts`: 11 shows, local artwork, schedules and demo live fixtures.
 - `src/context/FavoritesContext.tsx`: persisted device favourites.
 - `src/config/station.ts`: public live-stream URL and contact/social links.
-- `src/services/notifications.ts`: local notification preference.
+- `src/services/notifications.ts`: compatible local guest reminder preference.
+- `src/context/PushNotificationContext.tsx`: device consent, sync and startup-safe notification opening/playback.
+- `supabase/functions/push-device/`, `push-dispatch/`: guest/device registration and protected reminder delivery.
 - `assets/`: supplied branding, presenter portraits, posters, icons and splash.
 
-Native playback uses the installed Expo Audio package. Expo's native Expo Go detection keeps foreground playback working there without requesting unsupported service controls; AceRadio development and release builds retain background listening and live lock-screen controls. `ExecutionEnvironment.StoreClient` alone is not used to detect Expo Go because it also includes development clients. Browsers use their audio element and media-session controls. No microphone access or recording permissions are requested. Station notifications remain a local preference preview.
+Native playback uses the installed Expo Audio package. Expo's native Expo Go detection keeps foreground playback working there without requesting unsupported service controls; AceRadio development and release builds retain background listening and live lock-screen controls. `ExecutionEnvironment.StoreClient` alone is not used to detect Expo Go because it also includes development clients. Browsers use their audio element and media-session controls. No microphone access or recording permissions are requested. Show push reminders require installed builds and the platform setup described above; event/announcement campaigns are separate future features.

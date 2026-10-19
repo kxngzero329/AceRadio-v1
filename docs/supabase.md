@@ -1,5 +1,12 @@
 # Supabase content backend
 
+**19 October push update:** account reminder scope/timing, private installation
+registrations and delivery queues are deployed. The protected dispatcher and
+minute cron are installed with sending disabled pending Firebase/Apple/Expo
+credentials and physical-device tests. Guest reminders require no Auth account.
+Use the dedicated shared-history-safe deployment tool and
+[push setup guide](push-notifications.md); do not revert website migrations.
+
 **19 October 2026 local Expo Go fix:** this computer's ignored `.env.local` was
 still set to `bundled` after pulling the events/announcements feature. It now
 selects `supabase` with its existing public URL/key. Public reads confirm the

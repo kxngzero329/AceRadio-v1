@@ -1,5 +1,10 @@
 # Listening refinements — 18 October 2026
 
+**19 October update:** Home's reminder is now connected to guest/account push
+subscriptions, and notification taps can open a show and start live audio after
+startup. The original preview behaviour documented below has been superseded.
+See [push reminders and platform setup](push-notifications.md).
+
 Between scheduled shows, connecting to the default AceRadio stream changes the
 Home hero to station artwork, badges and the main action. Introductory copy,
 show metadata and the status footer are hidden for this state. Actual connection

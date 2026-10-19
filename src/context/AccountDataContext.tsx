@@ -16,6 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { accountConfig } from "@/services/authClient";
 import { accountApi } from "@/services/accountRepository";
 import { AccountSync, type SyncState } from "@/utils/AccountSync";
+import type { ReminderScope, ReminderLead } from "@/types/notifications";
 import {
   getNotificationsEnabled,
   enableNotifications,
@@ -26,6 +27,8 @@ const GUEST_KEY = "aceradio:favorites:v1";
 type AccountData = {
   favorites: string[];
   notificationsEnabled: boolean;
+  reminderScope: ReminderScope;
+  reminderLeadMinutes: ReminderLead;
   ready: boolean;
   canEdit: boolean;
   syncing: boolean;
@@ -40,6 +43,7 @@ type AccountData = {
   signedIn: boolean;
   toggleFavorite(id: string): void;
   setNotifications(value: boolean): Promise<void>;
+  setReminderOptions(scope: ReminderScope, leadMinutes: ReminderLead): Promise<void>;
   updateName(value: string): Promise<void>;
   importGuest(): Promise<void>;
   refresh(): Promise<void>;
@@ -96,6 +100,7 @@ function ScopedAccountData({
   const [guest, setGuest] = useState<string[]>([]);
   const guestRef = useRef(guest);
   const [guestNotifications, setGuestNotifications] = useState(false);
+  const [guestOptions, setGuestOptions] = useState<{ scope: ReminderScope; leadMinutes: ReminderLead }>({ scope: "favorites", leadMinutes: 5 });
   const [guestReady, setGuestReady] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const guestWrite = useRef<Promise<void>>(Promise.resolve());
@@ -104,8 +109,9 @@ function ScopedAccountData({
     void Promise.all([
       AsyncStorage.getItem(GUEST_KEY),
       getNotificationsEnabled(),
+      AsyncStorage.getItem("aceradio:guest-reminder-options:v1"),
     ])
-      .then(([raw, preference]) => {
+      .then(([raw, preference, rawOptions]) => {
         if (!alive) return;
         const parsed: unknown = raw ? JSON.parse(raw) : [];
         const ids = Array.isArray(parsed)
@@ -122,6 +128,12 @@ function ScopedAccountData({
         guestRef.current = ids;
         setGuest(ids);
         setGuestNotifications(preference);
+        if (rawOptions) {
+          try {
+            const saved = JSON.parse(rawOptions);
+            setGuestOptions({ scope: saved.scope === "all" ? "all" : "favorites", leadMinutes: [0, 5, 10, 15].includes(saved.leadMinutes) ? saved.leadMinutes : 5 });
+          } catch { /* Keep safe defaults if an old device preference is corrupt. */ }
+        }
       })
       .catch(() => {
         if (alive)
@@ -213,6 +225,8 @@ function ScopedAccountData({
         notificationsEnabled: userId
           ? (account?.settings.notifications_enabled ?? false)
           : guestNotifications,
+        reminderScope: userId ? (account?.settings.reminder_scope ?? "favorites") : guestOptions.scope,
+        reminderLeadMinutes: userId ? (account?.settings.reminder_lead_minutes ?? 5) : guestOptions.leadMinutes,
         ready,
         canEdit,
         syncing: state.syncing,
@@ -267,6 +281,14 @@ function ScopedAccountData({
             setGuestNotifications(value);
           }
           setLocalError(null);
+        },
+        setReminderOptions: async (scope, leadMinutes) => {
+          if (!canEdit) throw Error("Wait for your settings to load.");
+          if (engine) await engine.enqueue({ kind: "settings", value: engine.getSnapshot().account?.settings.notifications_enabled ?? false, scope, leadMinutes });
+          else {
+            await AsyncStorage.setItem("aceradio:guest-reminder-options:v1", JSON.stringify({ scope, leadMinutes }));
+            setGuestOptions({ scope, leadMinutes });
+          }
         },
         updateName: async (value) => {
           if (!engine || !canEdit)

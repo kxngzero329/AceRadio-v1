@@ -1,6 +1,5 @@
 import { fonts } from "@/theme/fonts";
-import { useState } from "react";
-import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { ArrowUpRight, Bell, Radio } from "lucide-react-native";
 import { router } from "@/utils/navigation";
 import { useRadio } from "@/context/RadioContext";
@@ -12,6 +11,9 @@ import {
 import { colors } from "@/theme/colors";
 import { layout } from "@/theme/layout";
 import type { Show } from "@/types/show";
+import { usePushNotifications } from "@/context/PushNotificationContext";
+import { useAccountData } from "@/context/AccountDataContext";
+import { reminderKey } from "@/types/notifications";
 
 function ShowNotice({ show, detail }: { show: Show; detail: string }) {
   return (
@@ -45,11 +47,12 @@ export function LiveNoticeBoard() {
   const unavailable = !!error && !shows.length;
   const { liveShows } = useRadio();
   const next = getNextScheduledShow(shows);
-  const occurrence = next ? `${next.show.id}:${next.startsAt.toISOString()}` : null;
-  // A UI preview only, scoped to this upcoming occurrence. No permission request,
-  // persisted subscription, account write or notification is created.
-  const [reminderFor, setReminderFor] = useState<string | null>(null);
-  const remindMe = occurrence !== null && reminderFor === occurrence;
+  const push = usePushNotifications();
+  const account = useAccountData();
+  const occurrence = next ? reminderKey({ showId: next.show.id, startsAt: next.startsAt.toISOString() }) : null;
+  const covered = !!next && push.enabled && (account.reminderScope === "all" || account.favorites.includes(next.show.id));
+  const saved = push.oneTime.find(item => reminderKey(item) === occurrence);
+  const remindMe = covered || !!saved;
   const nextTime = next
     ? new Intl.DateTimeFormat("en-ZA", {
         timeZone: SAST_TIME_ZONE,
@@ -117,16 +120,16 @@ export function LiveNoticeBoard() {
           <View style={styles.reminderCopy}>
             <Text style={styles.reminderTitle}>Remind me</Text>
             <Text style={styles.reminderHint} accessibilityLiveRegion="polite">
-              {!next ? "No upcoming show to remind you about." : remindMe ? "Preview on · Notifications coming soon." : "Notifications coming soon."}
+              {!next ? "No upcoming show to remind you about." : push.unsupported ? "Reminders need an installed AceRadio build." : (covered || saved) && !push.deliveryActive ? push.status : covered ? "Included in your show reminder settings." : saved ? (saved.leadMinutes ? `Reminder saved · ${saved.leadMinutes} minutes before.` : "Reminder saved · at the start.") : "A one-time reminder for this broadcast."}
             </Text>
           </View>
           <Switch
             testID="schedule-reminder-switch"
             accessibilityLabel="Remind me about the next show"
-            accessibilityHint="Preview only. Push reminders will be available in a future update."
+            accessibilityHint={covered ? "This show is included in your reminder settings." : "Save or remove a reminder for this broadcast only."}
             value={remindMe}
-            disabled={!next}
-            onValueChange={value => setReminderFor(value ? occurrence : null)}
+            disabled={!next || !push.ready || push.busy || push.unsupported || covered}
+            onValueChange={value => { if (next) void push.setOneTime(next.show.id, next.startsAt.toISOString(), value).catch(error => Alert.alert("Show reminder", error instanceof Error ? error.message : "Couldn't save your reminder.")); }}
             trackColor={{ false: colors.borderStrong, true: colors.accent }}
             thumbColor={remindMe ? colors.onAccent : colors.accentPressed}
             ios_backgroundColor={colors.borderStrong}

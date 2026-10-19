@@ -12,7 +12,11 @@ Guests can continue listening and saving shows on their device. After sign-in, f
 
 Signed-in screens show syncing, pending saves, retry and conflict information. A failed first account load has loading/error states rather than an empty collection presented as successfully loaded. Account changes keep the radio and navigation mounted.
 
-Notification preference sync does not register push tokens or request system notification permission. The running sleep timer, playback state, device permissions and future installation push tokens are device/session state.
+Account preference sync remains separate from device permission and registration.
+Show reminders now add account-synced scope/timing, plus explicit permission and
+consent on each installation; guest favourites/reminder choices remain on the
+phone. See [push reminder setup](push-notifications.md). The running sleep timer,
+playback state and device permissions remain device/session state.
 
 ## Current Auth configuration and future SMTP setup
 

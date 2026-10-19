@@ -6,7 +6,11 @@ export const accountSchema = z.object({
   user_id: z.uuid(),
   role: z.enum(["user", "admin"]),
   profile: z.object({ display_name: z.string().min(2).max(40), revision }),
-  settings: z.object({ notifications_enabled: z.boolean(), revision }),
+  settings: z.object({
+    notifications_enabled: z.boolean(), revision,
+    reminder_scope: z.enum(["favorites", "all"]).default("favorites"),
+    reminder_lead_minutes: z.union([z.literal(0), z.literal(5), z.literal(10), z.literal(15)]).default(5),
+  }),
   favorites: z
     .array(
       z.object({
@@ -32,7 +36,10 @@ export const changeSchema = z
         show_id: z.string().min(1).max(200),
         value: z.boolean(),
       }),
-      z.object({ kind: z.literal("settings"), value: z.boolean() }),
+      z.object({ kind: z.literal("settings"), value: z.boolean(),
+        scope: z.enum(["favorites", "all"]).optional(),
+        leadMinutes: z.union([z.literal(0), z.literal(5), z.literal(10), z.literal(15)]).optional(),
+      }),
       z.object({
         kind: z.literal("profile"),
         value: z
@@ -50,7 +57,7 @@ export const changeSchema = z
 export type AccountChange = z.infer<typeof changeSchema>;
 export type ChangeInput =
   | { kind: "favorite"; show_id: string; value: boolean }
-  | { kind: "settings"; value: boolean }
+  | { kind: "settings"; value: boolean; scope?: "favorites" | "all"; leadMinutes?: 0 | 5 | 10 | 15 }
   | { kind: "profile"; value: string };
 export const syncResponseSchema = z.object({
   account: accountSchema,

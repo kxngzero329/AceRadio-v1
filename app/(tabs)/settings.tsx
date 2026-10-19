@@ -5,8 +5,6 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  Switch,
-  Alert,
   ActivityIndicator,
   useWindowDimensions,
   Platform,
@@ -14,7 +12,6 @@ import {
 import { PageScrollView } from "@/components/PageScrollView";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  Bell,
   Timer,
   Link as LinkIcon,
   ChevronRight,
@@ -28,6 +25,7 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { SocialLinks } from "@/components/SocialLinks";
 import { useAccountData } from "@/context/AccountDataContext";
 import { AccountSyncStatus } from "@/components/AccountSyncStatus";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { router } from "@/utils/navigation";
 import { openVerifiedLink, openWhatsAppChat } from "@/services/links";
 import { useRadio } from "@/context/RadioContext";
@@ -42,13 +40,9 @@ export default function SettingsScreen() {
   const contentStyle = usePageContentStyle();
   const { fontScale } = useWindowDimensions();
   const {
-    notificationsEnabled: notifications,
-    setNotifications,
-    canEdit,
     signedIn,
     displayName,
   } = useAccountData();
-  const [busy, setBusy] = useState(false);
   const [shareNoticeVisible, setShareNoticeVisible] = useState(false);
   const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
   const whatsappOpening = useRef(false);
@@ -60,27 +54,6 @@ export default function SettingsScreen() {
     finally { whatsappOpening.current = false; setOpeningWhatsApp(false); }
   };
   const { sleepMinutes, setSleepTimer } = useRadio();
-  const updateNotifications = async (value: boolean) => {
-    setBusy(true);
-    try {
-      await setNotifications(value);
-      if (value) {
-        Alert.alert(
-          "Preference saved",
-          signedIn
-            ? "Show updates are coming soon. Your preference will sync with your account."
-            : "Show updates are coming soon. Your preference is saved on this device.",
-        );
-      }
-    } catch (e) {
-      Alert.alert(
-        "Notifications not ready",
-        e instanceof Error ? e.message : "Unable to enable notifications.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
   return (
     <SafeAreaView edges={["top"]} style={styles.root}>
       <ScreenHeader />
@@ -135,39 +108,7 @@ export default function SettingsScreen() {
         <Text accessibilityRole="header" style={styles.section}>
           Notifications
         </Text>
-        <View style={styles.panel}>
-          <View style={styles.row}>
-            <View style={styles.icon}>
-              <Bell color={colors.accent} size={20} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={styles.rowName}>Show & station updates</Text>
-              <Text style={styles.rowSub}>
-                Save your preference for future show updates
-              </Text>
-            </View>
-            {busy ? (
-              <ActivityIndicator
-                style={styles.switchLoading}
-                color={colors.accent}
-              />
-            ) : (
-              <Switch
-                accessibilityLabel="Show and station updates preference"
-                value={notifications}
-                disabled={!canEdit}
-                onValueChange={(v) => void updateNotifications(v)}
-                trackColor={{ false: colors.borderStrong, true: colors.accent }}
-                thumbColor={notifications ? colors.onAccent : colors.accentPressed}
-                ios_backgroundColor={colors.borderStrong}
-                {...(Platform.OS === "web" ? { activeThumbColor: colors.onAccent } : {})}
-              />
-            )}
-          </View>
-          <Text style={styles.notice}>
-            Station notifications are coming soon.
-          </Text>
-        </View>
+        <NotificationSettings />
         <Text accessibilityRole="header" style={styles.section}>
           Playback
         </Text>

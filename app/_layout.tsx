@@ -19,6 +19,8 @@ import { blurWebFocus } from "@/utils/navigation";
 import { prepareModalHistory } from "@/utils/modalHistory";
 import { fonts } from "@/theme/fonts";
 import { fontAssets } from "@/theme/fontAssets";
+import { PushNotificationProvider } from "@/context/PushNotificationContext";
+import { NotificationNotice } from "@/components/NotificationNotice";
 
 prepareModalHistory();
 applyWebTheme();
@@ -84,6 +86,7 @@ export default function RootLayout() {
               <AuthProvider>
                 <AccountDataProvider>
                   <RadioProvider>
+                    <PushNotificationProvider startupReady={appReady && !startup.visible}>
                     <ThemeProvider value={aceTheme}>
                       <View style={styles.navigation} onLayout={onReadyLayout}>
                         <Stack
@@ -101,8 +104,10 @@ export default function RootLayout() {
                           <Stack.Screen name="announcements" options={sheetOptions} />
                           <Stack.Screen name="account" />
                         </Stack>
+                        <NotificationNotice />
                       </View>
                     </ThemeProvider>
+                    </PushNotificationProvider>
                   </RadioProvider>
                 </AccountDataProvider>
               </AuthProvider>

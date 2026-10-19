@@ -6,6 +6,8 @@ android/
 ios/
 .env
 .env.local
+google-services.json
+*-firebase-adminsdk-*.json
 *.log
 .DS_Store
 

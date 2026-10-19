@@ -47,8 +47,9 @@ See [the monochrome theme](theme.md) for the current palette and validation.
 - Filters, favourites and sleep-timer options expose their selected state on
   native and web. Busy playback controls also expose their loading state.
 - About's story, founder images, timeline and links remain local. Settings keeps
-  the same sleep timer, locally saved notification preference and contact links.
-  Notification copy describes the future feature accurately.
+  the same sleep timer and contact links. Show reminders now provide scope and
+  timing controls for guests/accounts, device permission/consent, one-time Home
+  reminders and accurate sync/setup status. See [push reminders](push-notifications.md).
   Settings and Chat share the direct WhatsApp launcher; Studio email has been
   removed from Settings. See [phone playback and contact fixes](phone-fixes.md).
 

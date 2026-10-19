@@ -401,6 +401,14 @@ verify_jwt = false
 [functions.account-delete]
 verify_jwt = false
 
+# Guests use an installation secret; signed-in bearer tokens are verified in code.
+[functions.push-device]
+verify_jwt = false
+
+# Only the server-held worker secret authorises dispatch, never a public API key.
+[functions.push-dispatch]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

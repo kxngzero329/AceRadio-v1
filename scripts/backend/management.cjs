@@ -55,4 +55,4 @@ async function management(route, method = "GET", body) {
     );
   return response.json();
 }
-module.exports = { management };
+module.exports = { management, accessToken };

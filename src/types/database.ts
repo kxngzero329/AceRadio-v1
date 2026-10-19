@@ -735,18 +735,24 @@ export type Database = {
       user_settings: {
         Row: {
           notifications_enabled: boolean
+          reminder_lead_minutes: number
+          reminder_scope: string
           revision: number
           updated_at: string
           user_id: string
         }
         Insert: {
           notifications_enabled?: boolean
+          reminder_lead_minutes?: number
+          reminder_scope?: string
           revision?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           notifications_enabled?: boolean
+          reminder_lead_minutes?: number
+          reminder_scope?: string
           revision?: number
           updated_at?: string
           user_id?: string
@@ -780,6 +786,67 @@ export type Database = {
       is_account_admin: { Args: never; Returns: boolean }
       is_content_editor: { Args: never; Returns: boolean }
       is_verified_account: { Args: never; Returns: boolean }
+      push_claim_jobs: {
+        Args: { p_allowed?: string[]; p_at?: string; p_environment: string }
+        Returns: Json
+      }
+      push_cleanup: { Args: never; Returns: undefined }
+      push_due_candidates: {
+        Args: { p_at?: string }
+        Returns: {
+          device_id: string
+          ends_at: string
+          environment: string
+          expires_at: string
+          show_id: string
+          starts_at: string
+          title: string
+          token: string
+        }[]
+      }
+      push_finish_job: {
+        Args: {
+          p_error?: string
+          p_id: string
+          p_lease: string
+          p_state: string
+          p_ticket?: string
+        }
+        Returns: undefined
+      }
+      push_finish_receipt: {
+        Args: { p_error?: string; p_id: string; p_result: string }
+        Returns: undefined
+      }
+      push_hit_limit: {
+        Args: { p_bucket: string; p_max: number; p_seconds: number }
+        Returns: boolean
+      }
+      push_pending_receipts: { Args: never; Returns: Json }
+      push_register_device: {
+        Args: {
+          p_enabled: boolean
+          p_environment: string
+          p_favorites: string[]
+          p_hash: string
+          p_id: string
+          p_one_time: Json
+          p_platform: string
+          p_preferences: Json
+          p_sequence: number
+          p_token: string
+          p_user: string
+        }
+        Returns: Json
+      }
+      push_worker_lock: {
+        Args: { p_environment: string; p_lease: string }
+        Returns: boolean
+      }
+      push_worker_unlock: {
+        Args: { p_environment: string; p_lease: string }
+        Returns: undefined
+      }
       reserve_event_tickets: {
         Args: { details: Json; request_id: string; visitor_key: string }
         Returns: Json

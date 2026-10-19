@@ -38,6 +38,7 @@ type RadioContextValue = {
   clearCurrentShow: () => void;
   retry: () => void;
   listenLive: (showId?: string) => void;
+  listenNow: (showId?: string) => void;
   previous: () => void;
   next: () => void;
   sleepMinutes: number | null;
@@ -118,6 +119,10 @@ export function RadioProvider({ children }: PropsWithChildren) {
       startShow(selectAdjacentLiveShow(shows, selectedShow.current?.id, -1)),
     [startShow, shows],
   );
+  // Notification taps always play the actual broadcast, never an off-air preview.
+  const listenNow = useCallback((showId?: string) => {
+    startShow(selectLiveShow(shows, showId) ?? stationStreamShow);
+  }, [shows, startShow, stationStreamShow]);
   const next = useCallback(
     () => startShow(selectAdjacentLiveShow(shows, selectedShow.current?.id, 1)),
     [startShow, shows],
@@ -192,6 +197,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
       clearCurrentShow,
       retry,
       listenLive,
+      listenNow,
       previous,
       next,
       sleepMinutes,
@@ -208,6 +214,7 @@ export function RadioProvider({ children }: PropsWithChildren) {
       clearCurrentShow,
       retry,
       listenLive,
+      listenNow,
       previous,
       next,
       sleepMinutes,

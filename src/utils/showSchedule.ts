@@ -62,6 +62,20 @@ export function getNextScheduledShow(lineup: readonly Show[], at = new Date()): 
   }
   return next;
 }
+
+/** Validate a notification against the currently published slot, including overnight ends. */
+export function getShowOccurrence(show: Show, startsAt: string) {
+  const start = Date.parse(startsAt);
+  if (!Number.isFinite(start)) return null;
+  const day = startDay(new Date(start));
+  for (const slot of slots(show)) {
+    const actualStart = day + minutes(slot.start) * 60_000 - SAST_OFFSET_MS;
+    if (!validDay(slot, day) || actualStart !== start) continue;
+    const end = day + minutes(slot.end) * 60_000 - SAST_OFFSET_MS + (slot.end <= slot.start ? DAY_MS : 0);
+    return { startsAt: new Date(start), endsAt: new Date(end) };
+  }
+  return null;
+}
 function displayTime(value: string) {
   const hour = Number(value.slice(0,2));
   return `${hour % 12 || 12}:${value.slice(3,5)} ${hour < 12 ? "AM" : "PM"}`;

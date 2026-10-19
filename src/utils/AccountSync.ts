@@ -109,7 +109,10 @@ export class AccountSync {
             });
         } else if (change.kind === "settings")
           visible.settings = {
+            ...visible.settings,
             notifications_enabled: change.value,
+            ...(change.scope !== undefined ? { reminder_scope: change.scope } : {}),
+            ...(change.leadMinutes !== undefined ? { reminder_lead_minutes: change.leadMinutes } : {}),
             revision: change.base_revision + 1,
           };
         else
