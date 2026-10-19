@@ -98,6 +98,34 @@ correctly remains hidden until an active update is published.
 
 ## Validation
 
+### Events or announcements missing after a Git pull
+
+Check the current computer's ignored `.env.local`, not just the committed code.
+`EXPO_PUBLIC_CONTENT_SOURCE=bundled` deliberately disables event reads and uses
+an empty local announcements list. Each computer needs
+`EXPO_PUBLIC_CONTENT_SOURCE=supabase` with the correct public Supabase URL and
+publishable key. Git pull does not transfer these settings, and linking the
+Supabase CLI or running `backend:configure` does not switch the content source.
+
+On 19 October, this checkout still selected `bundled` despite containing the
+new screens. Switching only its local source to `supabase` restored access to
+the published Red Star Festival event and Test Announcement. Both public reads
+returned HTTP 200; no backend records or permissions needed changing.
+
+After a fresh Metro start, the rendered app was checked against these live reads:
+Home previews, announcement details/back, event details/SAST dates/booking
+action, reload, and widths 320/390/430/768 all passed without page errors.
+TypeScript and the 30 content/event tests passed. Ignored evidence is under
+`.qa/local-content-*`.
+
+Fully reload Expo Go after the change. If needed, stop the current Metro server,
+run `npm run start:go -- --clear`, and scan its new QR code. Clearing account
+storage or reinstalling the app is unnecessary: remote query keys include the
+selected source, so the bundled catalogue cannot override the remote query.
+Keep credentials local; do not commit `.env.local` to move between computers.
+
+The published-content checks below describe the original feature validation.
+
 - TypeScript and all **150 automated tests** pass, including eight new event
   tests, announcement-priority/legacy-cache coverage and public-cache isolation.
 - Production anonymous event list/detail queries were checked against the

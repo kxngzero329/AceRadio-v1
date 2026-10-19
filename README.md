@@ -17,6 +17,13 @@ npm run start:go -- --clear
 
 For a native development client, run `npm start`. Use `npm run web` for the browser preview.
 
+After pulling onto another computer, check its ignored `.env.local`: live events
+and announcements require `EXPO_PUBLIC_CONTENT_SOURCE=supabase` and the project's
+public URL/publishable key. Git does not sync this file; `bundled` mode shows the
+local show catalogue without events or announcements. Fully reload Expo Go after
+changing it. If the old configuration persists, stop Metro and rerun the command
+above, then scan that server's QR code. Keep `.env.local` out of Git.
+
 Expo Go plays the station stream in the foreground. It skips this app's background playback service and lock-screen controls because `app.json` cannot add native services to the installed Expo Go app. For background listening and system player controls, use a fresh AceRadio development or release build with the existing `expo-audio` plugin (`enableBackgroundPlayback: true`). Changing app config or clearing Metro's cache does not update a previously installed native binary. [Expo Audio configuration](https://docs.expo.dev/versions/latest/sdk/audio/#configuration-in-app-config).
 
 ## Listening and show previews

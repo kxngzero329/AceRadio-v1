@@ -1,5 +1,12 @@
 # Supabase content backend
 
+**19 October 2026 local Expo Go fix:** this computer's ignored `.env.local` was
+still set to `bundled` after pulling the events/announcements feature. It now
+selects `supabase` with its existing public URL/key. Public reads confirm the
+published event and announcement. The bundled setting described in the older
+review below is historical. See [events troubleshooting](events.md#events-or-announcements-missing-after-a-git-pull)
+when setting up another computer; Git does not carry `.env.local` between them.
+
 **Accounts update, 16 October 2026:** two subsequent migrations add private account profiles/roles/preferences/favourites, indexed sync lookups and MFA-aware deletion. They replace the old `content_staff` authority with `user_roles` (`user`/`admin`). Admin catalogue/Storage writes now require MFA. The account-deletion function is deployed. As of 19 October, mobile signup/sign-in uses email and password with immediate sign-in; email confirmation and password reset are deferred until SMTP setup. See [accounts and sync](accounts.md). The deployment history below describes the original content rollout.
 
 **16 October 2026 review:** CLI 2.84.2 is successfully linked to the project below, all four remote migrations match this checkout, and live schema/RLS/Storage inspection confirms the deployed structure. The local `.env.local` currently selects **bundled** content; the earlier deployment notes below describe its previous Supabase setting. CLI linkage does not switch that value. See the [codebase overview](codebase-overview.md) for the current environment snapshot, Windows tooling notes and the config-version fix (`[inbucket]`, with the empty `db.orioledb_version` removed).
