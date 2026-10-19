@@ -22,7 +22,7 @@
     "test:content": "node --test scripts/content.test.cjs",
     "test:events": "node --test scripts/events.test.cjs",
     "test:listeners": "node --test scripts/listeners.test.cjs",
-    "test:accounts": "node --test scripts/accounts.test.cjs",
+    "test:accounts": "node --test scripts/accounts.test.cjs scripts/auth.test.cjs",
     "backend:configure-auth": "node scripts/backend/configure-auth.cjs",
     "backend:configure": "node scripts/backend/configure.cjs",
     "backend:configure-eas": "node scripts/backend/configure-eas.cjs",

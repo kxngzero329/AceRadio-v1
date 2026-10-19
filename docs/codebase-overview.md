@@ -6,7 +6,7 @@ cards and event list/detail pages. Announcements now have a compact priority
 preview and full updates page. See [events.md](events.md); the database counts
 and content-cache description below remain the original dated audit snapshot.
 
-**Subsequent implementation on 16 October 2026:** accounts, two-role permissions, MFA-backed admin writes and cached favourites/settings sync are now deployed. The detailed account architecture and email setup requirement are in [accounts.md](accounts.md); that document supersedes the local-only favourites and old staff-role descriptions in this initial audit snapshot below.
+**Account updates, 16–19 October 2026:** accounts, two-role permissions, MFA-backed admin writes and cached favourites/settings sync are deployed. The mobile app now supports email/password-only signup with immediate sign-in; confirmation and password reset are deferred until SMTP setup. The detailed architecture is in [accounts.md](accounts.md); that document supersedes the local-only favourites and old staff-role descriptions in this initial audit snapshot below.
 
 Reviewed on 16 October 2026 against the application source, backend scripts, migrations, tests and linked Supabase project `dbgpfqyighcaquxwzkfe`. Counts and environment observations below are a dated snapshot.
 

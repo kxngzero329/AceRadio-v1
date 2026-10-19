@@ -2,7 +2,7 @@
 
 For an end-to-end map of the screens, playback, content flow, deployed database and CLI setup, see the [codebase overview](docs/codebase-overview.md), reviewed on 16 October 2026.
 
-Accounts, the two-role permission system, MFA for admin writes, and cached favourites/settings sync are implemented. See [account setup and release checks](docs/accounts.md). Public email-code registration/recovery stays gated until a production SMTP sender and templates are configured; listening and guest favourites remain available.
+Accounts, the two-role permission system, MFA for admin writes, and cached favourites/settings sync are implemented. See [account setup and release checks](docs/accounts.md). Users can register and sign in with email and password only, with immediate sign-in after signup and account-linked favourites. Email verification and password reset are deferred until SMTP is configured; listening and guest favourites remain available.
 
 Expo SDK 57 / React Native / TypeScript app using the supplied AceRadio artwork and branding.
 

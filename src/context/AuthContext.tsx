@@ -12,8 +12,6 @@ type AuthState = {
   session: Session | null;
   loading: boolean;
   available: boolean;
-  recovery: boolean;
-  finishRecovery: () => void;
   error: string | null;
   retry: () => void;
   signOut: () => Promise<void>;
@@ -22,7 +20,6 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(!accountConfig.error);
-  const [recovery, setRecovery] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -32,14 +29,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const client = getAuthClient();
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange((event, next) => {
+    } = client.auth.onAuthStateChange((_event, next) => {
       if (!alive) return;
       changed = true;
       setSession(next);
       setLoading(false);
       setError(null);
-      if (event === "PASSWORD_RECOVERY") setRecovery(true);
-      if (event === "SIGNED_OUT") setRecovery(false);
     });
     void client.auth
       .getSession()
@@ -77,8 +72,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       value={{
         session,
         loading,
-        recovery,
-        finishRecovery: () => setRecovery(false),
         available: !accountConfig.error,
         error,
         retry: () => {
@@ -92,7 +85,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
           });
           if (error) throw error;
           setSession(null);
-          setRecovery(false);
         },
       }}
     >

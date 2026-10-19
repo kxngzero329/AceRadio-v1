@@ -3,7 +3,6 @@ import { digestStringAsync, CryptoDigestAlgorithm } from "expo-crypto";
 import {
   accountConfig,
   accountFetch,
-  emailCodesReady,
   getAuthClient,
 } from "@/services/authClient";
 
@@ -18,9 +17,12 @@ export function authErrorMessage(error: unknown): string {
   if (code === "invalid_credentials")
     return "The email or password is incorrect.";
   if (code === "email_not_confirmed")
-    return "Please verify your email before signing in. Use Verify email below to request a code.";
-  if (code === "otp_expired")
-    return "That code is incorrect or has expired. Request a new code and try again.";
+    return "This account cannot sign in yet. Please contact AceRadio for help.";
+  if (code === "user_already_exists" || code === "email_exists")
+    return "An account with this email already exists. Please sign in instead.";
+  if (code === "signup_disabled" || code === "email_provider_disabled")
+    return "Account registration is currently unavailable. Please try again later.";
+  if (code === "email_address_invalid") return "Enter a valid email address.";
   if (code === "weak_password")
     return "Choose a stronger password with at least 10 characters, including uppercase, lowercase and a number.";
   if (code === "same_password")
@@ -106,30 +108,23 @@ async function run<T>(
   }
 }
 export const authActions = {
-  async signUp(email: string, password: string, displayName: string) {
-    if (!emailCodesReady)
-      localError(
-        "Verification emails are being set up. Please try creating your account again soon.",
-      );
-    const normalized = normalizeEmail(email),
-      label = displayName.trim();
-    if (
-      label.length < 2 ||
-      label.length > 40 ||
-      /[\u0000-\u001f\u007f]/.test(label)
-    )
-      localError("Use a display name of 2 to 40 characters.");
+  async signUp(email: string, password: string) {
+    const normalized = normalizeEmail(email);
     if (!validPassword(password))
       localError(
         "Use at least 10 characters with uppercase, lowercase and a number.",
       );
-    return run("email", normalized, 60, async () => {
-      const { error } = await getAuthClient().auth.signUp({
+    return run("signup", normalized, 3, async () => {
+      const { data, error } = await getAuthClient().auth.signUp({
         email: normalized,
         password,
-        options: { data: { display_name: label } },
       });
       if (error) throw error;
+      if (!data.session)
+        localError(
+          "Your account was created, but sign-in could not finish. Try signing in. If it still fails, please contact AceRadio.",
+        );
+      return data;
     });
   },
   async signIn(email: string, password: string) {
@@ -141,34 +136,6 @@ export const authActions = {
       });
       if (error) throw error;
       return data;
-    });
-  },
-  async sendCode(email: string, recovery = false) {
-    if (!emailCodesReady)
-      localError("Email codes are being set up. Please try again soon.");
-    const normalized = normalizeEmail(email);
-    return run("email", normalized, 60, async () => {
-      const { error } = recovery
-        ? await getAuthClient().auth.resetPasswordForEmail(normalized)
-        : await getAuthClient().auth.resend({
-            type: "signup",
-            email: normalized,
-          });
-      if (error) throw error;
-    });
-  },
-  async verify(email: string, code: string, recovery = false) {
-    const normalized = normalizeEmail(email),
-      token = code.replace(/\s/g, "");
-    if (!/^\d{6}$/.test(token))
-      localError("Enter the six-digit code from your email.");
-    return run("verify", normalized, 2, async () => {
-      const { error } = await getAuthClient().auth.verifyOtp({
-        email: normalized,
-        token,
-        type: recovery ? "recovery" : "email",
-      });
-      if (error) throw error;
     });
   },
   async password(password: string, mfaCode?: string) {

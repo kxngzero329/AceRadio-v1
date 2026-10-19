@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
   type TextInputProps,
 } from "react-native";
@@ -18,44 +19,57 @@ import { router } from "@/utils/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useAccountData } from "@/context/AccountDataContext";
 import { AccountSyncStatus } from "@/components/AccountSyncStatus";
+import { AceLogo } from "@/components/AceLogo";
 import { AdminMFA } from "@/components/AdminMFA";
 import {
   authActions,
   authErrorMessage,
   normalizeEmail,
 } from "@/services/authActions";
-import { emailCodesReady } from "@/services/authClient";
 import { colors } from "@/theme/colors";
 import { typography } from "@/theme/typography";
 import { layout } from "@/theme/layout";
 
-type Mode =
-  | "signin"
-  | "signup"
-  | "verify"
-  | "forgot"
-  | "recovery-code"
-  | "new-password"
-  | "change-password"
-  | "delete";
+type Mode = "signin" | "signup" | "change-password" | "delete";
 function Field({
   label,
   secret = false,
+  inputRef,
   ...props
-}: TextInputProps & { label: string; secret?: boolean }) {
+}: TextInputProps & {
+  label: string;
+  secret?: boolean;
+  inputRef?: React.Ref<TextInput>;
+}) {
   const [visible, setVisible] = useState(false);
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputRow}>
+      <View
+        style={[
+          styles.inputRow,
+          focused && styles.inputFocused,
+          props.editable === false && styles.inputDisabled,
+        ]}
+      >
         <TextInput
           {...props}
+          ref={inputRef}
           accessibilityLabel={label}
           placeholderTextColor={colors.subtle}
           selectionColor={colors.selection}
           cursorColor={colors.accent}
           style={styles.input}
           secureTextEntry={secret && !visible}
+          onFocus={(event) => {
+            setFocused(true);
+            props.onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            setFocused(false);
+            props.onBlur?.(event);
+          }}
         />
         {secret && (
           <Pressable
@@ -66,7 +80,9 @@ function Field({
                 : `Show ${label.toLowerCase()}`
             }
             onPress={() => setVisible((value) => !value)}
-            style={styles.eye}
+            disabled={props.editable === false}
+            accessibilityState={{ disabled: props.editable === false }}
+            style={({ pressed }) => [styles.eye, pressed && styles.pressed]}
           >
             {visible ? (
               <EyeOff size={19} color={colors.muted} />
@@ -97,7 +113,9 @@ function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={title}
       accessibilityState={{ disabled: disabled || busy, busy }}
+      aria-busy={busy}
       disabled={disabled || busy}
       onPress={onPress}
       style={({ pressed }) => [
@@ -127,6 +145,7 @@ function Button({
   );
 }
 export default function AccountScreen() {
+  const { width } = useWindowDimensions();
   const auth = useAuth(),
     data = useAccountData();
   const [mode, setMode] = useState<Mode>("signin");
@@ -134,17 +153,14 @@ export default function AccountScreen() {
     [password, setPasswordInput] = useState("");
   const [newPassword, setNewPassword] = useState(""),
     [confirmation, setConfirmation] = useState("");
-  const [displayName, setDisplayName] = useState(""),
-    [profileName, setProfileName] = useState("");
-  const [code, setCode] = useState("");
+  const [profileName, setProfileName] = useState("");
+  const passwordRef = useRef<TextInput>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [mfaRequired, setMfaRequired] = useState(false);
   const [busy, setBusy] = useState(false),
     busyRef = useRef(false);
   const [message, setMessage] = useState<string | null>(null),
     [error, setError] = useState<string | null>(null);
-  const [resendAt, setResendAt] = useState(0),
-    [clock, setClock] = useState(Date.now());
   const [confirmLogout, setConfirmLogout] = useState(false);
   const alive = useRef(true);
   useEffect(() => {
@@ -156,15 +172,6 @@ export default function AccountScreen() {
   useEffect(() => {
     setProfileName(data.displayName);
   }, [data.displayName]);
-  useEffect(() => {
-    if (auth.recovery) setMode("new-password");
-  }, [auth.recovery]);
-  useEffect(() => {
-    if (resendAt <= Date.now()) return;
-    const timer = setInterval(() => setClock(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [resendAt]);
-  const cooldown = Math.max(0, Math.ceil((resendAt - clock) / 1000));
   const move = (next: Mode) => {
     setMode(next);
     setError(null);
@@ -172,7 +179,6 @@ export default function AccountScreen() {
     setPasswordInput("");
     setNewPassword("");
     setConfirmation("");
-    setCode("");
     setMfaCode("");
     setMfaRequired(false);
     setConfirmLogout(false);
@@ -196,31 +202,36 @@ export default function AccountScreen() {
         if (alive.current) setBusy(false);
       });
   };
-  const sendCode = (recovery: boolean) =>
+  const submitAuth = () => {
+    if (
+      !email.trim() ||
+      !password ||
+      busyRef.current ||
+      auth.loading ||
+      !auth.available ||
+      auth.error
+    )
+      return;
     run(async () => {
       const normalized = normalizeEmail(email);
-      await authActions.sendCode(normalized, recovery);
-      if (!alive.current) return;
-      setEmail(normalized);
-      setCode("");
-      setMode(recovery ? "recovery-code" : "verify");
-      setResendAt(Date.now() + 60_000);
-      setClock(Date.now());
-      setMessage(
-        "If this email is eligible, a code will arrive shortly. Check your spam folder too.",
-      );
+      if (mode === "signup") await authActions.signUp(normalized, password);
+      else await authActions.signIn(normalized, password);
+      if (alive.current) {
+        setEmail(normalized);
+        setPasswordInput("");
+        setMode("signin");
+      }
     });
+  };
   const submitPassword = () =>
     run(async () => {
       if (newPassword !== confirmation) {
         setError("The new passwords do not match.");
         return;
       }
-      if (mode === "change-password")
-        await authActions.signIn(auth.session!.user.email!, password);
+      await authActions.signIn(auth.session!.user.email!, password);
       await authActions.password(newPassword, mfaCode);
       if (!alive.current) return;
-      auth.finishRecovery();
       move("signin");
       setMessage("Your password has been updated.");
     });
@@ -247,19 +258,13 @@ export default function AccountScreen() {
       editable={!busy}
     />
   ) : null;
-  const special =
-    mode === "new-password" ||
-    (signedIn && (mode === "change-password" || mode === "delete"));
+  const special = signedIn && (mode === "change-password" || mode === "delete");
   const title =
     signedIn && !special
       ? "Your account."
       : {
           signin: "Welcome back.",
           signup: "Make it yours.",
-          verify: "Check your inbox.",
-          forgot: "Forgot password?",
-          "recovery-code": "Check your inbox.",
-          "new-password": "A fresh start.",
           "change-password": "Change password.",
           delete: "Delete account?",
         }[mode];
@@ -277,40 +282,50 @@ export default function AccountScreen() {
               if (router.canGoBack()) router.back();
               else router.replace("/");
             }}
-            style={styles.back}
+            style={({ pressed }) => [
+              styles.back,
+              pressed && styles.backPressed,
+            ]}
           >
             <ChevronLeft color={colors.white} size={24} />
           </Pressable>
-          <Text style={styles.headerText}>ACE RADIO ACCOUNT</Text>
+          <AceLogo width={76} />
           <View style={styles.back} />
         </View>
         <ScrollView
           testID="account-scroll"
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.content}
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.content,
+            width < 360 && styles.contentCompact,
+          ]}
         >
-          <Text style={typography.eyebrow}>
-            {signedIn ? "YOUR SPACE" : "LISTEN. SAVE. CONNECT."}
-          </Text>
-          <Text
-            style={[typography.pageTitle, styles.title]}
-            accessibilityRole="header"
-          >
-            {title}
-          </Text>
-          <Text style={styles.body}>
-            {signedIn && !special
-              ? "Your favourite shows and preferences, wherever you listen."
-              : mode === "signup"
-                ? "Create an account to keep your favourites and preferences across devices."
-                : mode === "verify" || mode === "recovery-code"
-                  ? `Enter the six-digit code sent to ${email}. It expires after 10 minutes.`
+          <View style={styles.heading}>
+            <Text style={typography.eyebrow}>
+              {signedIn ? "YOUR SPACE" : "YOUR ACE RADIO ACCOUNT"}
+            </Text>
+            <Text
+              style={[typography.pageTitle, styles.title]}
+              accessibilityRole="header"
+            >
+              {title}
+            </Text>
+            <Text style={styles.body}>
+              {signedIn && !special
+                ? "Your favourite shows and preferences, wherever you listen."
+                : mode === "signup"
+                  ? "Your favourite shows, saved wherever you listen."
                   : mode === "delete"
                     ? "This permanently removes your account, profile, saved shows and preferences. This cannot be undone."
-                    : mode === "new-password" || mode === "change-password"
+                    : mode === "change-password"
                       ? "Use at least 10 characters with uppercase, lowercase and a number."
-                      : "Radio is always free to listen to. Sign in to make it yours."}
-          </Text>
+                      : "Sign in to keep your favourite shows and preferences in sync."}
+            </Text>
+          </View>
           {auth.loading ? (
             <ActivityIndicator color={colors.accent} style={styles.loader} />
           ) : !auth.available ? (
@@ -328,16 +343,6 @@ export default function AccountScreen() {
                     secondary
                     onPress={auth.retry}
                   />
-                </View>
-              )}
-              {!signedIn && !emailCodesReady && (
-                <View style={styles.notice}>
-                  <Text style={styles.body}>
-                    Account registration and email recovery are opening soon.
-                    Verification emails are being set up. Existing accounts can
-                    still sign in, and you can keep listening and saving shows
-                    on this device.
-                  </Text>
                 </View>
               )}
               {signedIn && !special ? (
@@ -459,69 +464,19 @@ export default function AccountScreen() {
                     <Text style={styles.dangerText}>Delete my account</Text>
                   </Pressable>
                 </>
-              ) : mode === "verify" || mode === "recovery-code" ? (
+              ) : mode === "change-password" ? (
                 <>
                   <Field
-                    label="Verification code"
-                    value={code}
-                    onChangeText={(value) =>
-                      setCode(value.replace(/\D/g, "").slice(0, 6))
+                    label="Current password"
+                    secret
+                    value={password}
+                    onChangeText={(setPasswordInputValue) =>
+                      setPasswordInput(setPasswordInputValue)
                     }
-                    keyboardType="number-pad"
-                    textContentType="oneTimeCode"
-                    autoComplete="one-time-code"
-                    maxLength={6}
-                    autoFocus
+                    autoComplete="current-password"
+                    autoCapitalize="none"
                     editable={!busy}
                   />
-                  <Button
-                    title="Verify code"
-                    busy={busy}
-                    disabled={code.length !== 6}
-                    onPress={() =>
-                      run(async () => {
-                        const recovery = mode === "recovery-code";
-                        await authActions.verify(email, code, recovery);
-                        if (!alive.current) return;
-                        setCode("");
-                        setPasswordInput("");
-                        setMode(recovery ? "new-password" : "signin");
-                      })
-                    }
-                  />
-                  <Button
-                    title={cooldown ? `Resend in ${cooldown}s` : "Resend code"}
-                    secondary
-                    disabled={cooldown > 0}
-                    busy={busy}
-                    onPress={() => sendCode(mode === "recovery-code")}
-                  />
-                  <Pressable
-                    accessibilityRole="button"
-                    disabled={busy}
-                    onPress={() =>
-                      move(mode === "recovery-code" ? "forgot" : "signup")
-                    }
-                    style={styles.textAction}
-                  >
-                    <Text style={styles.link}>Use a different email</Text>
-                  </Pressable>
-                </>
-              ) : mode === "new-password" || mode === "change-password" ? (
-                <>
-                  {mode === "change-password" && (
-                    <Field
-                      label="Current password"
-                      secret
-                      value={password}
-                      onChangeText={(setPasswordInputValue) =>
-                        setPasswordInput(setPasswordInputValue)
-                      }
-                      autoComplete="current-password"
-                      autoCapitalize="none"
-                      editable={!busy}
-                    />
-                  )}
                   <Field
                     label="New password"
                     secret
@@ -546,11 +501,7 @@ export default function AccountScreen() {
                   <Button
                     title="Update password"
                     busy={busy}
-                    disabled={
-                      !newPassword ||
-                      !confirmation ||
-                      (mode === "change-password" && !password)
-                    }
+                    disabled={!newPassword || !confirmation || !password}
                     onPress={submitPassword}
                   />
                   <Button
@@ -558,7 +509,6 @@ export default function AccountScreen() {
                     secondary
                     disabled={busy}
                     onPress={() => {
-                      auth.finishRecovery();
                       move("signin");
                     }}
                   />
@@ -615,32 +565,39 @@ export default function AccountScreen() {
                 </>
               ) : (
                 <>
-                  {mode === "signup" && (
+                  <View
+                    testID="account-auth-form"
+                    style={[
+                      styles.authForm,
+                      width < 360 && styles.authFormCompact,
+                    ]}
+                  >
                     <Field
-                      label="Display name"
-                      value={displayName}
-                      onChangeText={setDisplayName}
-                      maxLength={40}
-                      autoCapitalize="words"
+                      label="Email address"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoComplete="email"
+                      textContentType="emailAddress"
+                      autoCapitalize="none"
+                      autoCorrect={false}
                       editable={!busy}
+                      maxLength={254}
+                      placeholder="you@example.com"
+                      returnKeyType="next"
+                      submitBehavior="submit"
+                      onSubmitEditing={() => passwordRef.current?.focus()}
                     />
-                  )}
-                  <Field
-                    label="Email address"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoComplete="email"
-                    textContentType="emailAddress"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    editable={!busy}
-                    maxLength={254}
-                  />
-                  {mode !== "forgot" && (
                     <Field
+                      key={mode}
+                      inputRef={passwordRef}
                       label="Password"
                       secret
+                      placeholder={
+                        mode === "signup"
+                          ? "Choose a password"
+                          : "Enter your password"
+                      }
                       value={password}
                       onChangeText={(value) => setPasswordInput(value)}
                       autoComplete={
@@ -649,94 +606,68 @@ export default function AccountScreen() {
                       autoCapitalize="none"
                       editable={!busy}
                       maxLength={128}
+                      autoCorrect={false}
+                      textContentType={
+                        mode === "signup" ? "newPassword" : "password"
+                      }
+                      returnKeyType="go"
+                      submitBehavior="submit"
+                      onSubmitEditing={submitAuth}
                     />
-                  )}
-                  {mode === "signup" && (
-                    <Text style={styles.small}>
-                      At least 10 characters, including uppercase, lowercase and
-                      a number.
-                    </Text>
-                  )}
-                  <Button
-                    title={
-                      mode === "signup"
-                        ? "Create account"
-                        : mode === "forgot"
-                          ? "Send reset code"
-                          : "Sign in"
-                    }
-                    busy={busy}
-                    disabled={
-                      !email ||
-                      (mode !== "forgot" && !password) ||
-                      (mode === "signup" && displayName.trim().length < 2) ||
-                      ((mode === "signup" || mode === "forgot") &&
-                        !emailCodesReady)
-                    }
-                    onPress={() =>
-                      mode === "forgot"
-                        ? sendCode(true)
-                        : run(async () => {
-                            if (mode === "signup") {
-                              const normalized = normalizeEmail(email);
-                              await authActions.signUp(
-                                normalized,
-                                password,
-                                displayName,
-                              );
-                              if (alive.current) {
-                                setEmail(normalized);
-                                setPasswordInput("");
-                                setMode("verify");
-                                setResendAt(Date.now() + 60_000);
-                                setClock(Date.now());
-                              }
-                            } else {
-                              await authActions.signIn(email, password);
-                              if (alive.current) setPasswordInput("");
-                            }
-                          })
-                    }
-                  />
-                  {mode === "signin" && (
-                    <>
-                      <Button
-                        title="Create an account"
-                        secondary
-                        disabled={busy}
-                        onPress={() => move("signup")}
-                      />
-                      <View style={styles.linkRow}>
-                        <Pressable
-                          accessibilityRole="button"
-                          disabled={busy}
-                          onPress={() => move("forgot")}
-                          style={styles.textAction}
-                        >
-                          <Text style={styles.link}>Forgot password?</Text>
-                        </Pressable>
-                        <Pressable
-                          accessibilityRole="button"
-                          disabled={busy || !email}
-                          onPress={() => sendCode(false)}
-                          style={styles.textAction}
-                        >
-                          <Text style={styles.link}>Verify email</Text>
-                        </Pressable>
-                      </View>
-                    </>
-                  )}
-                  {mode !== "signin" && (
+                    {mode === "signup" && (
+                      <Text style={styles.small}>
+                        At least 10 characters, including uppercase, lowercase
+                        and a number.
+                      </Text>
+                    )}
+                    {error && (
+                      <Text
+                        accessibilityRole="alert"
+                        accessibilityLiveRegion="assertive"
+                        style={styles.error}
+                      >
+                        {error}
+                      </Text>
+                    )}
                     <Button
-                      title="Back to sign in"
-                      secondary
-                      disabled={busy}
-                      onPress={() => move("signin")}
+                      title={mode === "signup" ? "Create account" : "Sign in"}
+                      busy={busy}
+                      disabled={!email.trim() || !password || !!auth.error}
+                      onPress={submitAuth}
                     />
-                  )}
+                  </View>
+                  <View style={styles.switchRow}>
+                    <Text style={styles.small}>
+                      {mode === "signin"
+                        ? "New to AceRadio?"
+                        : "Already have an account?"}
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        mode === "signin"
+                          ? "Create an account"
+                          : "Back to sign in"
+                      }
+                      accessibilityState={{ disabled: busy }}
+                      disabled={busy}
+                      onPress={() =>
+                        move(mode === "signin" ? "signup" : "signin")
+                      }
+                      style={({ pressed }) => [
+                        styles.switchAction,
+                        pressed && styles.backPressed,
+                        busy && styles.disabled,
+                      ]}
+                    >
+                      <Text style={styles.switchText}>
+                        {mode === "signin" ? "Create an account" : "Sign in"}
+                      </Text>
+                    </Pressable>
+                  </View>
                 </>
               )}
-              {error && (
+              {error && signedIn && (
                 <Text
                   accessibilityRole="alert"
                   accessibilityLiveRegion="assertive"
@@ -763,34 +694,63 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   header: {
+    width: "100%",
+    maxWidth: layout.contentWidth,
+    alignSelf: "center",
+    minHeight: 72,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
   back: {
     width: 44,
     height: 44,
+    borderRadius: layout.controlRadius,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerText: {
-    color: colors.muted,
-    fontSize: 11,
-    fontFamily: fonts.semibold,
-    letterSpacing: 1,
-  },
+  backPressed: { backgroundColor: colors.surface2, opacity: 0.8 },
   content: {
     width: "100%",
-    maxWidth: 500,
+    maxWidth: 480,
     alignSelf: "center",
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-    gap: 14,
+    paddingHorizontal: layout.gutter,
+    paddingTop: 26,
+    paddingBottom: 32,
+    gap: 20,
   },
-  title: { marginTop: 2 },
+  contentCompact: { paddingHorizontal: 16, paddingTop: 16 },
+  heading: { gap: 8, marginBottom: 4 },
+  title: { marginTop: 0 },
+  authForm: {
+    padding: 20,
+    gap: 18,
+    borderRadius: layout.cardRadius,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  authFormCompact: { padding: 16 },
+  switchRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    columnGap: 4,
+  },
+  switchAction: {
+    minHeight: 44,
+    paddingHorizontal: 6,
+    paddingVertical: 12,
+    borderRadius: 8,
+    justifyContent: "center",
+  },
+  switchText: {
+    ...typography.caption,
+    color: colors.white,
+    fontFamily: fonts.semibold,
+  },
   body: { ...typography.body },
   small: { ...typography.caption },
   field: { gap: 7 },
@@ -799,10 +759,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderColor: colors.border,
     borderRadius: layout.controlRadius,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
+  inputFocused: { borderColor: colors.muted },
+  inputDisabled: { opacity: 0.65 },
   input: {
     color: colors.white,
     outlineColor: colors.accent,
@@ -811,7 +773,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     flex: 1,
-    minWidth: 0, fontFamily: fonts.regular,
+    minWidth: 0,
+    fontFamily: fonts.regular,
   },
   eye: {
     width: 48,
@@ -848,17 +811,6 @@ const styles = StyleSheet.create({
   dangerText: { color: colors.error, fontSize: 13, fontFamily: fonts.semibold },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
-  link: {
-    color: colors.accent,
-    fontSize: 13,
-    lineHeight: 19,
-    fontFamily: fonts.semibold,
-  },
-  linkRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
   textAction: {
     minHeight: 44,
     paddingVertical: 12,
@@ -873,9 +825,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.errorSurface,
     borderLeftWidth: 2,
     borderColor: colors.errorBorder,
-    borderRadius: 8, fontFamily: fonts.regular,
+    borderRadius: 8,
+    fontFamily: fonts.regular,
   },
-  success: { color: colors.accent, fontSize: 13, lineHeight: 20, fontFamily: fonts.regular },
+  success: {
+    color: colors.accent,
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: fonts.regular,
+  },
   loader: { marginVertical: 24 },
   notice: {
     padding: 14,
@@ -890,12 +848,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   grow: { flex: 1 },
-  identityName: { color: colors.white, fontSize: 20, fontFamily: fonts.displayBold },
+  identityName: {
+    color: colors.white,
+    fontSize: 20,
+    fontFamily: fonts.displayBold,
+  },
   footer: {
     color: colors.subtle,
     fontSize: 12,
     lineHeight: 18,
-    marginTop: 12,
-    textAlign: "center", fontFamily: fonts.medium,
+    marginTop: 0,
+    paddingHorizontal: 8,
+    textAlign: "center",
+    fontFamily: fonts.medium,
   },
 });

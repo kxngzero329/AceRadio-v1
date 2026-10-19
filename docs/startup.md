@@ -25,7 +25,8 @@ library, generated artwork, configuration plugin or database change is needed.
    app or changing tabs does not replay startup.
 
 The native fade is disabled because the overlay supplies the same transition
-on both platforms. Only opacity and scale transforms animate; native frames use
+on both platforms. `setOptions` is skipped in Expo Go, where it is unsupported;
+the app overlay and the settings in standalone/development builds are preserved. Only opacity and scale transforms animate; native frames use
 the native Animated driver with `isInteraction: false`. No React state updates
 run per frame. Loop orchestration is cleaned up when loading ends, the app moves
 to the background, reduced motion changes, or the component unmounts. Stale fade

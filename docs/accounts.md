@@ -1,10 +1,12 @@
 # Accounts, permissions and account sync
 
-Implemented and deployed to `dbgpfqyighcaquxwzkfe` on 16 October 2026. The public catalogue and station stream remain independent of authentication. This document supersedes the older local-only favourites and `content_staff` descriptions.
+Account schema deployed to `dbgpfqyighcaquxwzkfe` on 16 October 2026; email/password-only mobile flow updated on 19 October 2026. The public catalogue and station stream remain independent of authentication. This document supersedes the older local-only favourites and `content_staff` descriptions.
 
 ## What listeners see
 
-Settings now has an Account entry. Saved shows also explains how to keep favourites across devices. `/account` provides signup, email-code verification, sign-in, recovery by email code, password changes, display-name editing, device-favourites import, sign-out and account deletion.
+Settings now has an Account entry. Saved shows also explains how to keep favourites across devices. `/account` provides signup and sign-in with **email and password only**, authenticated password changes, display-name editing, device-favourites import, sign-out and account deletion. Successful signup signs the listener in immediately. Display names default to `Listener` and can be edited after signup. Verification codes, verification links and forgotten-password/reset screens are not available in this version.
+
+The shared top header opens `/account` from a circular profile button. Guests see a user icon; signed-in listeners see up to two initials from their display name. New accounts still named `Listener` use their email username as a fallback, excluding any plus alias. The avatar updates with profile edits and sign-out, uses a 44-point touch target and keeps an accessible account label. Settings remains available through the bottom navigation.
 
 Guests can continue listening and saving shows on their device. After sign-in, favourites and notification preferences belong to that account. Existing device choices are offered for explicit import; they are not silently assigned to whichever person signs in. Import adds missing favourites without reversing an existing account removal or replacing an established notification preference.
 
@@ -12,24 +14,74 @@ Signed-in screens show syncing, pending saves, retry and conflict information. A
 
 Notification preference sync does not register push tokens or request system notification permission. The running sleep timer, playback state, device permissions and future installation push tokens are device/session state.
 
-## Email setup still required
+## Current Auth configuration and future SMTP setup
 
-The project currently has **no custom SMTP provider**. The free-tier default sender restricts recipient addresses and refuses custom email templates. This was confirmed through the Management API; no SMTP credentials were guessed or changed.
+The connected project's public `/auth/v1/settings` endpoint was checked on
+19 October 2026: email authentication and signup are enabled, and
+`mailer_autoconfirm` is **true** (Confirm email is off, as configured by the
+project owner). Signup uses the regular public `auth.signUp({ email, password })`
+API. Supabase saves the identity and hashed password in `auth.users`,
+auto-confirms the account and returns a session. The existing database trigger
+creates its `profiles`, `user_roles` and `user_settings` rows transactionally.
+No password or Auth credential is copied into a public table.
 
-The app therefore defaults `EXPO_PUBLIC_AUTH_EMAIL_CODES_READY` to **false**. Existing accounts can sign in, but registration/recovery clearly explain that email setup is pending. Public signup and recovery controls must remain gated until delivery is configured. The flag is a release/UI switch; all security is enforced independently by Supabase and database policies.
+The local `supabase/config.toml` now also has
+`auth.email.enable_confirmations = false`. No hosted Auth setting, schema,
+policy or existing user was modified for this change. The client preserves the
+existing password policy: 10–128 characters with uppercase, lowercase and a
+number for new passwords. Existing-account sign-in does not enforce signup
+strength rules against older passwords.
 
-The hosted Auth configuration has been verified with confirmation enabled, a ten-character uppercase/lowercase/number password policy, six-digit codes, a ten-minute expiry, a sixty-second email resend interval and TOTP support. Existing hosted Auth rate quotas were preserved, including the default sender's two emails/hour and thirty verification requests per five minutes. Local `supabase/config.toml` mirrors the code/password settings.
+`EXPO_PUBLIC_AUTH_EMAIL_CODES_READY` no longer gates registration and is not
+read by the mobile app. Old `.env.local`/EAS values can remain harmlessly in
+place. The variable, SMTP configuration script and email templates are retained
+for future email setup tooling. No SMTP credentials are needed for the current
+signup/sign-in flow. If the server unexpectedly stops returning a signup
+session, the app explains that sign-in did not finish rather than displaying
+an email-code screen or pretending the user is signed in.
 
-To finish production email setup:
+To add verification/recovery later:
 
-1. Configure a real SMTP sender and verified domain in Supabase Authentication settings. Keep credentials there, never in `EXPO_PUBLIC_*` or source control. Verify the provider's sender-domain DNS records.
-2. Review the branded confirmation/recovery templates in `supabase/templates/`. They use `{{ .Token }}` and require no app-link redirect for these flows.
-3. Run `npm run backend:configure-auth` to inspect readiness without changing settings.
-4. Run `npm run backend:configure-auth -- --apply --confirm-project dbgpfqyighcaquxwzkfe`. This requires SMTP, updates only the reviewed Auth fields/templates, verifies them and sets `EXPO_PUBLIC_AUTH_EMAIL_CODES_READY=true` in ignored `.env.local`.
-5. Restart Metro and test actual delivery to real inboxes, including resend, expired/wrong codes and recovery. Review the project's email quota against provider capacity and expected signup volume; the setup script preserves quotas rather than raising them automatically.
-6. After delivery tests, run `npm run backend:configure-eas -- --auth-only --environment development --environment preview --environment production --apply --confirm-project dbgpfqyighcaquxwzkfe` to publish only the public email-readiness flag to those EAS environments. This does not change the content source or deploy a build.
+1. Configure a production SMTP sender, verified domain and sender DNS records in
+   Supabase; keep credentials there, never in app variables or source control.
+2. Implement the mobile confirmation/recovery flows and test actual delivery,
+   resend limits and expired codes before enabling them for users.
+3. The existing `backend:configure-auth` script inspects settings by default.
+   Its explicitly confirmed `--apply` mode is for that future email rollout:
+   it requires SMTP and turns confirmation **on**. Do not use it for the current
+   password-only flow. `--security-only --apply` preserves the current
+   confirmation setting while applying its security fields.
+4. Existing unconfirmed accounts are not bulk-confirmed or modified. If one
+   cannot sign in, review that specific account in Supabase instead of weakening
+   account policies. New password-only registrations are auto-confirmed.
 
-On Windows use `npm.cmd` where PowerShell blocks `npm.ps1`. `--security-only` on the Auth configuration script applies security fields without templates or enabling email flows; that mode has already been applied. Configuration backups contain only the changed non-secret Auth fields and are ignored under `.qa/supabase/`.
+## Account screen polish and Expo Go warnings
+
+The account screens share the app's black/surface palette, Outfit headings,
+Manrope text, logo header and existing corner radii. Sign-in/signup use a compact
+form card, focus borders, accessible password visibility, a single primary CTA
+and a smaller mode-switch action. Errors appear inside the form. Narrow phones
+use smaller gutters/card padding; the page remains scrollable with the keyboard
+open. Submission guards, field autofill, secure storage, favourites and the
+account-management actions are preserved.
+
+The installed Supabase SDK (2.117.3) already coordinates concurrent refreshes.
+The deprecated custom `processLock` option has been removed in accordance with
+[Supabase's migration guidance](https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md).
+Storage keys, persistence and token auto-refresh remain unchanged. An installed-
+SDK regression test covers signup, session restoration after a fresh client and
+concurrent refresh deduplication.
+
+Password-only authentication uses the SDK's default flow configuration, with
+URL session detection disabled. Signup no longer creates an unused PKCE
+challenge, so it does not invoke the native WebCrypto fallback. No OAuth or
+redirect-based email flow is exposed. Before adding redirect-based auth,
+configure PKCE with native S256 support rather than accepting a plain challenge.
+
+`SplashScreen.setOptions` is skipped when Expo Constants identifies Expo Go
+(`ExecutionEnvironment.StoreClient`). Native development/release builds retain
+the existing splash transition, as does the app's startup overlay. Reload Expo
+Go fully to replace any old initialized auth client after these changes.
 
 ## Exactly two roles
 
@@ -55,8 +107,8 @@ New migrations: `20261016100000_accounts_and_sync.sql` and `20261016110000_accou
 
 | Object | Behaviour |
 | --- | --- |
-| `profiles` | Own verified account read; constrained display name; revision and timestamps |
-| `user_roles` | Own verified role read; trusted dashboard/server writes only |
+| `profiles` | Own Auth-confirmed account read; constrained display name; revision and timestamps |
+| `user_roles` | Own Auth-confirmed role read; trusted dashboard/server writes only |
 | `user_settings` | Own notification preference, revision and timestamp |
 | `user_favorites` | Own show IDs, saved/removed state and per-show revision; removed rows remain as tombstones |
 | `app_private.account_operations` | Retry IDs/results, inaccessible to app clients; rolling fourteen-day cleanup on writes |
@@ -64,6 +116,8 @@ New migrations: `20261016100000_accounts_and_sync.sql` and `20261016110000_accou
 | `get_account_data()` | One consistent owner-only snapshot; requires an existing verified Auth account |
 | `apply_account_changes(changes)` | Validated owner-only transactional writes; no caller-selected user ID |
 | `assert_account_deletion_allowed()` | Requires verified identity, recent password authentication and a non-admin account |
+
+`is_verified_account()` retains its original name and checks Supabase's `email_confirmed_at`, which is automatically set for new signups while Confirm email is off. It does not establish that the listener owns that inbox. No policy was relaxed or bypassed.
 
 All account tables have RLS and explicit grants. Public clients have no direct insert/update/delete grants, so they cannot bypass RPC validation or limits. Private functions revoke public execution and use an empty search path. Trusted functions return only the caller's data. The public catalogue RPC remains published-only and uses its existing security model.
 
@@ -83,7 +137,7 @@ Each operation includes the revision it was based on. A newer save from another 
 
 The original guest favourites key and notification preference are preserved. Sign-out warns before discarding unsynced account work. Session/account changes cancel the old owner's work and remove that owner's cached snapshot/outbox. Cache identity validation and request lifecycle guards prevent late responses from appearing in another account. Clearing an account cache waits for queued storage writes so a late save cannot recreate it after sign-out.
 
-Native Auth tokens are stored entirely in Expo SecureStore, split into small Unicode-safe chunks with an atomic manifest for larger sessions. There is no plaintext AsyncStorage fallback for Auth tokens. Browser sessions use Supabase's browser storage/locking; browser script security remains important. Signup/recovery codes, passwords and MFA secrets are not persisted by the UI or logged.
+Native Auth tokens are stored entirely in Expo SecureStore, split into small Unicode-safe chunks with an atomic manifest for larger sessions. There is no plaintext AsyncStorage fallback for Auth tokens. Browser sessions persist in localStorage; the installed Supabase SDK coordinates refreshes internally without a custom lock. Browser script security remains important. Passwords and MFA secrets are not persisted by the UI or logged.
 
 ## Account deletion
 
@@ -104,17 +158,32 @@ npx expo export --platform all --output-dir .qa/accounts-export
 npm run backend:verify
 ```
 
-Verified during implementation:
+Verified for the password-only update on 19 October 2026:
 
-- All eighteen new account tests and ninety existing tests pass, with TypeScript and Deno checks.
-- Android/iOS/web exports succeed.
-- Hosted test accounts verify six-digit codes, default user roles, anonymous denial, private-data isolation and blocked direct role writes.
-- Two isolated browser contexts exercise guest import, profile/settings sync, offline removal/reconnect, sign-out cleanup and switching accounts. The shared browser transport remains active through sign-in/out; its audio element is doubled for this account test.
-- Browser signup and recovery screens use privileged test-code generation in place of email sending; actual public OTP verification, password update and deployed account deletion succeed. This does **not** establish SMTP deliverability.
-- Real admin authenticator enrollment, QR rendering, code verification, MFA-backed permissions and immediate database role revocation pass. Password changes and deletion also pass for an enrolled account after demotion, with the required authenticator step.
-- No browser page errors; account layouts checked at 320, 390 and 768 px. Temporary live test accounts/MFA factors are deleted after verification; no real admin remains.
+- TypeScript and all **158 automated tests** pass. `test:accounts` includes
+  18 database/sync/storage/deletion tests and eight password-authentication/client-session tests.
+- Android, iOS and web exports succeed.
+- Real public signup immediately returns a session and a Supabase-auto-confirmed
+  user. Its trigger-created private profile defaults to `Listener`, the role is
+  `user`, and preferences start at their defaults.
+- Two isolated browser contexts verify explicit guest-favourite import,
+  cross-device favourites, heart removal, offline add/reconnect, profile changes,
+  session restoration after reload, sign-out cache removal and switching users.
+- Another account cannot read the first account's favourites or grant itself
+  the admin role. Wrong-password and duplicate-signup messages are actionable.
+- No verification/recovery/OTP requests are made. There are no browser page
+  errors. The polished sign-in/signup layouts fit 320, 390, 430 and 768 px
+  widths. Browser checks also cover focused borders, password visibility,
+  accessible busy/disabled controls, inline errors and short-screen scrolling.
+- All temporary live accounts from these checks were removed using the existing
+  authenticated `account-delete` function. No existing user was changed.
 
-Physical Android/iPhone checks are still required for secure-session restoration, keyboard/autofill, offline relaunch, interruptions and audio continuity in fresh binaries. The new native dependencies require a fresh build. SMTP delivery and email quotas must be tested before enabling public registration.
+The unchanged admin MFA and deletion policies are covered by the account suite;
+real admin enrollment and MFA-backed permissions were also checked during the
+original account implementation. Current browser artifacts and the export log
+are ignored under `.qa/accounts-password-*`.
+
+Physical Android/iPhone checks are still required for secure-session restoration, keyboard/autofill, offline relaunch, interruptions and audio continuity in fresh binaries. The new native dependencies require a fresh build. SMTP delivery and email quotas must be tested before adding email confirmation or recovery. Password-only registration is available now with the verified auto-confirm configuration.
 
 The dependency audit reports 31 existing affected packages (20 high, 11 moderate), all already present at unchanged versions in the original lockfile. They are largely in the Expo/React Native/build dependency trees, with runtime dependencies also included. The audit proposes incompatible framework downgrades for several entries, so no force-fix was applied. Review these advisories and compatible framework/patch updates before a public release; the ignored audit output is `.qa/accounts-dependency-audit.json`.
 

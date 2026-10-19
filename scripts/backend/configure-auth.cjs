@@ -29,7 +29,8 @@ async function main() {
       "Configure a production SMTP provider in Supabase first. Code templates cannot be enabled with the default free-tier sender.",
     );
   const changes = {
-    mailer_autoconfirm: false,
+    // Security maintenance must not change the project's current signup flow.
+    mailer_autoconfirm: securityOnly ? current.mailer_autoconfirm : false,
     password_min_length: 10,
     password_required_characters:
       "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789",
@@ -80,8 +81,8 @@ async function main() {
   }
   console.log(
     securityOnly
-      ? "Verified Auth security settings. Email-code signup/recovery remains gated until SMTP/templates are configured."
-      : "Verified Auth settings/templates and enabled email-code flows in .env.local. Restart Metro; set the same public flag in EAS after testing delivery.",
+      ? "Verified Auth security settings; the current email-confirmation setting was preserved."
+      : "Verified Auth settings/templates and marked email delivery ready in .env.local. The mobile verification/recovery screens must be implemented before releasing email-code flows.",
   );
   console.log("Existing SMTP credentials and Auth rate quotas were preserved.");
 }

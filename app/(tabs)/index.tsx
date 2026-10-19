@@ -45,7 +45,7 @@ export default function HomeScreen() {
           <Headphones color={colors.muted} size={14} />
           <Text style={styles.noteText}>Free to listen</Text>
           <View style={styles.noteDot} />
-          <Text style={styles.noteText}>From Cape Town</Text>
+          <Text style={styles.noteText}>From Cape Town, Century City</Text>
         </View>
         <UpcomingEvents />
         {hasSpotlight && (

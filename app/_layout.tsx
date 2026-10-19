@@ -4,6 +4,7 @@ import { DarkTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { RadioProvider } from "@/context/RadioContext";
@@ -51,7 +52,8 @@ const sheetOptions = {
 
 // Hand the native screen to our matching overlay before revealing the interface.
 SplashScreen.preventAutoHideAsync().catch(console.warn);
-SplashScreen.setOptions({ duration: 0, fade: false });
+if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient)
+  SplashScreen.setOptions({ duration: 0, fade: false });
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({ ...FontAwesome6.font, ...fontAssets });
