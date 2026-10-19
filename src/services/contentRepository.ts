@@ -31,7 +31,7 @@ export const contentPayloadSchema = z.object({
   banners: z.array(z.object({ id, show_id: nullableText, title: z.string().min(1), subtitle: nullableText,
     image_id: id, placement: z.enum(["home_spotlight","home_banner"]), link_url: httpsUrl.nullable(), ...windowFields,
   })),
-  announcements: z.array(z.object({ id, title: z.string().min(1), body: z.string().min(1), link_url: httpsUrl.nullable(), ...windowFields })),
+  announcements: z.array(z.object({ id, title: z.string().min(1), body: z.string().min(1), link_url: httpsUrl.nullable(), priority: z.number().int().default(0), ...windowFields })),
 });
 export type ContentPayload = z.infer<typeof contentPayloadSchema>;
 
@@ -66,7 +66,7 @@ export function decodeContent(value: unknown, baseUrl: string): AppContent {
       return artwork ? [{ id: banner.id, title: banner.title, subtitle: banner.subtitle, showId: banner.show_id,
         image: artwork, placement: banner.placement, linkUrl: banner.link_url, startsAt: banner.starts_at, endsAt: banner.ends_at }] : [];
     }),
-    announcements: data.announcements.map(item => ({ id: item.id, title: item.title, body: item.body, linkUrl: item.link_url, startsAt: item.starts_at, endsAt: item.ends_at })),
+    announcements: data.announcements.map(item => ({ id: item.id, title: item.title, body: item.body, linkUrl: item.link_url, priority: item.priority, startsAt: item.starts_at, endsAt: item.ends_at })).sort((a,b) => b.priority - a.priority),
   };
 }
 

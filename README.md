@@ -46,6 +46,8 @@ and web. See [typography, font sources and checks](docs/typography.md).
 
 Searchable show grid, show details and posters, locally saved favourites, founder profiles and station story, contact links, and official social links. Existing show IDs and favourite storage are preserved.
 
+Home reads published events from the shared website/admin database in an independent cached query. Upcoming events appear below the live schedule, with full event details and a Book on the Website button opening the official booking site. Announcements keep a compact priority-based preview below the hero, opening all active updates when tapped. Empty sections stay hidden. See [shared events, announcements and verification](docs/events.md).
+
 The bottom bar's Chat action opens a compact chooser. In-app chat is marked Coming soon and shows a development notice when tapped; WhatsApp opens the studio's official chat. About remains available through Home's Our story link. See [chat chooser and future scope](docs/chat.md).
 
 Home, Shows and Favourites use the same show card: square artwork, independent heart at the top-right, content-width live badge at the top-left, and matching text slots. Narrow cards show just LIVE in the badge to keep the heart clear; its accessibility label still includes listeners.
@@ -65,6 +67,7 @@ The interface uses black backgrounds, charcoal panels, soft-white controls and g
 ```sh
 npm run typecheck
 npm run test:content
+npm run test:events
 npm run test:listeners
 npm run test:radio
 npm run test:navigation

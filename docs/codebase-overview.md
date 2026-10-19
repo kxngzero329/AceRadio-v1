@@ -1,5 +1,11 @@
 # AceRadio codebase overview
 
+**Subsequent integration on 19 October 2026:** the app reads published events
+from the shared website/admin table, with an independent public cache, Home
+cards and event list/detail pages. Announcements now have a compact priority
+preview and full updates page. See [events.md](events.md); the database counts
+and content-cache description below remain the original dated audit snapshot.
+
 **Subsequent implementation on 16 October 2026:** accounts, two-role permissions, MFA-backed admin writes and cached favourites/settings sync are now deployed. The detailed account architecture and email setup requirement are in [accounts.md](accounts.md); that document supersedes the local-only favourites and old staff-role descriptions in this initial audit snapshot below.
 
 Reviewed on 16 October 2026 against the application source, backend scripts, migrations, tests and linked Supabase project `dbgpfqyighcaquxwzkfe`. Counts and environment observations below are a dated snapshot.

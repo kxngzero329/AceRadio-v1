@@ -123,6 +123,204 @@ export type Database = {
           },
         ]
       }
+      booking_guests: {
+        Row: {
+          booking_id: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          position: number
+        }
+        Insert: {
+          booking_id: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone: string
+          position: number
+        }
+        Update: {
+          booking_id?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_guests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_rate_limits: {
+        Row: {
+          attempts: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      booking_requests: {
+        Row: {
+          created_at: string
+          email: string
+          event_id: string | null
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          preferred_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          event_id?: string | null
+          id: string
+          message: string
+          name: string
+          phone?: string | null
+          preferred_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          event_id?: string | null
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          preferred_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_ticket_types: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          currency: string
+          description: string
+          display_order: number
+          event_id: string
+          guests_per_unit: number
+          id: string
+          name: string
+          price_cents: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          currency?: string
+          description?: string
+          display_order?: number
+          event_id: string
+          guests_per_unit?: number
+          id?: string
+          name: string
+          price_cents: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          currency?: string
+          description?: string
+          display_order?: number
+          event_id?: string
+          guests_per_unit?: number
+          id?: string
+          name?: string
+          price_cents?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_ticket_types_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          booking_url: string | null
+          created_at: string
+          description: string
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          location: string | null
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          booking_url?: string | null
+          created_at?: string
+          description?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          starts_at: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          booking_url?: string | null
+          created_at?: string
+          description?: string
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       media_assets: {
         Row: {
           alt_text: string | null
@@ -385,6 +583,90 @@ export type Database = {
           },
         ]
       }
+      ticket_bookings: {
+        Row: {
+          created_at: string
+          currency: string
+          email: string
+          event_id: string
+          event_title: string
+          first_name: string
+          guests_per_unit: number
+          id: string
+          last_name: string
+          payment_status: string
+          phone: string
+          quantity: number
+          reference: string
+          request_hash: string
+          status: string
+          ticket_name: string
+          ticket_type_id: string
+          total_cents: number
+          unit_price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          email: string
+          event_id: string
+          event_title: string
+          first_name: string
+          guests_per_unit: number
+          id: string
+          last_name: string
+          payment_status?: string
+          phone: string
+          quantity: number
+          reference: string
+          request_hash: string
+          status?: string
+          ticket_name: string
+          ticket_type_id: string
+          total_cents: number
+          unit_price_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          email?: string
+          event_id?: string
+          event_title?: string
+          first_name?: string
+          guests_per_unit?: number
+          id?: string
+          last_name?: string
+          payment_status?: string
+          phone?: string
+          quantity?: number
+          reference?: string
+          request_hash?: string
+          status?: string
+          ticket_name?: string
+          ticket_type_id?: string
+          total_cents?: number
+          unit_price_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_bookings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_bookings_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "event_ticket_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_favorites: {
         Row: {
           is_favorite: boolean
@@ -490,9 +772,38 @@ export type Database = {
       get_app_content: { Args: never; Returns: Json }
       get_app_content_v2: { Args: never; Returns: Json }
       get_app_content_v3: { Args: never; Returns: Json }
+      get_event_ticket_availability: {
+        Args: { event_id: string }
+        Returns: Json
+      }
+      get_website_content: { Args: never; Returns: Json }
       is_account_admin: { Args: never; Returns: boolean }
       is_content_editor: { Args: never; Returns: boolean }
       is_verified_account: { Args: never; Returns: boolean }
+      reserve_event_tickets: {
+        Args: { details: Json; request_id: string; visitor_key: string }
+        Returns: Json
+      }
+      reserve_website_tickets: {
+        Args: { details: Json; request_id: string }
+        Returns: Json
+      }
+      submit_booking_request: {
+        Args: { details: Json; request_id: string; visitor_key: string }
+        Returns: string
+      }
+      submit_website_booking_request: {
+        Args: { details: Json; request_id: string }
+        Returns: string
+      }
+      update_ticket_booking: {
+        Args: {
+          booking_id: string
+          new_payment_status: string
+          new_status: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -15,6 +15,7 @@ import { usePageContentStyle } from "@/hooks/usePageContentStyle";
 import { ContentStatus } from "@/components/ContentStatus";
 import { StationAnnouncements } from "@/components/StationAnnouncements";
 import { HomeBanners } from "@/components/HomeBanners";
+import { UpcomingEvents } from "@/components/UpcomingEvents";
 import { colors } from "@/theme/colors";
 import { layout } from "@/theme/layout";
 
@@ -33,11 +34,11 @@ export default function HomeScreen() {
         contentContainerStyle={[contentStyle, styles.scroll]}
       >
         <LiveRadioHero />
+        <StationAnnouncements />
         <ContentStatus
           showLoading={false}
           emptyMessage="The show lineup will appear here when it is published."
         />
-        <StationAnnouncements />
         <HomeBanners />
         <LiveNoticeBoard />
         <View style={styles.stationNote}>
@@ -46,6 +47,7 @@ export default function HomeScreen() {
           <View style={styles.noteDot} />
           <Text style={styles.noteText}>From Cape Town</Text>
         </View>
+        <UpcomingEvents />
         {hasSpotlight && (
           <>
             <SectionTitle title="Show spotlight" />

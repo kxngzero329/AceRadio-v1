@@ -154,7 +154,7 @@ test('a hung client request also times out and HTTP errors never become zero lis
   await assert.rejects(hung.fetchListenerSample(new AbortController().signal),/Aborted/);
 });
 
-test('concurrent UI reads deduplicate and listener data is excluded from the actual persisted catalogue',async()=>{
+test('concurrent UI reads deduplicate and only public catalogue/events enter the persisted content cache',async()=>{
   const React=require('react');
   const queries=require('@tanstack/react-query');
   const storage={getItem:async()=>null,setItem:async()=>{},removeItem:async()=>{}};
@@ -170,8 +170,12 @@ test('concurrent UI reads deduplicate and listener data is excluded from the act
   const options={queryKey:client.listenerQueryKey,queryFn:async()=>{calls++;return client.decodeListenerSample(payload(),Date.now(),Date.now());}};
   await Promise.all([cache.fetchQuery(options),cache.fetchQuery(options)]);assert.equal(calls,1);
   cache.setQueryData(['app-content',1,'supabase'],{version:3,shows:[]});
+  cache.setQueryData(['station-events',1,'supabase','upcoming'],[]);
+  cache.setQueryData(['station-events',1,'supabase','detail','public-event'],{title:'Published event'});
+  cache.setQueryData(['account-data','private-user'],{displayName:'Private account'});
   const dehydrated=queries.dehydrate(cache,element.props.persistOptions.dehydrateOptions);
-  assert.equal(dehydrated.queries.length,1);assert.equal(dehydrated.queries[0].queryKey[0],'app-content');
+  assert.equal(dehydrated.queries.length,3);
+  assert.ok(dehydrated.queries.every(query=>['app-content','station-events'].includes(query.queryKey[0])));
   cache.clear();
 });
 

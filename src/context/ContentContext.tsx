@@ -14,7 +14,7 @@ export const queryClient = new QueryClient({ defaultOptions: { queries: {
   staleTime: 60_000, gcTime: MAX_CACHE_AGE, retry: 2, refetchOnWindowFocus: true, refetchOnReconnect: true,
 } } });
 const persister = createAsyncStoragePersister({ storage: AsyncStorage, key: `aceradio:content:v1:${contentConfig.url}`, throttleTime: 1000 });
-type ContentState = AppContent & { source: "supabase" | "bundled"; loading: boolean; refreshing: boolean; error: string | null; refresh: () => Promise<void> };
+type ContentState = AppContent & { now: number; source: "supabase" | "bundled"; loading: boolean; refreshing: boolean; error: string | null; refresh: () => Promise<void> };
 const ContentContext = createContext<ContentState | null>(null);
 const selectContent = (value: unknown) => decodeContent(value, contentConfig.url);
 
@@ -36,6 +36,7 @@ function ContentStateProvider({ children }: PropsWithChildren) {
   }, []);
   const content = remote ? query.data ?? emptyContent : bundledContent;
   const value = useMemo<ContentState>(() => ({ ...content,
+    now,
     banners: content.banners.filter(item => isContentInWindow(item, now)),
     announcements: content.announcements.filter(item => isContentInWindow(item, now)),
     source: contentConfig.source,
@@ -50,7 +51,7 @@ function ContentStateProvider({ children }: PropsWithChildren) {
 export function ContentProvider({ children }: PropsWithChildren) {
   return <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: MAX_CACHE_AGE,
     buster: `content-v1:${contentConfig.source}:${contentConfig.url}`,
-    dehydrateOptions: { shouldDehydrateQuery: query => query.queryKey[0] === "app-content" && query.state.status === "success" },
+    dehydrateOptions: { shouldDehydrateQuery: query => (query.queryKey[0] === "app-content" || query.queryKey[0] === "station-events") && query.state.status === "success" },
   }}><ContentStateProvider>{children}</ContentStateProvider></PersistQueryClientProvider>;
 }
 export function useContent() {

@@ -5,6 +5,7 @@ export const STATION = {
   tagline: "Built for those who listen differently.",
   location: "Cape Town, South Africa",
   website: "https://ace.radio",
+  bookings: "https://bookings.ace.radio/",
   email: "studio@ace.radio",
   whatsapp: "https://wa.me/27730676204",
   social: {

@@ -176,6 +176,15 @@ test('import IDs preserve favourites and API provenance, and all image hashes ar
   assert.ok(!JSON.stringify(manifest).includes('base64'));
 });
 
+test('announcements preserve legacy caches and order active previews by priority without losing their full text', async () => {
+  const payload = await content();
+  const update = (id, priority) => ({ id, title:id, body:'Complete announcement\nIncluding its second paragraph.', link_url:null, starts_at:null, ends_at:null, ...(priority === undefined ? {} : {priority}) });
+  const mapped = repository.decodeContent({...payload,announcements:[update('normal',0),update('important',10),update('legacy')]},'https://test.supabase.co');
+  assert.deepEqual(Array.from(mapped.announcements,item=>item.id),['important','normal','legacy']);
+  assert.equal(mapped.announcements[2].priority,0);
+  assert.equal(mapped.announcements[0].body,'Complete announcement\nIncluding its second paragraph.');
+});
+
 test('seeding twice neither duplicates records nor overwrites a staff edit', async () => {
   const title = manifest.records.shows.find(show => show.id === 'mornings').title;
   await db.exec("update public.shows set title = 'Reviewed staff edit' where id = 'mornings'");

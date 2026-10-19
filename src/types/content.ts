@@ -15,6 +15,17 @@ export type Banner = {
 export type Announcement = {
   id: string; title: string; body: string; linkUrl: string | null;
   startsAt: string | null; endsAt: string | null;
+  priority: number;
+};
+export type StationEvent = {
+  id: string;
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt: string | null;
+  location: string | null;
+  imageUrl: string | null;
+  bookingUrl: string | null;
 };
 export type Presenter = { id: string; name: string; bio: string | null; photo?: ImageSourcePropType };
 export type AppContent = {

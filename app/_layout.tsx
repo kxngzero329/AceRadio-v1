@@ -94,6 +94,9 @@ export default function RootLayout() {
                           <Stack.Screen name="(tabs)" />
                           <Stack.Screen name="player" options={sheetOptions} />
                           <Stack.Screen name="show/[id]" options={sheetOptions} />
+                          <Stack.Screen name="events" options={sheetOptions} />
+                          <Stack.Screen name="event/[id]" options={sheetOptions} />
+                          <Stack.Screen name="announcements" options={sheetOptions} />
                           <Stack.Screen name="account" />
                         </Stack>
                       </View>
