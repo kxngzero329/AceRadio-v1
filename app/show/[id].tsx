@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenSafeArea } from "@/components/ScreenSafeArea";
 import { useLocalSearchParams } from "expo-router";
 import {
   ChevronLeft,
@@ -70,7 +70,7 @@ export default function ShowDetail() {
       shouldRasterizeIOS={isTransitioning}
       collapsable={false}
     >
-      <SafeAreaView edges={["top", "bottom"]} style={styles.root}>
+      <ScreenSafeArea style={styles.root}>
         <View style={styles.top}>
           <Pressable
             onPress={close}
@@ -262,7 +262,7 @@ export default function ShowDetail() {
           )}
         </ScrollView>
         <MiniPlayer placement="sheet" />
-      </SafeAreaView>
+      </ScreenSafeArea>
     </Animated.View>
   );
 }
@@ -279,6 +279,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
+    gap: 8,
   },
   circle: {
     width: 44,
@@ -290,7 +291,14 @@ const styles = StyleSheet.create({
   favoriteActive: { backgroundColor: colors.accentSoft },
   pressed: { backgroundColor: colors.surface2 },
   headerSpacer: { width: 44 },
-  topTitle: { color: colors.muted, fontSize: 13, fontFamily: fonts.semibold },
+  topTitle: {
+    color: colors.muted,
+    fontSize: 13,
+    fontFamily: fonts.semibold,
+    flex: 1,
+    flexShrink: 1,
+    textAlign: "center",
+  },
   scroll: {
     width: "100%",
     maxWidth: layout.contentWidth,

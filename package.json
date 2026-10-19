@@ -19,6 +19,7 @@
     "test:animations": "node --test scripts/animations.test.cjs",
     "test:startup": "node --test scripts/startup.test.cjs",
     "test:listening-ui": "node --test scripts/listening-ui.test.cjs",
+    "test:safe-area": "node --test scripts/safe-area.test.cjs",
     "test:content": "node --test scripts/content.test.cjs",
     "test:events": "node --test scripts/events.test.cjs",
     "test:listeners": "node --test scripts/listeners.test.cjs",

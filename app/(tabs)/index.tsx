@@ -33,8 +33,8 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[contentStyle, styles.scroll]}
       >
-        <LiveRadioHero />
         <StationAnnouncements />
+        <LiveRadioHero />
         <ContentStatus
           showLoading={false}
           emptyMessage="The show lineup will appear here when it is published."

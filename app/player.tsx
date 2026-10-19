@@ -9,7 +9,7 @@ import {
   ScrollView,
   useWindowDimensions,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenSafeArea } from "@/components/ScreenSafeArea";
 import {
   ChevronDown,
   Pause,
@@ -64,7 +64,7 @@ export default function PlayerScreen() {
       shouldRasterizeIOS={isTransitioning}
       collapsable={false}
     >
-      <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
+      <ScreenSafeArea style={styles.root}>
         <View style={styles.header}>
           <Pressable
             style={({ pressed }) => [styles.close, pressed && styles.pressed]}
@@ -183,7 +183,7 @@ export default function PlayerScreen() {
             </View>
           )}
         </ScrollView>
-      </SafeAreaView>
+      </ScreenSafeArea>
     </Animated.View>
   );
 }
@@ -200,8 +200,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
+    gap: 8,
   },
-  headerLabel: { color: colors.muted, fontSize: 13, fontFamily: fonts.semibold },
+  headerLabel: {
+    color: colors.muted,
+    fontSize: 13,
+    fontFamily: fonts.semibold,
+    flex: 1,
+    flexShrink: 1,
+    textAlign: "center",
+  },
   headerSpacer: { width: 44 },
   close: {
     width: 44,

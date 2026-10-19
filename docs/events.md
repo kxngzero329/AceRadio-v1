@@ -8,7 +8,7 @@ from that shared schema.
 
 ## Home and navigation
 
-- Announcements stay immediately below the live hero. One compact card previews
+- Announcements appear immediately above the live hero. One compact card previews
   the highest-priority active announcement. Tapping it opens `/announcements`,
   with all active updates, complete text and any supplied information links.
 - Upcoming events sit below the live schedule/station note, before Show Spotlight.

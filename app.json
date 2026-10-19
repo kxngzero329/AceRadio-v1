@@ -26,7 +26,10 @@
     "ios": {
       "bundleIdentifier": "com.aceradio.app",
       "icon": "./assets/icons/icon.png",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "web": {
       "favicon": "./assets/icons/favicon.png"

@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenSafeArea } from "@/components/ScreenSafeArea";
 import { ChevronLeft } from "lucide-react-native";
 import { useModalTransition } from "@/hooks/useModalTransition";
 import { colors } from "@/theme/colors";
@@ -34,7 +34,7 @@ export function ContentSheet({
       shouldRasterizeIOS={isTransitioning}
       collapsable={false}
     >
-      <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
+      <ScreenSafeArea style={styles.root}>
         <View style={styles.header}>
           <Pressable
             onPress={close}
@@ -56,7 +56,7 @@ export function ContentSheet({
         >
           {children}
         </ScrollView>
-      </SafeAreaView>
+      </ScreenSafeArea>
     </Animated.View>
   );
 }

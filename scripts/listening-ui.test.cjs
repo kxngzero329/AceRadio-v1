@@ -98,7 +98,7 @@ function details({ selected = false, live = true, playing = false, buffering = f
   };
   const Screen = load('app/show/[id].tsx', {
     'react/jsx-runtime': require('react/jsx-runtime'), 'react-native': native,
-    'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
+    '@/components/ScreenSafeArea': { ScreenSafeArea: 'ScreenSafeArea' },
     'expo-router': { useLocalSearchParams: () => ({ id: show.id }) },
     'lucide-react-native': { ChevronLeft: noop, Heart: noop, CalendarDays: noop, Mic2: noop, Play: noop, Pause: noop, Radio: noop },
     '@/components/ShowPoster': { ShowPoster: noop }, '@/components/FittedImage': { FittedImage: noop },

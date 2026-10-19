@@ -13,7 +13,7 @@ import {
   View,
   type TextInputProps,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenSafeArea } from "@/components/ScreenSafeArea";
 import { ChevronLeft, Eye, EyeOff, ShieldCheck } from "lucide-react-native";
 import { router } from "@/utils/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -269,7 +269,7 @@ export default function AccountScreen() {
           delete: "Delete account?",
         }[mode];
   return (
-    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+    <ScreenSafeArea style={styles.screen}>
       <KeyboardAvoidingView
         style={styles.screen}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -688,7 +688,7 @@ export default function AccountScreen() {
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenSafeArea>
   );
 }
 const styles = StyleSheet.create({

@@ -24,14 +24,16 @@ export function StationAnnouncements() {
           STATION UPDATE
           {announcements.length > 1 ? ` · ${announcements.length}` : ""}
         </Text>
-        <ChevronRight size={16} color={colors.muted} />
       </View>
-      <Text style={styles.title} numberOfLines={2}>
-        {item.title}
-      </Text>
-      <Text style={styles.body} numberOfLines={2}>
-        {item.body}
-      </Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <View style={styles.action}>
+          <Text style={styles.actionText}>Tap to view</Text>
+          <ChevronRight size={14} color={colors.muted} />
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -59,18 +61,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     flex: 1,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
   title: {
+    flex: 1,
+    minWidth: 0,
     color: colors.white,
     fontFamily: fonts.displayBold,
     fontSize: 16,
     lineHeight: 22,
   },
-  body: {
+  action: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0,
+  },
+  actionText: {
     color: colors.muted,
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 5,
-    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: fonts.medium,
   },
   pressed: { backgroundColor: colors.surface2, opacity: 0.85 },
 });
