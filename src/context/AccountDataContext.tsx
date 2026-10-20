@@ -18,6 +18,16 @@ import { accountApi } from "@/services/accountRepository";
 import { AccountSync, type SyncState } from "@/utils/AccountSync";
 import type { ReminderScope, ReminderLead } from "@/types/notifications";
 import {
+  readGuestAccountTransfer,
+  saveGuestAccountTransfer,
+  clearGuestAccountTransfer,
+  type GuestAccountTransfer,
+} from "@/services/guestAccountTransfer";
+import {
+  readDevicePreferences,
+  saveDevicePreferences,
+} from "@/services/pushNotifications";
+import {
   getNotificationsEnabled,
   enableNotifications,
   disableNotifications,
@@ -41,11 +51,16 @@ type AccountData = {
   guestImportCount: number;
   guestImportAvailable: boolean;
   signedIn: boolean;
+  transferringGuest: boolean;
   toggleFavorite(id: string): void;
   setNotifications(value: boolean): Promise<void>;
-  setReminderOptions(scope: ReminderScope, leadMinutes: ReminderLead): Promise<void>;
+  setReminderOptions(
+    scope: ReminderScope,
+    leadMinutes: ReminderLead,
+  ): Promise<void>;
   updateName(value: string): Promise<void>;
   importGuest(): Promise<void>;
+  transferGuestAfterSignup(userId: string): Promise<void>;
   refresh(): Promise<void>;
   clearAccountCache(): Promise<void>;
 };
@@ -92,6 +107,15 @@ function ScopedAccountData({
   );
   const currentOwner = useRef(userId);
   currentOwner.current = userId;
+  const currentEngine = useRef(engine);
+  currentEngine.current = engine;
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const state = useSyncExternalStore(
     engine?.subscribe ?? noopSubscribe,
     engine?.getSnapshot ?? emptySnapshot,
@@ -100,10 +124,39 @@ function ScopedAccountData({
   const [guest, setGuest] = useState<string[]>([]);
   const guestRef = useRef(guest);
   const [guestNotifications, setGuestNotifications] = useState(false);
-  const [guestOptions, setGuestOptions] = useState<{ scope: ReminderScope; leadMinutes: ReminderLead }>({ scope: "favorites", leadMinutes: 5 });
+  const [guestOptions, setGuestOptions] = useState<{
+    scope: ReminderScope;
+    leadMinutes: ReminderLead;
+  }>({ scope: "favorites", leadMinutes: 5 });
   const [guestReady, setGuestReady] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const guestWrite = useRef<Promise<void>>(Promise.resolve());
+  const [transfer, setTransfer] = useState<{
+    userId: string;
+    value: GuestAccountTransfer;
+  } | null>(null);
+  const transferRunning = useRef(false);
+  const [transferAttempt, setTransferAttempt] = useState(0);
+  useEffect(() => {
+    if (!userId) {
+      setTransfer(null);
+      return;
+    }
+    let current = true;
+    void readGuestAccountTransfer(userId)
+      .then((value) => {
+        if (current && value) setTransfer({ userId, value });
+      })
+      .catch(() => {
+        if (current)
+          setLocalError(
+            "Couldn't restore device favourites. Your original guest choices are still on this phone.",
+          );
+      });
+    return () => {
+      current = false;
+    };
+  }, [userId]);
   useEffect(() => {
     let alive = true;
     void Promise.all([
@@ -131,8 +184,15 @@ function ScopedAccountData({
         if (rawOptions) {
           try {
             const saved = JSON.parse(rawOptions);
-            setGuestOptions({ scope: saved.scope === "all" ? "all" : "favorites", leadMinutes: [0, 5, 10, 15].includes(saved.leadMinutes) ? saved.leadMinutes : 5 });
-          } catch { /* Keep safe defaults if an old device preference is corrupt. */ }
+            setGuestOptions({
+              scope: saved.scope === "all" ? "all" : "favorites",
+              leadMinutes: [0, 5, 10, 15].includes(saved.leadMinutes)
+                ? saved.leadMinutes
+                : 5,
+            });
+          } catch {
+            /* Keep safe defaults if an old device preference is corrupt. */
+          }
         }
       })
       .catch(() => {
@@ -204,20 +264,126 @@ function ScopedAccountData({
     }
   };
   const account = state.account;
+  const activeTransfer = transfer?.userId === userId ? transfer.value : null;
+  useEffect(() => {
+    if (
+      !engine ||
+      !activeTransfer ||
+      !state.ready ||
+      !state.account ||
+      transferRunning.current
+    )
+      return;
+    const target = engine;
+    const value = activeTransfer;
+    const current = () =>
+      mounted.current &&
+      currentOwner.current === target.userId &&
+      currentEngine.current === target;
+    let needsAnotherBatch = false;
+    transferRunning.current = true;
+    void (async () => {
+      try {
+        // Small durable batches respect the account outbox limit. Successfully
+        // queued choices appear optimistically and survive network interruption.
+        const missing = (value.remaining ?? value.favorites).filter(
+          (id) =>
+            !target
+              .getSnapshot()
+              .account?.favorites.some((row) => row.show_id === id),
+        );
+        const capacity = Math.max(
+          0,
+          Math.min(50, 198 - target.getSnapshot().pending),
+        );
+        if (!current()) return;
+        if (capacity > 0 && missing.length)
+          await target.enqueueMany(
+            missing
+              .slice(0, capacity)
+              .map((id) => ({ kind: "favorite", show_id: id, value: true })),
+          );
+        if (!current()) return;
+        if (missing.length > capacity) {
+          if (capacity > 0) {
+            const updated = { ...value, remaining: missing.slice(capacity) };
+            await saveGuestAccountTransfer(target.userId, updated);
+            if (current())
+              setTransfer({ userId: target.userId, value: updated });
+          }
+          needsAnotherBatch =
+            capacity > 0 && target.getSnapshot().pending < 198;
+          return;
+        }
+        const settings = target.getSnapshot().account!.settings;
+        if (
+          settings.revision === 0 &&
+          (settings.notifications_enabled !== value.notificationsEnabled ||
+            settings.reminder_scope !== value.scope ||
+            settings.reminder_lead_minutes !== value.leadMinutes)
+        ) {
+          await target.enqueue({
+            kind: "settings",
+            value: value.notificationsEnabled,
+            scope: value.scope,
+            leadMinutes: value.leadMinutes,
+          });
+        }
+        if (!current()) return;
+        await saveDevicePreferences(target.userId, value.push);
+        if (!current()) return;
+        await clearGuestAccountTransfer(target.userId);
+        if (current()) {
+          setTransfer(null);
+          setLocalError(null);
+        }
+      } catch {
+        if (current())
+          setLocalError(
+            "Your device favourites are safe. Reconnect or refresh to finish adding them to your account.",
+          );
+      } finally {
+        transferRunning.current = false;
+        // Enqueue publishes before its storage write finishes. Recheck after
+        // that write too, rather than losing a wake-up during a fast batch.
+        if (mounted.current && (!current() || needsAnotherBatch))
+          setTransferAttempt((value) => value + 1);
+      }
+    })();
+  }, [
+    engine,
+    activeTransfer,
+    state.ready,
+    state.account,
+    state.pending,
+    transferAttempt,
+  ]);
   const favorites = useMemo(
     () =>
       userId
-        ? (account?.favorites
-            .filter((row) => row.is_favorite)
-            .map((row) => row.show_id) ?? [])
+        ? [
+            ...new Set([
+              ...(activeTransfer?.favorites.filter(
+                (id) => !account?.favorites.some((row) => row.show_id === id),
+              ) ?? []),
+              ...(account?.favorites
+                .filter((row) => row.is_favorite)
+                .map((row) => row.show_id) ?? []),
+            ]),
+          ]
         : guest,
-    [account, guest, userId],
+    [account, activeTransfer, guest, userId],
   );
   const canEdit =
-    !authLoading && (userId ? !!account && state.ready : guestReady);
+    !authLoading &&
+    !activeTransfer &&
+    (userId ? !!account && state.ready : guestReady);
   const ready =
     !authLoading &&
     (userId ? state.ready && (!!account || !!state.error) : guestReady);
+  const guestToImport = guest.filter(
+    (id) => !account?.favorites.some((row) => row.show_id === id),
+  );
   return (
     <Context.Provider
       value={{
@@ -225,8 +391,12 @@ function ScopedAccountData({
         notificationsEnabled: userId
           ? (account?.settings.notifications_enabled ?? false)
           : guestNotifications,
-        reminderScope: userId ? (account?.settings.reminder_scope ?? "favorites") : guestOptions.scope,
-        reminderLeadMinutes: userId ? (account?.settings.reminder_lead_minutes ?? 5) : guestOptions.leadMinutes,
+        reminderScope: userId
+          ? (account?.settings.reminder_scope ?? "favorites")
+          : guestOptions.scope,
+        reminderLeadMinutes: userId
+          ? (account?.settings.reminder_lead_minutes ?? 5)
+          : guestOptions.leadMinutes,
         ready,
         canEdit,
         syncing: state.syncing,
@@ -237,9 +407,12 @@ function ScopedAccountData({
         role: account?.role ?? "user",
         displayName: account?.profile.display_name ?? "Listener",
         signedIn: !!userId,
-        guestImportCount: guest.length,
+        transferringGuest: !!activeTransfer,
+        guestImportCount: guestToImport.length,
         guestImportAvailable:
-          guestReady && (guest.length > 0 || guestNotifications),
+          guestReady &&
+          (guestToImport.length > 0 ||
+            (guestNotifications && account?.settings.revision === 0)),
         toggleFavorite: (id) => {
           if (!canEdit) {
             setLocalError("Wait for your saved shows to load, then try again.");
@@ -284,9 +457,20 @@ function ScopedAccountData({
         },
         setReminderOptions: async (scope, leadMinutes) => {
           if (!canEdit) throw Error("Wait for your settings to load.");
-          if (engine) await engine.enqueue({ kind: "settings", value: engine.getSnapshot().account?.settings.notifications_enabled ?? false, scope, leadMinutes });
+          if (engine)
+            await engine.enqueue({
+              kind: "settings",
+              value:
+                engine.getSnapshot().account?.settings.notifications_enabled ??
+                false,
+              scope,
+              leadMinutes,
+            });
           else {
-            await AsyncStorage.setItem("aceradio:guest-reminder-options:v1", JSON.stringify({ scope, leadMinutes }));
+            await AsyncStorage.setItem(
+              "aceradio:guest-reminder-options:v1",
+              JSON.stringify({ scope, leadMinutes }),
+            );
             setGuestOptions({ scope, leadMinutes });
           }
         },
@@ -316,8 +500,22 @@ function ScopedAccountData({
           await disableNotifications();
           setGuestNotifications(false);
         },
+        transferGuestAfterSignup: async (targetUserId) => {
+          await guestWrite.current;
+          const value: GuestAccountTransfer = {
+            version: 1,
+            favorites: [...guestRef.current],
+            notificationsEnabled: guestNotifications,
+            scope: guestOptions.scope,
+            leadMinutes: guestOptions.leadMinutes,
+            push: await readDevicePreferences("guest"),
+          };
+          await saveGuestAccountTransfer(targetUserId, value);
+          setTransfer({ userId: targetUserId, value });
+        },
         refresh: async () => {
           setLocalError(null);
+          setTransferAttempt((value) => value + 1);
           if (engine) await engine.refresh();
         },
         clearAccountCache: async () => {

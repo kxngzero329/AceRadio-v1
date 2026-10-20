@@ -1,9 +1,10 @@
 # Show reminders: setup and operation
 
-Implemented on 19 October 2026. **App code, database migrations, both Edge
-Functions and the minute cron are deployed/prepared. Delivery is deliberately
-OFF until platform credentials and test devices are configured.** No listener
-has been subscribed or sent a test notification by this implementation.
+Implemented on 19 October 2026. **The base migrations, both Edge Functions and
+minute cron are installed. On 20 October, preview delivery was enabled with
+explicit approval for one registered Android phone. Public delivery remains
+disabled.** The favourite-live migration and worker update were also deployed
+with explicit approval on 20 October.
 
 ## What listeners get
 
@@ -17,6 +18,11 @@ has been subscribed or sent a test notification by this implementation.
 - Choices: **My favourites / Every show**, with **At start / 5 / 10 / 15 minutes
   before**. The suggested timing is five minutes before. No favourites means no
   favourite reminders, rather than silently switching to all shows.
+- Favourite-live reminders add one extra reminder **five minutes into
+  a favourite show's published slot**. It requires recurring reminders and current
+  favourite membership, including in Every show mode. A one-time request alone
+  does not subscribe to this extra alert. It stops if the show has ended or the
+  listener opts out/removes the favourite. Timing remains schedule-based.
 - Home's **Remind me** saves only the next occurrence. If the preferred advance
   time has already passed, that one-time reminder falls back to the show's start.
   A show already covered by global preferences is labelled accordingly, avoiding
@@ -49,16 +55,39 @@ Project: `dbgpfqyighcaquxwzkfe`; EAS project:
 | `push-dispatch` | Deployed; server worker authentication only |
 | `aceradio-show-reminders` cron | Active, every minute |
 | Worker credential | Installed in Supabase Secrets and encrypted Vault |
-| `PUSH_ENABLED` | `false` |
+| `PUSH_ENABLED` | `true`, approved phone-only preview test |
 | `PUSH_ALLOW_ALL` | `false` |
 | `PUSH_ENVIRONMENT` | `preview` |
-| Test devices | None |
-| Firebase, Apple credentials and Expo push access token | User setup below |
+| Test devices | One Android preview installation, explicitly approved on 20 October |
+| Firebase / Expo token | Android client configured, FCM V1 upload confirmed by user, Expo server token installed |
+| Apple credentials | Pending user setup below |
+
+**20 October Android review:** the phone is registered as a guest with
+`rush-hour` saved, five-minute advance reminders and a one-time request for the
+15:00 SAST broadcast. The Expo access token is configured. The review found that
+`PUSH_ENABLED` was still false and the audience unset; after explicit approval,
+phone-only preview delivery was enabled with `PUSH_ALLOW_ALL=false` and exactly
+that installation allowlisted. The 14:55 eligibility check was read-only and
+created no delivery jobs. Credential values were neither printed nor persisted.
+
+The favourite-live migration `20261020130000_favorite_live_reminders.sql` and
+worker change were deployed after a separate explicit approval. The migration preserves
+existing jobs as `phase=reminder` and adds a separate `live` phase. Both use the
+existing version-1 notification payload, so the installed Android preview can
+open the extra alert with the installed build. Automatic signup transfer
+requires a new app build. Its details are in [accounts](accounts.md).
+
+Post-deployment verification at 14:29 SAST confirmed the migration, private job
+RLS, service-only candidate RPC, active minute cron and HTTP-200 enabled-worker
+responses. Read-only eligibility checks returned Rush Hour's `reminder` at 14:55
+and `live` at 15:05. The sender retained exactly the approved Android installation,
+`PUSH_ALLOW_ALL=false` and `PUSH_ENVIRONMENT=preview`. No due jobs existed yet;
+provider handoff/phone arrival still require the scheduled device test.
 
 The shared project also contains website/booking migrations absent from this
 app's original checkout. **Do not repair/revert those migrations.**
 `backend:deploy-push` fetches the actual remote history into a fresh ignored
-workspace, adds only the two reviewed reminder migrations, previews the change,
+workspace, adds only the reviewed reminder migrations, previews the change,
 and applies those plus the two named functions. It preserves website history.
 
 ## Your setup, step by step
@@ -248,7 +277,11 @@ The database derives occurrences from published structured schedules in SAST,
 including overnight slots and effective dates. Only due occurrences in a
 two-minute dispatch window are eligible. It rechecks favourites, device consent,
 account settings and publication before claiming work. One job per device/show/
-start prevents overlapping one-time/global subscriptions from duplicating sends.
+start and phase prevents overlapping one-time/global subscriptions from duplicating
+sends, while allowing one independent five-minute favourite-live alert. The
+initial reminder and live alert have separate job IDs, provider collapse IDs,
+retry state and receipts. Live eligibility is checked against current account
+favourites for signed-in listeners and device favourites for guests.
 
 Workers claim jobs atomically, use a separate worker lease, send batches of at
 most 100, limit send pace, retry clear temporary rejections, and check receipts
@@ -316,8 +349,19 @@ completed by this review.
 
 ## Validation performed
 
-- TypeScript and all **213 automated tests** pass, including **43** push database,
-  endpoint, client-lifecycle and native-service cases plus **8** spotlight cases.
+The 20 October Android follow-up also checks guest favourites across app launches,
+automatic signup transfer, durable offline/restart recovery, account isolation,
+bulk-import capacity, overnight/effective-date live reminders, existing delivery
+preservation during migration, phase deduplication, opt-out and payload compatibility.
+The browser signup test intercepts every authentication/account-write endpoint:
+it creates no real account and changes no production favourites. It verifies the
+Saved page before signup, after automatic sync, after reload and after sign-out.
+The deployment dry run preserves shared website migration history. Device receipt
+confirmation remains distinct from a successful code/export test.
+
+- TypeScript and all **230 automated tests** pass, including **52** push database,
+  endpoint, client-lifecycle and native-service cases, **8** spotlight cases and
+  **8** guest-account transfer cases.
   Run `node --test scripts/*.test.cjs`, `npm run typecheck`, `npm run test:push`
   and `npm run test:animations` to repeat the relevant checks.
 - Android, iOS and web exports succeed.

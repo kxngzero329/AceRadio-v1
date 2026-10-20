@@ -111,8 +111,12 @@ export class AccountSync {
           visible.settings = {
             ...visible.settings,
             notifications_enabled: change.value,
-            ...(change.scope !== undefined ? { reminder_scope: change.scope } : {}),
-            ...(change.leadMinutes !== undefined ? { reminder_lead_minutes: change.leadMinutes } : {}),
+            ...(change.scope !== undefined
+              ? { reminder_scope: change.scope }
+              : {}),
+            ...(change.leadMinutes !== undefined
+              ? { reminder_lead_minutes: change.leadMinutes }
+              : {}),
             revision: change.base_revision + 1,
           };
         else
@@ -229,28 +233,35 @@ export class AccountSync {
     } else void this.refresh();
   }
   async enqueue(input: ChangeInput) {
+    return this.enqueueMany([input]);
+  }
+  async enqueueMany(inputs: readonly ChangeInput[]) {
     if (this.stopped || !this.state.ready || !this.account)
       throw Error("Wait for your account to load before making changes.");
-    const same = [...this.pending]
-      .reverse()
-      .find((change) => keyOf(change) === keyOf(input));
-    if (same && !same.sent && !this.storage.getAllKeys)
-      Object.assign(same, changeSchema.parse({ ...same, ...input }));
-    else {
-      if (this.pending.length >= 200)
-        throw Error("Please sync your pending changes before adding more.");
-      this.pending.push(
-        changeSchema.parse({
-          ...input,
-          id: this.uuid(),
-          created_at: this.now(),
-          base_revision: same
-            ? same.base_revision + 1
-            : revisionOf(this.account, input),
-          sent: false,
-        }),
-      );
+    const queued = this.pending.map((change) => ({ ...change }));
+    for (const input of inputs) {
+      const same = [...queued]
+        .reverse()
+        .find((change) => keyOf(change) === keyOf(input));
+      if (same && !same.sent && !this.storage.getAllKeys)
+        Object.assign(same, changeSchema.parse({ ...same, ...input }));
+      else {
+        if (queued.length >= 200)
+          throw Error("Please sync your pending changes before adding more.");
+        queued.push(
+          changeSchema.parse({
+            ...input,
+            id: this.uuid(),
+            created_at: this.now(),
+            base_revision: same
+              ? same.base_revision + 1
+              : revisionOf(this.account, input),
+            sent: false,
+          }),
+        );
+      }
     }
+    this.pending = queued;
     this.publish({ error: null, notice: null });
     try {
       await this.persist();

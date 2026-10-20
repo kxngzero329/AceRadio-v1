@@ -1,5 +1,5 @@
 type Result = { data: unknown; error: unknown };
-type Job = { id: string; lease: string; token: string; showId: string; title: string; time: string; startsAt: string; endsAt: string; expiresAt: string };
+type Job = { id: string; lease: string; token: string; showId: string; title: string; time: string; startsAt: string; endsAt: string; expiresAt: string; phase?: "reminder" | "live" };
 type ReceiptJob = { id: string; ticket: string };
 type Dependencies = {
   rpc(name: string, args?: Record<string, unknown>): Promise<Result>;
@@ -70,8 +70,8 @@ export function createPushDispatchHandler(deps: Dependencies) {
         let response;
         try {
           response = await post("send", jobs.map(job => ({
-            to: job.token, title: job.title,
-            body: `${job.time} SAST · Tap to open the show and listen live.`,
+            to: job.token, title: job.phase === "live" ? `${job.title} is on now` : job.title,
+            body: job.phase === "live" ? "Your favourite show is on air. Tap to listen live." : `${job.time} SAST · Tap to open the show and listen live.`,
             data: { version: 1, kind: "show-reminder", showId: job.showId, startsAt: job.startsAt, endsAt: job.endsAt },
             expiration: Math.floor(Date.parse(job.expiresAt) / 1000),
             sound: "default", priority: "high", channelId: "ace-radio-updates",

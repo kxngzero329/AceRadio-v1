@@ -10,7 +10,7 @@ import { useRadio } from "@/context/RadioContext";
 import { router } from "@/utils/navigation";
 import { notificationOpenAction } from "@/utils/notificationOpen";
 import { parseShowReminder, reminderKey, type DevicePreferences, type OneTimeReminder, type ShowReminder } from "@/types/notifications";
-import { acquirePushToken, invalidatePushToken, notificationApi, permissionGranted, pushUnsupportedReason, readDevicePreferences, saveDevicePreferences, syncPushDevice } from "@/services/pushNotifications";
+import { acquirePushToken, invalidatePushToken, notificationApi, permissionGranted, pushUnsupportedReason, readDevicePreferences, saveDevicePreferences, subscribeDevicePreferences, syncPushDevice } from "@/services/pushNotifications";
 
 type PushState = {
   enabled: boolean; ready: boolean; busy: boolean; syncing: boolean; status: string;
@@ -51,7 +51,7 @@ export function PushNotificationProvider({ children, startupReady }: PropsWithCh
   const latest = useRef({ content, radio });
   latest.current = { content, radio };
   const refresh = useCallback(() => setAttempt(value => value + 1), []);
-  const ready = local.owner === owner && local.ready && account.ready;
+  const ready = local.owner === owner && local.ready && account.ready && !account.transferringGuest;
   const preferences = local.owner === owner ? local.value : { consent: false, oneTime: [] };
 
   useEffect(() => {
@@ -66,15 +66,21 @@ export function PushNotificationProvider({ children, startupReady }: PropsWithCh
       void syncPushDevice(disabledSnapshot, undefined, () => ownerRef.current === owner).catch(() => {});
     }
     previousOwner.current = owner;
-    void readDevicePreferences(owner).then(value => {
-      if (current) setLocal({ owner, ready: true, value });
-    }).catch(() => {
-      if (current) {
-        setLocal({ owner, ready: true, value: { consent: false, oneTime: [] } });
-        setSyncError("Couldn't read reminders saved on this phone.");
-      }
-    });
-    return () => { current = false; action.current++; };
+    let generation = 0;
+    const restore = () => {
+      const read = ++generation;
+      void readDevicePreferences(owner).then(value => {
+        if (current && read === generation) setLocal({ owner, ready: true, value });
+      }).catch(() => {
+        if (current && read === generation) {
+          setLocal({ owner, ready: true, value: { consent: false, oneTime: [] } });
+          setSyncError("Couldn't read reminders saved on this phone.");
+        }
+      });
+    };
+    const unsubscribe = subscribeDevicePreferences(changed => { if (changed === owner) restore(); });
+    restore();
+    return () => { current = false; action.current++; unsubscribe(); };
   }, [owner]);
 
   useEffect(() => {

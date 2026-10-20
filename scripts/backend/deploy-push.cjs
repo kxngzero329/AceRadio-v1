@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { cli, projectRef, root } = require('./linked-project.cjs');
 const { manifest } = require('./seed.cjs');
-const migrations = ['20261019100000_reminder_preferences.sql','20261019101000_push_delivery.sql'];
+const migrations = ['20261019100000_reminder_preferences.sql','20261019101000_push_delivery.sql','20261020130000_favorite_live_reminders.sql'];
 const apply = process.argv.includes('--apply');
 const confirmed = process.argv[process.argv.indexOf('--confirm-project') + 1];
 if (apply && (!process.argv.includes('--confirm-project') || confirmed !== projectRef() || confirmed !== manifest.project_ref)) throw Error('Explicit --confirm-project must match the linked AceRadio project.');
@@ -25,4 +25,4 @@ console.log('Shared remote history fetched without altering it. Reviewed reminde
 if (!apply) { console.log('Dry run complete. Use --apply --confirm-project '+projectRef()+' to deploy these migrations and only push-device/push-dispatch. Sending is not enabled by this command.');process.exit(0); }
 cli(['--workdir',workspace,'db','push','--linked','--yes']);
 for(const name of ['push-device','push-dispatch']) cli(['functions','deploy',name,'--project-ref',confirmed,'--use-api']);
-console.log('Reminder migrations and two Edge Functions deployed. Existing website history and content preserved. Complete backend:setup-push before device tests.');
+console.log('Reminder migrations and two Edge Functions deployed. Existing website history, content, cron and sender settings preserved. Do not rerun backend:setup-push on an already configured sender.');

@@ -214,8 +214,17 @@ export default function AccountScreen() {
       return;
     run(async () => {
       const normalized = normalizeEmail(email);
-      if (mode === "signup") await authActions.signUp(normalized, password);
-      else await authActions.signIn(normalized, password);
+      if (mode === "signup") {
+        const result = await authActions.signUp(normalized, password);
+        try {
+          await data.transferGuestAfterSignup(result.session.user.id);
+        } catch {
+          if (alive.current)
+            setMessage(
+              "Your account is ready. Your device favourites are still on this phone; use Add device favourites & preferences below to finish transferring them.",
+            );
+        }
+      } else await authActions.signIn(normalized, password);
       if (alive.current) {
         setEmail(normalized);
         setPasswordInput("");

@@ -55,6 +55,7 @@ export function NotificationSettings() {
       </Pressable>)}
     </View>
     <Text testID="notification-status" style={styles.hint} accessibilityLiveRegion="polite">{push.status}</Text>
+    <Text style={styles.small}>Favourite shows also get one reminder five minutes into their scheduled broadcast.</Text>
     <Text style={styles.small}>Guest choices stay on this phone. With an account, show choices and recurring on/off sync across devices. Each phone needs notification permission.</Text>
     {push.blocked ? <Pressable accessibilityRole="button" onPress={() => void push.openSettings().catch(report)} style={styles.link}><Text style={styles.linkText}>Open phone settings</Text></Pressable> :
       !push.unsupported && <Pressable accessibilityRole="button" disabled={push.busy || push.syncing} onPress={push.refresh} style={styles.link}><Text style={styles.linkText}>Refresh notification status</Text></Pressable>}

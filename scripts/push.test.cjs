@@ -151,6 +151,61 @@ test('account deletion cascades private device registrations and queued deliveri
   await db.query('delete from auth.users where id=$1',[other]);
   assert.equal((await db.query('select count(*)::int as n from app_private.push_devices where id=$1',[d.id])).rows[0].n,0);
 });
+test('a favourite gets one independent live alert five minutes after start, even after its first reminder was sent',async()=>{
+ const d=registration();await register(d);
+ const [first]=await claim([d.id]);assert.equal(first.phase,'reminder');await rpc('push_finish_job',[first.id,first.lease,'sent','first-ticket',null]);
+ assert.equal((await claim([d.id],'2026-10-19T16:04:59Z')).length,0);
+ const [live]=await claim([d.id],'2026-10-19T16:05:00Z');assert.equal(live.phase,'live');assert.notEqual(live.id,first.id);assert.equal(live.showId,'restart');
+ assert.equal((await claim([d.id],'2026-10-19T16:05:30Z')).length,0);
+ await rpc('push_finish_job',[live.id,live.lease,'sent','live-ticket',null]);
+ assert.equal((await claim([d.id],'2026-10-19T16:06:00Z')).length,0);
+ assert.equal((await claim([d.id],'2026-10-19T16:07:00Z')).length,0);
+});
+test('live alerts honour current favourites, opt-out and environment; every-show and one-time choices alone do not subscribe extra alerts',async()=>{
+ const at='2026-10-19T16:05:00Z';
+ for(const overrides of [{favorites:[]},{enabled:false},{env:'production'},{favorites:[],prefs:{enabled:true,scope:'all',leadMinutes:5}},{prefs:{enabled:false,scope:'favorites',leadMinutes:5}}]){
+  const d=registration(overrides);await register(d);assert.equal((await claim([d.id],at)).length,0);
+ }
+ const d=registration();await register(d);const [job]=await claim([d.id],at);assert.equal(job.phase,'live');
+ await rpc('push_finish_job',[job.id,job.lease,'retry',null,'http_503']);
+ await register({...d,seq:2,favorites:[]});assert.equal((await claim([d.id],at)).length,0);
+ assert.equal((await db.query('select state from app_private.push_jobs where id=$1',[job.id])).rows[0].state,'cancelled');
+});
+test('signed-in live alerts use account favourites and skip shows that have ended or become drafts',async()=>{
+ await db.query("update public.user_settings set notifications_enabled=true,reminder_scope='all' where user_id=$1",[uid]);
+ await db.query("update public.user_favorites set is_favorite=true where user_id=$1 and show_id='restart'",[uid]);
+ const d=registration({user:uid,favorites:[]});await register(d);
+ const at='2026-10-19T16:05:00Z';assert.equal((await claim([d.id],at)).length,1);
+ const other=registration();await register(other);
+ await db.exec("update public.shows set status='draft' where id='restart'");assert.equal((await claim([other.id],at)).length,0);
+ await db.exec("update public.shows set status='published' where id='restart'");
+ await db.exec("update public.show_schedules set ends_at='18:04' where show_id='restart' and day_of_week=1");assert.equal((await claim([other.id],at)).length,0);
+ await db.exec("update public.show_schedules set ends_at='21:00' where show_id='restart' and day_of_week=1");
+});
+test('the new candidate RPC remains inaccessible to ordinary app roles',async()=>{
+ for(const role of ['anon','authenticated']){await db.exec('set role '+role);try{await assert.rejects(rpc('push_delivery_candidates',[now]),/permission denied/);}finally{await db.exec('reset role');}}
+});
+test('the live alert follows overnight slots and their effective date on the starting SAST day',async()=>{
+ const d=registration();await register(d);
+ await db.exec("update public.show_schedules set starts_at='23:58',ends_at='00:30',valid_from='2026-10-19',valid_until='2026-10-19' where show_id='restart' and day_of_week=1");
+ try{
+  const [job]=await claim([d.id],'2026-10-19T22:03:00Z');assert.equal(job.phase,'live');assert.equal(Date.parse(job.startsAt),Date.parse('2026-10-19T21:58:00Z'));
+  assert.equal((await claim([d.id],'2026-10-26T22:03:00Z')).length,0);
+ }finally{await db.exec("update public.show_schedules set starts_at='18:00',ends_at='21:00',valid_from=null,valid_until=null where show_id='restart' and day_of_week=1");}
+});
+test('the upgrade preserves existing delivery IDs and states while assigning their original reminder phase',async()=>{
+ await db.exec('begin');
+ try{
+  await db.exec(`delete from app_private.push_jobs where phase='live';
+    alter table app_private.push_jobs drop column phase;
+    alter table app_private.push_jobs add unique(device_id,show_id,starts_at);
+    drop function public.push_delivery_candidates(timestamptz);`);
+  const d=registration();await register(d);
+  const id=randomUUID();await db.query("insert into app_private.push_jobs(id,device_id,show_id,starts_at,ends_at,expires_at,state,ticket) values($1,$2,'restart',$3,$4,$4,'sent','preserved-ticket')",[id,d.id,start,end]);
+  await db.exec(fs.readFileSync(path.join(root,'supabase/migrations/20261020130000_favorite_live_reminders.sql'),'utf8'));
+  const row=(await db.query('select id,state,ticket,phase from app_private.push_jobs where id=$1',[id])).rows[0];assert.deepEqual(row,{id,state:'sent',ticket:'preserved-ticket',phase:'reminder'});
+ }finally{await db.exec('rollback');}
+});
 test('extended account settings preserve legacy boolean writes and retry-safe revision semantics',async()=>{
   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[uid]);
   const get=()=>rpc('get_account_data');const apply=changes=>rpc('apply_account_changes',[JSON.stringify(changes)]);
@@ -201,9 +256,9 @@ test('registration verifies signed-in bearers, validates inputs and rate-limits 
   assert.equal((await invalid.handler(invalid.request(publicBody(),{'x-installation-secret':'bad'}))).status,401);
   const limited=deviceHarness({allowed:false});assert.equal((await limited.handler(limited.request())).status,429);assert.equal(limited.calls.length,1);
 });
-function dispatcher(fetcher,enabled=true){
+function dispatcher(fetcher,enabled=true,phase='reminder'){
   const calls=[];let claimed=false;
-  const job={id:randomUUID(),lease:randomUUID(),token:'ExpoPushToken[abcdefghijklmnop]',showId:'restart',title:'The Restart',time:'18:00',startsAt:start,endsAt:end,expiresAt:'2026-10-19T15:57:00Z'};
+  const job={id:randomUUID(),lease:randomUUID(),token:'ExpoPushToken[abcdefghijklmnop]',showId:'restart',title:'The Restart',time:'18:00',startsAt:start,endsAt:end,expiresAt:'2026-10-19T15:57:00Z',phase};
   const handler=createPushDispatchHandler({rpc:async(name,args)=>{calls.push({name,args});return {data:name==='push_worker_lock'?true:name==='push_pending_receipts'?[]:name==='push_claim_jobs'&&!claimed?(claimed=true,[job]):name==='push_claim_jobs'?[]:null,error:null};},fetch:fetcher,enabled,workerSecret:'s'.repeat(64),accessToken:'server-token',environment:'preview',allowed:[],pause:async()=>{},now:()=>Date.parse(now)});
   const request=(secret='s'.repeat(64))=>new Request('https://example.test/dispatch',{method:'POST',headers:{authorization:'Bearer '+secret}});
   return {handler,calls,request,job};
@@ -224,4 +279,8 @@ test('temporary provider rejections back off; ambiguous timeouts and malformed s
   for(const [fetcher,state]of [[async()=>new Response('',{status:429}),'retry'],[async()=>{throw Error('timeout');},'uncertain'],[async()=>new Response('{}',{status:200}),'uncertain']]){
     const h=dispatcher(fetcher);await h.handler(h.request());assert.equal(h.calls.find(c=>c.name==='push_finish_job').args.p_state,state);
   }
+});
+test('the live alert uses on-air text and the existing payload so installed previews can open it',async()=>{
+ const h=dispatcher(async(_url,options)=>{const[message]=JSON.parse(options.body);assert.match(message.title,/is on now/);assert.match(message.body,/favourite show/);assert.equal(message.data.kind,'show-reminder');assert.equal(message.data.version,1);assert.equal(types.parseShowReminder(message.data).showId,'restart');return new Response(JSON.stringify({data:[{status:'ok',id:'live-ticket'}]}));},true,'live');
+ assert.equal((await h.handler(h.request())).status,200);
 });

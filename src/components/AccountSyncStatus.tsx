@@ -42,13 +42,15 @@ export function AccountSyncStatus({
         <Text style={styles.text}>
           {data.error ??
             (data.signedIn
-              ? data.pending
-                ? `${data.pending} ${data.pending === 1 ? "change" : "changes"} waiting to sync`
-                : data.syncing
-                  ? "Syncing your account…"
-                  : data.lastSynced
-                    ? "Saved to your account"
-                    : "Your saved account data is available on this device."
+              ? data.transferringGuest
+                ? "Adding your device favourites…"
+                : data.pending
+                  ? `${data.pending} ${data.pending === 1 ? "change" : "changes"} waiting to sync`
+                  : data.syncing
+                    ? "Syncing your account…"
+                    : data.lastSynced
+                      ? "Saved to your account"
+                      : "Your saved account data is available on this device."
               : "Sign in to keep your favourites and preferences across devices.")}
         </Text>
         {data.notice && <Text style={styles.text}>{data.notice}</Text>}
@@ -90,7 +92,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   copy: { flex: 1, gap: 6 },
-  text: { color: colors.muted, fontSize: 12, lineHeight: 18, fontFamily: fonts.regular },
+  text: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: fonts.regular,
+  },
   action: { minHeight: 44, justifyContent: "center", paddingHorizontal: 8 },
   link: { color: colors.accent, fontFamily: fonts.semibold, fontSize: 13 },
 });

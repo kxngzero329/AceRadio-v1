@@ -8,7 +8,24 @@ Settings now has an Account entry. Saved shows also explains how to keep favouri
 
 The shared top header opens `/account` from a circular profile button. Guests see a user icon; signed-in listeners see up to two initials from their display name. New accounts still named `Listener` use their email username as a fallback, excluding any plus alias. The avatar updates with profile edits and sign-out, uses a 44-point touch target and keeps an accessible account label. Settings remains available through the bottom navigation.
 
-Guests can continue listening and saving shows on their device. After sign-in, favourites and notification preferences belong to that account. Existing device choices are offered for explicit import; they are not silently assigned to whichever person signs in. Import adds missing favourites without reversing an existing account removal or replacing an established notification preference.
+Guests can continue listening and saving shows on their device. Creating a new
+account automatically adds their guest favourites to that account, keeping the
+original guest copy on the phone. Saved shows remain visible while the durable
+account outbox syncs. The new account also inherits the guest's reminder choices
+and that phone's existing explicit notification consent and one-time requests;
+signup never prompts for permission or creates consent that was not already given.
+
+This transfer is triggered only by successful signup. Signing into an existing
+account keeps the explicit device-import option, so another person's guest
+choices are not silently assigned to it. Import preserves existing account
+choices, including removed favourites and established reminder settings.
+
+An owner-scoped `aceradio:signup-transfer:v1:<project>:<user>` journal resumes an
+interrupted signup transfer on the next launch. Imports use batches of at most
+50 operations and wait for outbox capacity. Each batch is persisted together;
+restarts, offline writes, account changes and unavailable storage cannot assign
+the transfer to another account. Failure to prepare a transfer is explained
+without presenting an already-created account as a failed signup.
 
 Signed-in screens show syncing, pending saves, retry and conflict information. A failed first account load has loading/error states rather than an empty collection presented as successfully loaded. Account changes keep the radio and navigation mounted.
 

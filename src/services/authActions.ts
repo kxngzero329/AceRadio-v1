@@ -124,7 +124,7 @@ export const authActions = {
         localError(
           "Your account was created, but sign-in could not finish. Try signing in. If it still fails, please contact AceRadio.",
         );
-      return data;
+      return { ...data, session: data.session };
     });
   },
   async signIn(email: string, password: string) {

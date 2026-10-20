@@ -804,6 +804,20 @@ export type Database = {
           token: string
         }[]
       }
+      push_delivery_candidates: {
+        Args: { p_at?: string }
+        Returns: {
+          device_id: string
+          ends_at: string
+          environment: string
+          expires_at: string
+          phase: string
+          show_id: string
+          starts_at: string
+          title: string
+          token: string
+        }[]
+      }
       push_finish_job: {
         Args: {
           p_error?: string

@@ -48,6 +48,7 @@ function harness(options={}){
   invalidatePushToken:()=>{},
   async acquirePushToken(){calls.acquire++;if(options.tokenPromise)await options.tokenPromise;if(!granted)throw Error('Notifications are blocked');return 'token';},
   readDevicePreferences:async key=>saved.get(key)??{consent:false,oneTime:[]},
+  subscribeDevicePreferences(listener){calls.preferenceChanged=listener;return()=>{calls.preferenceChanged=null;};},
   async saveDevicePreferences(key,value){saved.set(key,value);},
   async syncPushDevice(snapshot,bearer){calls.sync.push({snapshot,bearer});if(options.syncError)throw Error('Network unavailable');return{deliveryEnabled:true,saved:true};},
  };
@@ -139,4 +140,13 @@ test('turning reminders off during token refresh cannot reactivate the old snaps
  await h.flush();await h.timer();await h.value.setEnabled(false);await h.flush();await h.timer();
  const before=h.calls.sync.length;token.resolve();await h.flush();
  assert.equal(h.calls.sync.length,before);assert.equal(h.calls.sync.at(-1).snapshot.enabled,false);assert.equal(h.value.deliveryActive,false);h.unmount();
+});
+test('a completed signup transfer reloads consent for that owner without prompting or affecting another account',async()=>{
+ const h=harness({previewEnabled:true});await h.flush();await h.owner('new-user');await h.timer();assert.equal(h.value.enabled,false);
+ h.saved.set('new-user',{consent:true,oneTime:[]});h.calls.preferenceChanged('new-user');await h.flush();await h.timer();assert.equal(h.value.enabled,true);assert.equal(h.calls.sync.at(-1).snapshot.enabled,true);
+ await h.owner('other-user');await h.timer();h.calls.preferenceChanged('new-user');await h.flush();assert.equal(h.value.enabled,false);h.unmount();
+});
+test('push registration waits for a signup transfer to finish instead of publishing incomplete new-account choices',async()=>{
+ const h=harness({previewEnabled:true,saved:{guest:{consent:true,oneTime:[]}}});h.account.transferringGuest=true;await h.flush();await h.timer();assert.equal(h.value.ready,false);assert.equal(h.calls.sync.length,0);
+ h.account.transferringGuest=false;await h.flush();await h.timer();assert.equal(h.value.ready,true);assert.equal(h.calls.sync.at(-1).snapshot.enabled,true);h.unmount();
 });

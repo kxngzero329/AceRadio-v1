@@ -91,7 +91,15 @@ export async function readDevicePreferences(owner: string): Promise<DevicePrefer
       Date.parse(r.startsAt) > Date.now() && Date.parse(r.startsAt) < Date.now() + 14 * 86400_000 && [0, 5, 10, 15].includes(r.leadMinutes)).slice(0, 50) : [] };
   } catch { return { consent: false, oneTime: [] }; }
 }
-export const saveDevicePreferences = (owner: string, value: DevicePreferences) => AsyncStorage.setItem(preferenceKey(owner), JSON.stringify(value));
+const preferenceListeners = new Set<(owner: string) => void>();
+export function subscribeDevicePreferences(listener: (owner: string) => void) {
+  preferenceListeners.add(listener);
+  return () => { preferenceListeners.delete(listener); };
+}
+export async function saveDevicePreferences(owner: string, value: DevicePreferences) {
+  await AsyncStorage.setItem(preferenceKey(owner), JSON.stringify(value));
+  preferenceListeners.forEach(listener => listener(owner));
+}
 export type DeviceSnapshot = {
   enabled: boolean; preferences: { enabled: boolean; scope: ReminderScope; leadMinutes: ReminderLead };
   favorites: string[]; oneTime: OneTimeReminder[];
