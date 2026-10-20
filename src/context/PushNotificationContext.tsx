@@ -63,7 +63,7 @@ export function PushNotificationProvider({ children, startupReady }: PropsWithCh
     setDeliveryReady(false);
     if (previousOwner.current !== owner && !pushUnsupportedReason()) {
       // Release the old account association before the new owner's snapshot.
-      void syncPushDevice(disabledSnapshot, undefined).catch(() => {});
+      void syncPushDevice(disabledSnapshot, undefined, () => ownerRef.current === owner).catch(() => {});
     }
     previousOwner.current = owner;
     void readDevicePreferences(owner).then(value => {
@@ -96,28 +96,31 @@ export function PushNotificationProvider({ children, startupReady }: PropsWithCh
   useEffect(() => {
     if (!ready || authLoading || pushUnsupportedReason()) return;
     let current = true;
+    const isCurrent = () => current && ownerRef.current === owner;
     setSyncing(true);
     const timeout = setTimeout(() => {
       void (async () => {
         setSyncing(true);
         try {
           const allowed = await permissionGranted();
-          if (current) setGranted(allowed);
+          if (!isCurrent()) return;
+          setGranted(allowed);
           // Refresh the Expo token after upgrades/reinstalls and on foreground.
           // This never prompts: permission was checked immediately above.
-          if (snapshot.enabled && allowed) await acquirePushToken();
-          const result = await syncPushDevice({ ...snapshot, enabled: snapshot.enabled && allowed }, bearer);
-          if (current) { needsRetry.current = false; setDeliveryReady(result.deliveryEnabled); setSyncError(null); }
+          if (snapshot.enabled && allowed) await acquirePushToken({ requestPermission: false });
+          if (!isCurrent()) return;
+          const result = await syncPushDevice({ ...snapshot, enabled: snapshot.enabled && allowed }, bearer, isCurrent);
+          if (isCurrent()) { needsRetry.current = false; setDeliveryReady(result.deliveryEnabled); setSyncError(null); }
         } catch (error) {
-          if (current) { needsRetry.current = true; setSyncError(error instanceof Error ? error.message : "Couldn't sync reminders. Reconnect and try again."); }
-        } finally { if (current) setSyncing(false); }
+          if (isCurrent()) { needsRetry.current = true; setSyncError(error instanceof Error ? error.message : "Couldn't sync reminders. Reconnect and try again."); }
+        } finally { if (isCurrent()) setSyncing(false); }
       })();
     }, snapshot.enabled ? 900 : 0);
     return () => { current = false; clearTimeout(timeout); };
     // Snapshot is represented by its stable value, avoiding duplicate requests
     // when a content refresh creates an equivalent favourites array.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature, bearer, ready, authLoading, attempt]);
+  }, [signature, bearer, owner, ready, authLoading, attempt]);
 
   const save = async (value: DevicePreferences, expectedOwner: string) => {
     await saveDevicePreferences(expectedOwner, value);
@@ -142,7 +145,9 @@ export function PushNotificationProvider({ children, startupReady }: PropsWithCh
       // Consent is a new, explicit device decision. The legacy preview boolean
       // alone can never activate a phone or cause a permission request.
       await save({ consent: enabled, oneTime: enabled ? preferences.oneTime : [] }, expectedOwner);
+      if (ownerRef.current !== expectedOwner) return;
       await account.setNotifications(enabled);
+      if (ownerRef.current !== expectedOwner) return;
       setSyncError(null); refresh();
     } finally { if (ownerRef.current === expectedOwner) { acting.current = false; setBusy(false); } }
   };
@@ -250,7 +255,7 @@ export function PushNotificationProvider({ children, startupReady }: PropsWithCh
       enabled ? "Show reminders are enabled on this phone." : account.notificationsEnabled && !preferences.consent ? "Enable reminders on this phone to finish setup." :
       preferences.oneTime.length ? "One-time show reminders are saved on this phone." : "Choose which shows you want to hear about."));
   return <Context.Provider value={{ enabled, ready, busy, syncing, status, blocked, unsupported: !!unsupported,
-    deliveryActive: !unsupported && deliveryReady && !syncError && !syncing,
+    deliveryActive: !unsupported && preferences.consent && granted === true && deliveryReady && !syncError && !syncing,
     notice, oneTime: preferences.oneTime, setEnabled, setOneTime, refresh,
     openSettings: () => Linking.openSettings(), dismissNotice: () => setNotice(null),
   }}>{children}</Context.Provider>;

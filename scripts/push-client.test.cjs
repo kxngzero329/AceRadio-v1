@@ -126,3 +126,17 @@ test('unsupported Expo Go/web never loads native push APIs or makes remote regis
 test('unmount while a notification refresh is pending cannot navigate or start audio later',async()=>{
  const refresh=deferred();const h=harness({refreshPromise:refresh.promise});await h.flush();await h.tap();h.unmount();refresh.resolve();await h.flush();assert.equal(h.calls.navigate.length,0);assert.equal(h.calls.play.length,0);
 });
+test('a token refresh started for the previous owner cannot register after an account switch',async()=>{
+ const token=deferred();const h=harness({tokenPromise:token.promise,previewEnabled:true,saved:{guest:{consent:true,oneTime:[]}}});
+ await h.flush();await h.timer();assert.equal(h.calls.acquire,1);
+ await h.owner('20000000-0000-4000-8000-000000000001');await h.timer();
+ const before=h.calls.sync.length;token.resolve();await h.flush();
+ assert.equal(h.calls.sync.length,before,'The old owner must not enqueue another registration after token refresh');
+ assert.equal(h.calls.sync.at(-1).snapshot.enabled,false);h.unmount();
+});
+test('turning reminders off during token refresh cannot reactivate the old snapshot',async()=>{
+ const token=deferred();const h=harness({tokenPromise:token.promise,previewEnabled:true,saved:{guest:{consent:true,oneTime:[]}}});
+ await h.flush();await h.timer();await h.value.setEnabled(false);await h.flush();await h.timer();
+ const before=h.calls.sync.length;token.resolve();await h.flush();
+ assert.equal(h.calls.sync.length,before);assert.equal(h.calls.sync.at(-1).snapshot.enabled,false);assert.equal(h.value.deliveryActive,false);h.unmount();
+});

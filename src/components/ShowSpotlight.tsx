@@ -34,7 +34,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const INTERVAL_MS = 5500;
 
-const SpotlightSlide = memo(function SpotlightSlide({ banner, width }: { banner: Banner; width: number }) {
+const SpotlightSlide = memo(function SpotlightSlide({ banner, width, loadImage }: { banner: Banner; width: number; loadImage: boolean }) {
   const openBanner = useCallback(() => {
     if (banner.showId) router.push({ pathname: "/show/[id]", params: { id: banner.showId } });
     else if (banner.linkUrl) void openVerifiedLink(banner.title, banner.linkUrl);
@@ -43,7 +43,7 @@ const SpotlightSlide = memo(function SpotlightSlide({ banner, width }: { banner:
     <Pressable style={({ pressed }) => ({ width, aspectRatio: imageAspectRatio(banner.image, 2), opacity: pressed ? 0.8 : 1 })} onPress={openBanner}
       disabled={!banner.showId && !banner.linkUrl} accessibilityRole={banner.showId || banner.linkUrl ? "button" : undefined}
       accessibilityLabel={`${banner.title}. ${banner.subtitle ?? ""}`}>
-      <FittedImage source={banner.image} accessibilityLabel={banner.title} />
+      {loadImage && <FittedImage source={banner.image} accessibilityLabel={banner.title} />}
     </Pressable>
   );
 });
@@ -54,6 +54,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
   const slideIds = slides.map(slide => slide.id).join("|");
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
+  const [visibleIndex, setVisibleIndex] = useState(0);
   const [interacting, setInteracting] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
   const [focused, setFocused] = useState(false);
@@ -62,41 +63,43 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
   );
   const reduceMotion = useReducedMotion();
   const list = useRef<ScrollView>(null);
-  const resetting = useRef(false);
+  const resetting = useRef<number | null>(null);
+  const currentPage = useRef(slides.length > 1 ? 1 : 0);
+  const previousIds = useRef(slideIds);
   const target = useRef<number | null>(null);
   const moving = useRef(false);
   const gesture = useRef(false);
   const safeIndex = slides.length ? index % slides.length : 0;
-  useEffect(() => {
-    target.current = null;
-    moving.current = false;
-    gesture.current = false;
-    setInteracting(false);
-    setIndex(0);
-  }, [slideIds]);
-  // Keep only the previous, current and next banners mounted.
+  // Every page keeps the same banner and native Image. Swapping three image
+  // sources while recentering the native scroll view can flash the old artwork.
+  // The two boundary copies make looping seamless; only nearby artwork loads.
   const pages = useMemo(
     () =>
       slides.length > 1
-        ? [-1, 0, 1].map(
-            (step) => slides[(safeIndex + step + slides.length) % slides.length],
-          )
+        ? [slides[slides.length - 1], ...slides, slides[0]]
         : slides,
-    [safeIndex, slides],
+    [slides],
   );
+  const initialOffset = useMemo(() => ({ x: slides.length > 1 ? width : 0, y: 0 }), [width, slides.length]);
 
   useLayoutEffect(() => {
     if (width <= 0) return;
-    resetting.current = true;
+    if (previousIds.current !== slideIds) {
+      previousIds.current = slideIds;
+      currentPage.current = slides.length > 1 ? 1 : 0;
+      setIndex(0);
+      setVisibleIndex(0);
+    }
+    target.current = null;
+    moving.current = false;
+    gesture.current = false;
+    resetting.current = null;
+    setInteracting(false);
     list.current?.scrollTo({
-      x: slides.length > 1 ? width : 0,
+      x: currentPage.current * width,
       animated: false,
     });
-    const frame = requestAnimationFrame(() => {
-      resetting.current = false;
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [safeIndex, slideIds, slides.length, width]);
+  }, [slideIds, slides.length, width]);
 
   useFocusEffect(
     useCallback(() => {
@@ -134,29 +137,36 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
   }, [reduceMotion]);
 
   const settle = useCallback((page: number) => {
-    if (resetting.current) return;
-    const step = slides.length > 1 ? Math.max(0, Math.min(page, 2)) - 1 : 0;
-    if (step !== 0) {
-      resetting.current = true;
-      setIndex((current) => (current + step + slides.length) % slides.length);
-    }
+    if (resetting.current !== null || !slides.length) return;
+    const bounded = Math.max(0, Math.min(page, slides.length + 1));
+    const realPage = slides.length < 2 ? 0 : bounded === 0 ? slides.length : bounded === slides.length + 1 ? 1 : bounded;
+    currentPage.current = realPage;
+    const nextIndex = slides.length > 1 ? realPage - 1 : 0;
+    setIndex(nextIndex);
+    setVisibleIndex(nextIndex);
     target.current = null;
     moving.current = false;
     gesture.current = false;
-    setInteracting(false);
-  }, [slides.length]);
+    setInteracting(realPage !== bounded);
+    if (realPage !== bounded) {
+      // The destination and boundary copy already contain identical artwork.
+      // Wait for the native offset acknowledgement, rather than a JS frame.
+      resetting.current = realPage;
+      list.current?.scrollTo({ x: realPage * width, animated: false });
+    }
+  }, [slides.length, width]);
 
   const advance = useCallback(
     (direction: number) => {
       if (
-        resetting.current ||
+        resetting.current !== null ||
         moving.current ||
         !list.current ||
         width <= 0 ||
         slides.length < 2
       )
         return;
-      const next = 1 + direction;
+      const next = currentPage.current + direction;
       moving.current = true;
       target.current = next;
       setInteracting(true);
@@ -189,8 +199,17 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
   };
 
   const trackScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (resetting.current) return;
     const offset = event.nativeEvent.contentOffset.x;
+    if (width <= 0) return;
+    if (resetting.current !== null) {
+      if (Math.abs(offset - resetting.current * width) < 1) {
+        resetting.current = null;
+        setInteracting(false);
+      }
+      return;
+    }
+    const page = Math.max(0, Math.min(Math.round(offset / width), pages.length - 1));
+    setVisibleIndex(slides.length > 1 ? (page - 1 + slides.length) % slides.length : 0);
     // Also finish programmatic scrolling on platforms that omit momentum-end events.
     if (
       target.current !== null &&
@@ -203,8 +222,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
       (gesture.current || Platform.OS === "web")
     ) {
       // Browsers use CSS scroll snapping and do not emit native drag/momentum events.
-      const page = Math.round(offset / width);
-      if (page !== 1 && Math.abs(offset - page * width) < 1) settle(page);
+      if (Math.abs(offset - page * width) < 1) settle(page);
     }
   };
 
@@ -236,7 +254,7 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
             bounces={false}
             showsHorizontalScrollIndicator={false}
             decelerationRate="fast"
-            contentOffset={{ x: slides.length > 1 ? width : 0, y: 0 }}
+            contentOffset={initialOffset}
             scrollEnabled={slides.length > 1}
             style={[styles.list, { height: width / aspectRatio }]}
             scrollEventThrottle={16}
@@ -280,9 +298,12 @@ export const ShowSpotlight = memo(function ShowSpotlight() {
             }}
             onMomentumScrollEnd={finishScroll}
           >
-            {pages.map((banner, page) => (
-              <SpotlightSlide key={page} banner={banner} width={width} />
-            ))}
+            {pages.map((banner, page) => {
+              const bannerIndex = slides.length > 1 ? (page - 1 + slides.length) % slides.length : 0;
+              const distance = Math.abs(bannerIndex - visibleIndex);
+              const loadImage = Math.min(distance, slides.length - distance) <= 2;
+              return <SpotlightSlide key={`${page === 0 ? "leading" : page === pages.length - 1 ? "trailing" : "slide"}:${banner.id}`} banner={banner} width={width} loadImage={loadImage} />;
+            })}
           </ScrollView>
         </View>
       )}

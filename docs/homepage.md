@@ -25,16 +25,18 @@ managed home banners still render from the existing Supabase catalogue.
   stays visible while its replacement loads. See [motion](motion.md).
 - The schedule uses clearer current-show/presenter typography, readable times,
   separate Live right now and Coming up next sections, and SAST next-show times.
-  Between shows it identifies the AceRadio stream. A Remind me switch replaces
-  the timezone footer as a frontend preview, labelled Notifications coming soon;
-  no subscription or push notification is created. Existing SAST scheduling
-  logic is unchanged. See [listening refinements](listening-refinement.md).
+  Between shows it identifies the AceRadio stream. The Remind me switch saves
+  a one-time reminder for the next broadcast, after explicit device permission.
+  Delivery requires the platform credentials and server setup described in
+  [push notifications](push-notifications.md). Existing SAST scheduling is retained.
 - Show artwork keeps a square frame. Shared cards separate the day from the time
   range, preserve complete schedule text in accessibility labels, and retain
   independent favourite buttons. Large system fonts switch the grid/carousel to
   one column; wide Home layouts can show three cards.
-- Spotlight keeps its bounded three-slide swipe/autoplay implementation and
-  reduced-motion/screen-reader behaviour. One counter replaces the duplicate
+- Spotlight uses stable banner pages with identical first/last copies for looping;
+  only nearby artwork is mounted. Native image sources stay attached to the same
+  banner while scrolling, avoiding a flash of another show during recentering.
+  Reduced-motion/screen-reader behaviour is retained. One counter replaces the duplicate
   dots/counter display, alongside 44 px previous/next controls and accessible
   increment/decrement actions.
 - Navigation uses clearer inactive labels and a quiet charcoal active icon

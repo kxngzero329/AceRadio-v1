@@ -16,7 +16,7 @@
     "test:web-input": "node --test scripts/web-responder.test.cjs",
     "test:radio": "node --test scripts/radio.test.cjs",
     "test:navigation": "node --test scripts/navigation.test.cjs",
-    "test:animations": "node --test scripts/animations.test.cjs",
+    "test:animations": "node --test scripts/animations.test.cjs scripts/spotlight.test.cjs",
     "test:startup": "node --test scripts/startup.test.cjs",
     "test:listening-ui": "node --test scripts/listening-ui.test.cjs",
     "test:safe-area": "node --test scripts/safe-area.test.cjs",

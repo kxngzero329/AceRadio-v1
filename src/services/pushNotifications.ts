@@ -32,9 +32,9 @@ async function loadIdentity(create: boolean): Promise<Identity | null> {
   const existing = await identityLoad;
   if (identity) return identity;
   if (existing || !create) return existing;
-  identity = { id: randomUUID(), secret: [...getRandomBytes(32)].map(n => n.toString(16).padStart(2, "0")).join(""), sequence: 0, token: null };
-  await SecureStore.setItemAsync(secureKey, JSON.stringify(identity));
-  return identity;
+  const created = { id: randomUUID(), secret: [...getRandomBytes(32)].map(n => n.toString(16).padStart(2, "0")).join(""), sequence: 0, token: null };
+  await SecureStore.setItemAsync(secureKey, JSON.stringify(created));
+  return identity = created;
 }
 let api: Promise<typeof import("expo-notifications")> | null = null;
 export function invalidatePushToken() { if (identity) identity.tokenUpdatedAt = 0; }
@@ -48,7 +48,7 @@ export async function permissionGranted() {
   const permission = await notifications.getPermissionsAsync();
   return permission.granted || permission.ios?.status === notifications.IosAuthorizationStatus.PROVISIONAL;
 }
-export async function acquirePushToken() {
+export async function acquirePushToken({ requestPermission = true }: { requestPermission?: boolean } = {}) {
   const unsupported = pushUnsupportedReason();
   if (unsupported) throw Error(unsupported);
   const notifications = (await notificationApi())!;
@@ -56,7 +56,7 @@ export async function acquirePushToken() {
     name: "Show reminders", importance: notifications.AndroidImportance.DEFAULT, sound: "default",
   });
   let permission = await notifications.getPermissionsAsync();
-  if (!permission.granted && permission.canAskAgain)
+  if (!permission.granted && permission.ios?.status !== notifications.IosAuthorizationStatus.PROVISIONAL && permission.canAskAgain && requestPermission)
     permission = await notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowBadge: false, allowSound: true } });
   if (!permission.granted && permission.ios?.status !== notifications.IosAuthorizationStatus.PROVISIONAL)
     throw Error("Notifications are blocked on this phone. Enable them in your phone's notification settings.");
@@ -72,9 +72,9 @@ export async function acquirePushToken() {
     ]);
     const persist = write.catch(() => {}).then(async () => {
       const current = await loadIdentity(true);
-      current!.token = result.data;
-      current!.tokenUpdatedAt = Date.now();
-      await SecureStore.setItemAsync(secureKey, JSON.stringify(current));
+      const updated = { ...current!, token: result.data, tokenUpdatedAt: Date.now() };
+      await SecureStore.setItemAsync(secureKey, JSON.stringify(updated));
+      identity = updated;
     });
     write = persist;
     await persist;
@@ -97,13 +97,18 @@ export type DeviceSnapshot = {
   favorites: string[]; oneTime: OneTimeReminder[];
 };
 /** Serialize credentials/counters. Higher sequence numbers reject late older-owner requests. */
-export function syncPushDevice(snapshot: DeviceSnapshot, bearer: string | undefined) {
+export function syncPushDevice(snapshot: DeviceSnapshot, bearer: string | undefined, isCurrent = () => true) {
   const operation = write.catch(() => {}).then(async () => {
+    if (!isCurrent()) return { deliveryEnabled: false, saved: false };
     const current = await loadIdentity(false);
+    if (!isCurrent()) return { deliveryEnabled: false, saved: false };
     if (!current) return { deliveryEnabled: false, saved: true };
     if (accountConfig.error) throw Error("Reminder service is not configured for this build.");
     current.sequence++;
     await SecureStore.setItemAsync(secureKey, JSON.stringify(current));
+    // An account/preference change can happen while waiting for another queued
+    // write or SecureStore. Never send that obsolete snapshot afterwards.
+    if (!isCurrent()) return { deliveryEnabled: false, saved: false };
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12_000);
     try {
@@ -116,6 +121,15 @@ export function syncPushDevice(snapshot: DeviceSnapshot, bearer: string | undefi
       if (!response.ok) throw Error(response.status === 429 ? "Too many changes. Reminders will sync again shortly." : "Couldn't sync reminders. Your choices are saved on this phone; reconnect to finish.");
       const result = await response.json().catch(() => { throw Error("Unexpected reminder service response."); });
       if (result.saved !== true && result.saved !== false) throw Error("Unexpected reminder service response.");
+      if (!result.saved) {
+        // A restored device backup can have an older counter than the server.
+        // Preserve server ordering and retry the current choices above it.
+        if (Number.isSafeInteger(result.sequence) && result.sequence > current.sequence) {
+          current.sequence = result.sequence;
+          await SecureStore.setItemAsync(secureKey, JSON.stringify(current));
+        }
+        throw Error("Reminder registration changed. Your choices will sync again shortly.");
+      }
       return { deliveryEnabled: result.deliveryEnabled === true, saved: result.saved };
     } finally { clearTimeout(timer); }
   });

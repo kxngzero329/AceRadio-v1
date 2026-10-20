@@ -9,11 +9,11 @@ const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/servic
 function harness(options={}){
  const secure=options.secure??new Map(),local=options.local??new Map(),requests=[],calls={native:0,prompts:0,channels:0,imports:0};
  let token='ExpoPushToken[abcdefghijklmnop]';
- const permission=()=>({granted:options.granted??true,canAskAgain:options.canAsk??true});
+ const permission=()=>({granted:options.granted??true,canAskAgain:options.canAsk??true,ios:options.iosStatus?{status:options.iosStatus}:undefined});
  const native={getPermissionsAsync:async()=>permission(),requestPermissionsAsync:async()=>{calls.prompts++;return permission();},IosAuthorizationStatus:{PROVISIONAL:3},AndroidImportance:{DEFAULT:3},setNotificationChannelAsync:async()=>{calls.channels++;},getExpoPushTokenAsync:async()=>{calls.native++;if(options.tokenWait)await options.tokenWait;return{data:token};}};
  const imports={
   '@react-native-async-storage/async-storage':{__esModule:true,default:{getItem:async key=>local.get(key)??null,setItem:async(key,value)=>local.set(key,value)}},
-  'expo-secure-store':{getItemAsync:async key=>secure.get(key)??null,setItemAsync:async(key,value)=>secure.set(key,value)},
+  'expo-secure-store':{getItemAsync:async key=>secure.get(key)??null,setItemAsync:async(key,value)=>{if(options.storageError)throw Error('SecureStore unavailable');secure.set(key,value);}},
   'expo-crypto':{getRandomBytes:n=>randomBytes(n),randomUUID},
   'expo-constants':{__esModule:true,default:{expoConfig:{extra:{eas:{projectId:'test-project'}}}}},
   expo:{isRunningInExpoGo:()=>options.go??false},'react-native':{Platform:{OS:options.platform??'android'}},
@@ -62,4 +62,28 @@ test('bounded request timeouts leave credentials reusable and return an actionab
  const h=harness({fetcher:(_url,init)=>new Promise((_resolve,reject)=>init.signal.addEventListener('abort',()=>reject(Error('aborted'))))});await h.api.acquirePushToken();
  await assert.rejects(h.api.syncPushDevice(snapshot,undefined),/reconnect to finish/);assert.equal(JSON.parse([...h.secure.values()][0]).sequence,1);
  h.options.fetcher=null;await h.api.syncPushDevice(snapshot,undefined);assert.equal(h.requests.at(-1).body.sequence,2);
+});
+test('passive token refresh never prompts and iOS provisional permission is accepted without another prompt',async()=>{
+ const denied=harness({granted:false,canAsk:true});await assert.rejects(denied.api.acquirePushToken({requestPermission:false}),/blocked/);assert.equal(denied.calls.prompts,0);
+ const provisional=harness({platform:'ios',granted:false,canAsk:true,iosStatus:3});await provisional.api.acquirePushToken({requestPermission:false});assert.equal(provisional.calls.prompts,0);assert.equal(provisional.calls.native,1);
+});
+test('obsolete snapshots waiting behind a registration are skipped before allocating a newer sequence',async()=>{
+ let release;const wait=new Promise(resolve=>{release=resolve;});
+ const h=harness({fetcher:async()=>{await wait;return new Response(JSON.stringify({saved:true,deliveryEnabled:true}));}});await h.api.acquirePushToken();
+ const first=h.api.syncPushDevice(snapshot,undefined);let current=true;
+ const stale=h.api.syncPushDevice(snapshot,'previous-owner',()=>current);
+ current=false;release();await first;assert.equal((await stale).saved,false);assert.equal(h.requests.length,1);
+ assert.equal(JSON.parse([...h.secure.values()][0]).sequence,1);
+});
+test('a failed SecureStore token write cannot poison the successful token cache',async()=>{
+ const h=harness();await h.api.acquirePushToken();h.api.invalidatePushToken();h.rotate('ExpoPushToken[replacement_abcdefg]');
+ h.options.storageError=true;await assert.rejects(h.api.acquirePushToken(),/SecureStore/);h.options.storageError=false;
+ await h.api.acquirePushToken();assert.equal(h.calls.native,3,'A failed write must be retried instead of returning an unpersisted cached token');
+ assert.equal(JSON.parse([...h.secure.values()][0]).token,'ExpoPushToken[replacement_abcdefg]');
+});
+test('restoring an older device counter catches up to the server before retrying current choices',async()=>{
+ const h=harness({fetcher:async()=>new Response(JSON.stringify({saved:false,sequence:50,deliveryEnabled:true}))});await h.api.acquirePushToken();
+ await assert.rejects(h.api.syncPushDevice(snapshot,undefined),/sync again shortly/);
+ assert.equal(JSON.parse([...h.secure.values()][0]).sequence,50);
+ h.options.fetcher=null;await h.api.syncPushDevice(snapshot,undefined);assert.equal(h.requests.at(-1).body.sequence,51);
 });

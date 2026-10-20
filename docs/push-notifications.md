@@ -280,12 +280,52 @@ The existing two-role model, station schedule, bookings, announcements, account
 deletion and media service are retained. Push reminders do not subscribe users
 to event/announcement campaigns or chat alerts.
 
+## Review on 20 October 2026
+
+The working tree was clean at the start of the review; the notification work was
+in commit `164e179`. The live linked project was inspected using read-only CLI
+queries. Both reminder migrations and Edge Functions are present. All five push
+tables have RLS, no client table grants exist, and all ten push RPCs are executable
+only by the service role. The minute cron uses the Vault credential and its latest
+five invocations returned HTTP 200 with delivery disabled. There were zero device
+registrations, one-time requests or delivery jobs. Secret digests confirm
+`PUSH_ENABLED=false`, `PUSH_ALLOW_ALL=false`, `PUSH_ENVIRONMENT=preview`; no
+`EXPO_ACCESS_TOKEN` is configured, and no local `google-services.json` exists.
+EAS-hosted FCM/APNs credentials were not inspected. No live settings, records,
+secrets, schedules or deployments were changed during this review.
+
+Local corrections:
+
+- Cancel obsolete sync work after asynchronous permission/token acquisition and
+  while it waits in the serialized device-write queue. Signing out, switching
+  accounts or disabling reminders cannot enqueue an old enabled snapshot later.
+- Passive refresh explicitly disallows permission prompts. iOS provisional
+  permission is accepted without requesting permission again.
+- Failed SecureStore token writes do not populate the successful token cache.
+  Restored counters catch up to the server before retrying, rather than reporting
+  an ignored registration as successfully saved.
+- Delivery status also checks current device consent and OS permission.
+- Spotlight preserves each banner's image source while scrolling. It recenters
+  only at the looping end copies, waits for native offset acknowledgement, and
+  loads only nearby artwork. Arrow/swipe, loop, resize, catalogue refresh and
+  reduced-motion cases are covered for Android, iOS and web event sequences.
+
+The platform credential and installed-device steps above are still required
+before enabling test delivery. The physical-device checklist has not been
+completed by this review.
+
 ## Validation performed
 
-- TypeScript and all **199 automated tests** pass, including **37 new** push
-  database, endpoint, client-lifecycle and native-service regression cases.
+- TypeScript and all **213 automated tests** pass, including **43** push database,
+  endpoint, client-lifecycle and native-service cases plus **8** spotlight cases.
+  Run `node --test scripts/*.test.cjs`, `npm run typecheck`, `npm run test:push`
+  and `npm run test:animations` to repeat the relevant checks.
 - Android, iOS and web exports succeed.
 - Deno type-checking passes for both deployed Edge Function entrypoints.
+- The review's browser check navigates all 11 banners through both loop boundaries,
+  samples animation frames for stable image sources, swipes using touch input,
+  resizes at 320/390/430/768 px without overflow and opens the visible show.
+  No page errors occurred. These are browser checks, not physical iOS/Android runs.
 - Five browser scenarios cover live events/announcements, guest favourites,
   settings persistence, unsupported web behaviour, four responsive widths and
   playback. No browser page errors or attempted web push registrations occurred.
