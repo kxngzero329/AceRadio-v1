@@ -249,6 +249,21 @@ test('guest registration works without Auth and never trusts a caller-supplied a
   const h=deviceHarness();const response=await h.handler(h.request({...publicBody(),userId:uid}));assert.equal(response.status,200);
   assert.equal(h.calls.at(-1).args.p_user,null);assert.equal((await response.json()).deliveryEnabled,false);
 });
+test('iPhone guest registration reaches the existing backend without an account or Android credential',async()=>{
+ const h=deviceHarness();const response=await h.handler(h.request({...publicBody(),platform:'ios'}));
+ assert.equal(response.status,200);const args=h.calls.at(-1).args;
+ assert.equal(args.p_platform,'ios');assert.equal(args.p_user,null);assert.equal(args.p_environment,'preview');
+});
+test('iOS and Android installations independently receive both favourite reminders from the same scheduler',async()=>{
+ const android=registration(),ios=registration({platform:'ios'});await register(android);await register(ios);
+ const devices=[android.id,ios.id];const first=await claim(devices);
+ assert.equal(first.length,2);assert.deepEqual(new Set(first.map(job=>job.token)),new Set([android.token,ios.token]));
+ for(const job of first){assert.equal(job.phase,'reminder');await rpc('push_finish_job',[job.id,job.lease,'sent','ticket-'+job.id,null]);}
+ const live=await claim(devices,'2026-10-19T16:05:00Z');assert.equal(live.length,2);
+ assert.ok(live.every(job=>job.phase==='live'));assert.equal((await claim(devices,'2026-10-19T16:05:30Z')).length,0);
+ await register({...ios,seq:2,enabled:false});
+ assert.equal((await db.query('select enabled from app_private.push_devices where id=$1',[android.id])).rows[0].enabled,true);
+});
 test('registration verifies signed-in bearers, validates inputs and rate-limits without exposing secrets',async()=>{
   const h=deviceHarness({user:uid});assert.equal((await h.handler(h.request(publicBody(),{authorization:'Bearer user-token'}))).status,200);assert.equal(h.calls.at(-1).args.p_user,uid);
   const invalid=deviceHarness();assert.equal((await invalid.handler(invalid.request(publicBody(),{authorization:'Bearer fake'}))).status,401);
@@ -271,6 +286,7 @@ test('sender builds typed expiring reminders with secure Expo authentication and
   const h=dispatcher(async(url,options)=>{
     assert.ok(url.endsWith('/send'));assert.equal(options.headers.Authorization,'Bearer server-token');
     const [message]=JSON.parse(options.body);assert.equal(message.data.showId,'restart');assert.equal(message.channelId,'ace-radio-updates');assert.ok(message.expiration);assert.equal(message.tag,message.collapseId);
+    assert.equal(message.sound,'default');assert.equal(message.priority,'high');assert.ok(message.title);assert.ok(message.body);assert.equal(message._contentAvailable,undefined,'Visible APNs alerts must not depend on background JS');assert.equal(message.badge,undefined);
     return new Response(JSON.stringify({data:[{status:'ok',id:'ticket-ok'}]}),{status:200});
   });
   assert.equal((await h.handler(h.request())).status,200);assert.equal(h.calls.find(c=>c.name==='push_finish_job').args.p_ticket,'ticket-ok');

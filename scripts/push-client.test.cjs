@@ -66,7 +66,7 @@ function harness(options={}){
  function render(){if(!alive)return;let passes=0;do{assert.ok(++passes<20,'Render loop');cursor=0;effects=[];dirty=false;result=PushNotificationProvider({children:null,startupReady:startup});effects.forEach(effect=>effect());}while(dirty);return result.props.value;}
  async function flush(){for(let i=0;i<20;i++){await Promise.resolve();render();}return result.props.value;}
  render();
- return{calls,saved,store,frames,account,options,flush,render,get value(){return result.props.value;},
+ return{calls,saved,store,frames,account,radio,options,flush,render,get value(){return result.props.value;},
   async timer(ms=900){for(const[id,item]of[...timers])if(item.ms<=ms){timers.delete(id);item.callback();}return flush();},
   async tap(value=response()){assert.ok(onResponse);onResponse(value);return flush();},
   async frame(){const current=[...frames.values()];frames.clear();current.forEach(fn=>fn());return flush();},
@@ -149,4 +149,14 @@ test('a completed signup transfer reloads consent for that owner without prompti
 test('push registration waits for a signup transfer to finish instead of publishing incomplete new-account choices',async()=>{
  const h=harness({previewEnabled:true,saved:{guest:{consent:true,oneTime:[]}}});h.account.transferringGuest=true;await h.flush();await h.timer();assert.equal(h.value.ready,false);assert.equal(h.calls.sync.length,0);
  h.account.transferringGuest=false;await h.flush();await h.timer();assert.equal(h.value.ready,true);assert.equal(h.calls.sync.at(-1).snapshot.enabled,true);h.unmount();
+});
+test('foreground iOS alerts show a banner and enter Notification Centre without setting an app badge',async()=>{
+ const h=harness();await h.flush();
+ const behavior=await h.calls.handler.handleNotification(response().notification);
+ assert.equal(behavior.shouldShowBanner,true);assert.equal(behavior.shouldShowList,true);assert.equal(behavior.shouldPlaySound,true);assert.equal(behavior.shouldSetBadge,false);
+ h.radio.playing=true;h.radio.currentShow={id:'restart'};
+ const playing=await h.calls.handler.handleNotification(response().notification);
+ assert.equal(playing.shouldShowBanner,false);assert.equal(playing.shouldShowList,false);assert.equal(playing.shouldPlaySound,false);
+ const different=await h.calls.handler.handleNotification(response('other',{...data,showId:'other'}).notification);
+ assert.equal(different.shouldShowBanner,true);h.unmount();
 });

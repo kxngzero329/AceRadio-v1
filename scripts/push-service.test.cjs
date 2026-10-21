@@ -7,13 +7,13 @@ const ts=require('typescript');
 const {randomUUID,randomBytes}=require('node:crypto');
 const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src/services/pushNotifications.ts'),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 function harness(options={}){
- const secure=options.secure??new Map(),local=options.local??new Map(),requests=[],calls={native:0,prompts:0,channels:0,imports:0};
+ const secure=options.secure??new Map(),local=options.local??new Map(),requests=[],calls={native:0,prompts:0,channels:0,imports:0,secureOptions:[],tokenOptions:[],permissionOptions:[]};
  let token='ExpoPushToken[abcdefghijklmnop]';
- const permission=()=>({granted:options.granted??true,canAskAgain:options.canAsk??true,ios:options.iosStatus?{status:options.iosStatus}:undefined});
- const native={getPermissionsAsync:async()=>permission(),requestPermissionsAsync:async()=>{calls.prompts++;return permission();},IosAuthorizationStatus:{PROVISIONAL:3},AndroidImportance:{DEFAULT:3},setNotificationChannelAsync:async()=>{calls.channels++;},getExpoPushTokenAsync:async()=>{calls.native++;if(options.tokenWait)await options.tokenWait;return{data:token};}};
+ const permission=()=>({granted:options.granted??true,canAskAgain:options.canAsk??true,ios:options.iosStatus!==undefined?{status:options.iosStatus}:undefined});
+ const native={getPermissionsAsync:async()=>permission(),requestPermissionsAsync:async value=>{calls.prompts++;calls.permissionOptions.push(value);Object.assign(options,options.permissionResult);return permission();},IosAuthorizationStatus:{NOT_DETERMINED:0,DENIED:1,AUTHORIZED:2,PROVISIONAL:3,EPHEMERAL:4},AndroidImportance:{DEFAULT:3},setNotificationChannelAsync:async()=>{calls.channels++;},getExpoPushTokenAsync:async value=>{calls.native++;calls.tokenOptions.push(value);if(options.tokenWait)await options.tokenWait;if(options.tokenError)throw Error('APNs registration unavailable');return{data:token};}};
  const imports={
   '@react-native-async-storage/async-storage':{__esModule:true,default:{getItem:async key=>local.get(key)??null,setItem:async(key,value)=>local.set(key,value)}},
-  'expo-secure-store':{getItemAsync:async key=>secure.get(key)??null,setItemAsync:async(key,value)=>{if(options.storageError)throw Error('SecureStore unavailable');secure.set(key,value);}},
+  'expo-secure-store':{WHEN_UNLOCKED_THIS_DEVICE_ONLY:'this-device-only',getItemAsync:async key=>secure.get(key)??null,setItemAsync:async(key,value,config)=>{if(options.storageError)throw Error('SecureStore unavailable');calls.secureOptions.push(config);secure.set(key,value);}},
   'expo-crypto':{getRandomBytes:n=>randomBytes(n),randomUUID},
   'expo-constants':{__esModule:true,default:{expoConfig:{extra:{eas:{projectId:'test-project'}}}}},
   expo:{isRunningInExpoGo:()=>options.go??false},'react-native':{Platform:{OS:options.platform??'android'}},
@@ -86,4 +86,52 @@ test('restoring an older device counter catches up to the server before retrying
  await assert.rejects(h.api.syncPushDevice(snapshot,undefined),/sync again shortly/);
  assert.equal(JSON.parse([...h.secure.values()][0]).sequence,50);
  h.options.fetcher=null;await h.api.syncPushDevice(snapshot,undefined);assert.equal(h.requests.at(-1).body.sequence,51);
+});
+test('iOS uses Apple authorisation states for both permission checks and token acquisition',async()=>{
+ for(const status of [2,3,4]){
+  const h=harness({platform:'ios',granted:false,iosStatus:status});
+  assert.equal(await h.api.permissionGranted(),true);await h.api.acquirePushToken({requestPermission:false});
+  assert.equal(h.calls.prompts,0);assert.equal(h.calls.channels,0);assert.equal(h.calls.native,1);
+ }
+ for(const status of [0,1]){
+  const h=harness({platform:'ios',granted:true,iosStatus:status,canAsk:false});
+  assert.equal(await h.api.permissionGranted(),false);await assert.rejects(h.api.acquirePushToken(),/blocked/);
+  assert.equal(h.calls.native,0);assert.equal(h.secure.size,0);
+ }
+});
+test('iOS explicit opt-in asks for alerts and sound once; passive registration never prompts',async()=>{
+ const h=harness({platform:'ios',granted:false,iosStatus:0,permissionResult:{granted:true,iosStatus:2}});
+ await assert.rejects(h.api.acquirePushToken({requestPermission:false}),/blocked/);assert.equal(h.calls.prompts,0);
+ await h.api.acquirePushToken();await h.api.acquirePushToken();assert.equal(h.calls.prompts,1);
+ const request=h.calls.permissionOptions[0].ios;
+ assert.equal(request.allowAlert,true);assert.equal(request.allowSound,true);assert.equal(request.allowBadge,false);
+ assert.equal(h.calls.native,1);assert.equal(h.calls.channels,0);
+});
+test('iOS re-registers on each launch while preserving installation ownership and in-session caching',async()=>{
+ const first=harness({platform:'ios',iosStatus:2});await first.api.acquirePushToken();await first.api.syncPushDevice(snapshot,undefined);
+ const next=harness({platform:'ios',iosStatus:2,secure:first.secure});next.rotate('ExpoPushToken[apns_changed_abcdefg]');
+ await next.api.acquirePushToken({requestPermission:false});await next.api.acquirePushToken();
+ assert.equal(next.calls.native,1,'A recent persisted token must still register with APNs on a new launch');
+ assert.equal(next.calls.tokenOptions[0].projectId,'test-project');assert.equal(next.calls.tokenOptions[0].development,undefined,'Expo must infer the signed APNs environment');
+ await next.api.syncPushDevice(snapshot,undefined);
+ assert.equal(next.requests[0].body.id,first.requests[0].body.id);assert.equal(next.requests[0].body.sequence,2);
+ assert.equal(next.requests[0].body.platform,'ios');assert.equal(next.requests[0].body.token,'ExpoPushToken[apns_changed_abcdefg]');
+ assert.equal(next.requests[0].headers.Authorization,undefined,'Guest iPhones do not require an account');
+ assert.ok(next.calls.secureOptions.every(value=>value?.keychainAccessible==='this-device-only'));
+});
+test('iOS launch registration failures cannot fall back to an old token; revocation blocks even a cached token',async()=>{
+ const first=harness({platform:'ios',iosStatus:2});await first.api.acquirePushToken();
+ const next=harness({platform:'ios',iosStatus:2,secure:first.secure,tokenError:true});
+ await assert.rejects(next.api.acquirePushToken({requestPermission:false}),/APNs/);assert.equal(next.calls.native,1);
+ next.options.tokenError=false;await next.api.acquirePushToken({requestPermission:false});assert.equal(next.calls.native,2);
+ next.options.iosStatus=1;next.options.canAsk=false;
+ assert.equal(await next.api.permissionGranted(),false);await assert.rejects(next.api.acquirePushToken(),/blocked/);assert.equal(next.calls.native,2);
+});
+test('concurrent iOS opt-in and passive refresh share one APNs registration and persist one installation',async()=>{
+ let release;const tokenWait=new Promise(resolve=>{release=resolve;});
+ const h=harness({platform:'ios',iosStatus:2,tokenWait});
+ const first=h.api.acquirePushToken(),second=h.api.acquirePushToken({requestPermission:false});
+ for(let i=0;i<20;i++)await Promise.resolve();assert.equal(h.calls.native,1);
+ release();const tokens=await Promise.all([first,second]);assert.equal(tokens[0],tokens[1]);assert.equal(h.secure.size,1);
+ await h.api.syncPushDevice(snapshot,undefined);assert.equal(h.requests[0].body.sequence,1);
 });

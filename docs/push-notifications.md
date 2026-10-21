@@ -1,5 +1,10 @@
 # Show reminders: setup and operation
 
+For the iPhone setup after Android is working, follow the
+[complete iOS guide](ios-push-notifications.md). It covers the paid Apple team,
+bundle identifier, APNs key, device registration, preview build and adding the
+iPhone to the existing allowlist while preserving Android delivery.
+
 Implemented on 19 October 2026. **The base migrations, both Edge Functions and
 minute cron are installed. On 20 October, preview delivery was enabled with
 explicit approval for one registered Android phone. Public delivery remains
@@ -82,7 +87,14 @@ RLS, service-only candidate RPC, active minute cron and HTTP-200 enabled-worker
 responses. Read-only eligibility checks returned Rush Hour's `reminder` at 14:55
 and `live` at 15:05. The sender retained exactly the approved Android installation,
 `PUSH_ALLOW_ALL=false` and `PUSH_ENVIRONMENT=preview`. No due jobs existed yet;
-provider handoff/phone arrival still require the scheduled device test.
+provider handoff/phone arrival still required the scheduled device test at that
+point. On 21 October, the user confirmed Android delivery. A fresh read-only
+audit found two initial reminders and one favourite-live alert sent to Android,
+all with successful provider receipts, and the minute cron still active. No iOS
+device was registered; the preview audience remained restricted to the approved
+Android installation. The iOS client review added fresh APNs registration per
+launch, device-bound Keychain storage and shared in-flight token registration,
+without changing live backend configuration.
 
 The shared project also contains website/booking migrations absent from this
 app's original checkout. **Do not repair/revert those migrations.**
@@ -138,7 +150,10 @@ project. The private key belongs in EAS credentials, never in the app or any
 
 ### 4. Set up Apple push credentials
 
-You need access to the Apple Developer team used to sign AceRadio. Run:
+You need access to a **paid** Apple Developer team used to sign AceRadio. A free
+Personal Team cannot provision Push Notifications. Follow the
+[full iOS instructions](ios-push-notifications.md), starting with device and
+bundle-identifier checks. The credential command is:
 
 ```powershell
 npx --yes eas-cli@latest credentials --platform ios
@@ -161,8 +176,10 @@ configuration; install a new build after completing credentials.
    **`EXPO_ACCESS_TOKEN`** with that token's value.
 
 The worker already sends Expo requests with that server token. It does not use
-the phone's Supabase key to authorise sending. Leave `PUSH_ENABLED=false` and
-`PUSH_ALLOW_ALL=false` until your test phones have registered.
+the phone's Supabase key to authorise sending. For a new setup, leave
+`PUSH_ENABLED=false` and `PUSH_ALLOW_ALL=false` until test phones have registered.
+For this existing project, Android delivery is already enabled for the approved
+phone; preserve its credentials and settings while adding iOS.
 [Expo push security](https://docs.expo.dev/push-notifications/sending-notifications/#additional-security).
 
 ### 6. Build and install new previews
@@ -194,7 +211,8 @@ order by updated_at desc;
 ```
 
 Identify your Android/iPhone by platform and registration time. In **Edge
-Functions → Secrets**, set:
+Functions → Secrets**, preserve existing approved installation IDs and append
+the new phone's ID to `PUSH_TEST_DEVICE_IDS`:
 
 ```text
 PUSH_TEST_DEVICE_IDS=<android-installation-uuid>,<iphone-installation-uuid>
@@ -298,7 +316,11 @@ Device secrets are random 256-bit values in native SecureStore, hashed at the
 server. Persisted increasing sequence numbers reject late old-owner snapshots.
 Phone registration is rate-limited, debounced, bounded by deadlines and retried
 on reconnect/foreground; only failed syncs poll every minute. Expo token refreshes
-are cached for 15 minutes and invalidated on native token-change events.
+are cached for 15 minutes and invalidated on native token-change events. Opted-in
+iPhones also re-register on every launch, rather than trusting a token persisted
+before an installation or signing change. Concurrent registration requests share
+one in-flight operation. Their installation credentials use device-only Keychain
+accessibility to avoid migration to a different phone through backup restoration.
 
 One-time requests are limited to 50 over the next 14 days. Registration snapshots
 accept up to 2,000 public show IDs and 64 KiB. Rate limits are 300 requests/minute

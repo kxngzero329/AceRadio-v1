@@ -22,7 +22,7 @@
     "test:safe-area": "node --test scripts/safe-area.test.cjs",
     "test:content": "node --test scripts/content.test.cjs",
     "test:events": "node --test scripts/events.test.cjs",
-    "test:push": "node --test scripts/push.test.cjs scripts/push-client.test.cjs scripts/push-service.test.cjs",
+    "test:push": "node --test scripts/push.test.cjs scripts/push-client.test.cjs scripts/push-service.test.cjs scripts/push-config.test.cjs",
     "test:listeners": "node --test scripts/listeners.test.cjs",
     "test:accounts": "node --test scripts/accounts.test.cjs scripts/auth.test.cjs scripts/account-transfer.test.cjs",
     "backend:configure-auth": "node scripts/backend/configure-auth.cjs",

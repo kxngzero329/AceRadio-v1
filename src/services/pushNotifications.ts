@@ -14,10 +14,18 @@ export const pushUnsupportedReason = () => Platform.OS === "web"
 type Identity = { id: string; secret: string; sequence: number; token: string | null; tokenUpdatedAt?: number };
 let identity: Identity | null = null;
 let identityLoad: Promise<Identity | null> | null = null;
+let tokenRegisteredThisSession = false;
+let tokenRegistration: Promise<string> | null = null;
 let write: Promise<unknown> = Promise.resolve();
 // Preview/production upgrades can retain the same Expo token. Keep installation
 // ownership stable while consent/audience stays explicitly environment-scoped.
 const secureKey = `aceradio.push.${accountConfig.url.replace(/[^a-z0-9]/gi, "_")}`;
+function storeIdentity(value: Identity) {
+  // An installation credential belongs to this phone, including after an iOS
+  // backup restore onto a different device. Account favourites sync separately.
+  return SecureStore.setItemAsync(secureKey, JSON.stringify(value), Platform.OS === "ios"
+    ? { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY } : undefined);
+}
 async function loadIdentity(create: boolean): Promise<Identity | null> {
   if (identity) return identity;
   identityLoad ??= SecureStore.getItemAsync(secureKey).then(raw => {
@@ -33,20 +41,32 @@ async function loadIdentity(create: boolean): Promise<Identity | null> {
   if (identity) return identity;
   if (existing || !create) return existing;
   const created = { id: randomUUID(), secret: [...getRandomBytes(32)].map(n => n.toString(16).padStart(2, "0")).join(""), sequence: 0, token: null };
-  await SecureStore.setItemAsync(secureKey, JSON.stringify(created));
+  await storeIdentity(created);
   return identity = created;
 }
 let api: Promise<typeof import("expo-notifications")> | null = null;
-export function invalidatePushToken() { if (identity) identity.tokenUpdatedAt = 0; }
+export function invalidatePushToken() {
+  tokenRegisteredThisSession = false;
+  if (identity) identity.tokenUpdatedAt = 0;
+}
 export function notificationApi() {
   if (pushUnsupportedReason()) return null;
   return api ??= import("expo-notifications");
+}
+function allowsNotifications(permission: import("expo-notifications").NotificationPermissionsStatus, notifications: typeof import("expo-notifications")) {
+  // iOS has quiet and temporary authorisation states beyond the common granted
+  // flag. Use Apple's status consistently for both opt-in and passive refresh.
+  if (Platform.OS === "ios" && permission.ios) {
+    const status = notifications.IosAuthorizationStatus;
+    return [status.AUTHORIZED, status.PROVISIONAL, status.EPHEMERAL].includes(permission.ios.status);
+  }
+  return permission.granted;
 }
 export async function permissionGranted() {
   const notifications = await notificationApi();
   if (!notifications) return false;
   const permission = await notifications.getPermissionsAsync();
-  return permission.granted || permission.ios?.status === notifications.IosAuthorizationStatus.PROVISIONAL;
+  return allowsNotifications(permission, notifications);
 }
 export async function acquirePushToken({ requestPermission = true }: { requestPermission?: boolean } = {}) {
   const unsupported = pushUnsupportedReason();
@@ -56,30 +76,40 @@ export async function acquirePushToken({ requestPermission = true }: { requestPe
     name: "Show reminders", importance: notifications.AndroidImportance.DEFAULT, sound: "default",
   });
   let permission = await notifications.getPermissionsAsync();
-  if (!permission.granted && permission.ios?.status !== notifications.IosAuthorizationStatus.PROVISIONAL && permission.canAskAgain && requestPermission)
+  if (!allowsNotifications(permission, notifications) && permission.canAskAgain && requestPermission)
     permission = await notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowBadge: false, allowSound: true } });
-  if (!permission.granted && permission.ios?.status !== notifications.IosAuthorizationStatus.PROVISIONAL)
+  if (!allowsNotifications(permission, notifications))
     throw Error("Notifications are blocked on this phone. Enable them in your phone's notification settings.");
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (!projectId) throw Error("This app build is missing its notification configuration.");
   const cached = await loadIdentity(false);
-  if (cached?.token && cached.tokenUpdatedAt && Date.now() - cached.tokenUpdatedAt < 15 * 60_000) return cached.token;
-  let timeout: ReturnType<typeof setTimeout> | undefined;
-  try {
-    const result = await Promise.race([
-      notifications.getExpoPushTokenAsync({ projectId }),
-      new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(Error("Couldn't register notifications. Check your connection and try again.")), 15_000); }),
-    ]);
-    const persist = write.catch(() => {}).then(async () => {
-      const current = await loadIdentity(true);
-      const updated = { ...current!, token: result.data, tokenUpdatedAt: Date.now() };
-      await SecureStore.setItemAsync(secureKey, JSON.stringify(updated));
-      identity = updated;
-    });
-    write = persist;
-    await persist;
-    return result.data;
-  } finally { if (timeout) clearTimeout(timeout); }
+  // Register with APNs on each iOS launch. Keychain data can outlive an install
+  // or signing change; a persisted Expo token alone cannot validate that build.
+  if (cached?.token && cached.tokenUpdatedAt && Date.now() - cached.tokenUpdatedAt < 15 * 60_000 &&
+    (Platform.OS !== "ios" || tokenRegisteredThisSession)) return cached.token;
+  // APNs token events can trigger a passive refresh during explicit opt-in.
+  // Share that registration instead of starting competing native requests.
+  if (tokenRegistration) return tokenRegistration;
+  tokenRegistration = (async () => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const result = await Promise.race([
+        notifications.getExpoPushTokenAsync({ projectId }),
+        new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(Error("Couldn't register notifications. Check your connection and try again.")), 15_000); }),
+      ]);
+      const persist = write.catch(() => {}).then(async () => {
+        const current = await loadIdentity(true);
+        const updated = { ...current!, token: result.data, tokenUpdatedAt: Date.now() };
+        await storeIdentity(updated);
+        identity = updated;
+        tokenRegisteredThisSession = true;
+      });
+      write = persist;
+      await persist;
+      return result.data;
+    } finally { if (timeout) clearTimeout(timeout); }
+  })().finally(() => { tokenRegistration = null; });
+  return tokenRegistration;
 }
 const preferenceKey = (owner: string) => `aceradio:push-consent:v1:${accountConfig.url}:${pushEnvironment}:${owner}`;
 export async function readDevicePreferences(owner: string): Promise<DevicePreferences> {
@@ -113,7 +143,7 @@ export function syncPushDevice(snapshot: DeviceSnapshot, bearer: string | undefi
     if (!current) return { deliveryEnabled: false, saved: true };
     if (accountConfig.error) throw Error("Reminder service is not configured for this build.");
     current.sequence++;
-    await SecureStore.setItemAsync(secureKey, JSON.stringify(current));
+    await storeIdentity(current);
     // An account/preference change can happen while waiting for another queued
     // write or SecureStore. Never send that obsolete snapshot afterwards.
     if (!isCurrent()) return { deliveryEnabled: false, saved: false };
@@ -134,7 +164,7 @@ export function syncPushDevice(snapshot: DeviceSnapshot, bearer: string | undefi
         // Preserve server ordering and retry the current choices above it.
         if (Number.isSafeInteger(result.sequence) && result.sequence > current.sequence) {
           current.sequence = result.sequence;
-          await SecureStore.setItemAsync(secureKey, JSON.stringify(current));
+          await storeIdentity(current);
         }
         throw Error("Reminder registration changed. Your choices will sync again shortly.");
       }
