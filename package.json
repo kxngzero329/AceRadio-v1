@@ -38,7 +38,17 @@
     "backend:migrate": "npx --yes supabase db push --linked",
     "doctor": "expo-doctor",
     "build:android": "npx --yes eas-cli@latest build --platform android --profile preview",
-    "build:ios": "npx --yes eas-cli@latest build --platform ios --profile preview"
+    "build:ios": "npx --yes eas-cli@latest build --platform ios --profile preview",
+    "test:media": "node --test scripts/media.test.cjs scripts/media-service.test.cjs",
+    "media:prepare": "node scripts/backend/r2-media.cjs prepare",
+    "media:upload": "node scripts/backend/r2-media.cjs upload",
+    "backend:configure-r2": "node scripts/backend/configure-r2.cjs",
+    "backend:deploy-media": "node scripts/backend/deploy-media.cjs",
+    "media:cutover": "node scripts/backend/r2-media.cjs cutover",
+    "backend:deploy-public-content": "node scripts/backend/deploy-public-content.cjs",
+    "backend:setup-public-content": "node scripts/backend/setup-public-content.cjs",
+    "test:public-content": "node --test scripts/public-content.test.cjs scripts/image-cache.test.cjs",
+    "media:rollback": "node scripts/backend/r2-media.cjs rollback"
   },
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
@@ -55,6 +65,7 @@
     "expo-constants": "~57.0.21",
     "expo-crypto": "~57.0.4",
     "expo-font": "~57.0.4",
+    "expo-image": "~57.0.5",
     "expo-linear-gradient": "~57.0.2",
     "expo-linking": "~57.0.12",
     "expo-notifications": "~57.0.22",
@@ -81,10 +92,13 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10",
     "@types/react": "~19.2.0",
+    "aws4fetch": "1.0.20",
     "babel-preset-expo": "~57.0.15",
     "expo-dev-client": "~57.0.20",
     "expo-doctor": "^1.17.0",
+    "image-size": "2.0.4",
     "react-native-svg-transformer": "~1.5.3",
+    "sharp": "0.35.5",
     "typescript": "~6.0.3"
   }
 }

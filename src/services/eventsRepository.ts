@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getSupabaseClient } from "@/services/supabase";
 import { contentConfig } from "@/config/content";
+import { publicSnapshotEnabled, readPublicSnapshot } from "@/services/publicSnapshot";
 import type { StationEvent } from "@/types/content";
 
 // An invalid optional URL must never become a link or prevent the event's text
@@ -82,6 +83,8 @@ async function request<T>(
 }
 
 export function fetchUpcomingEvents(signal: AbortSignal): Promise<EventRow[]> {
+  if (publicSnapshotEnabled()) return readPublicSnapshot(signal).then(value => eventRowsSchema.parse(value.events)
+    .filter(event => event.ends_at ? Date.parse(event.ends_at) > Date.now() : Date.parse(event.starts_at) >= Date.now()));
   return request(signal, async (requestSignal) => {
     const now = new Date().toISOString();
     const events = new Map<string, EventRow>();
@@ -108,6 +111,10 @@ export function fetchEvent(
   id: string,
   signal: AbortSignal,
 ): Promise<EventRow | null> {
+  if (publicSnapshotEnabled()) return readPublicSnapshot(signal).then(value => {
+    const event = eventRowsSchema.parse(value.events).find(item => item.id === id);
+    return event ?? null;
+  });
   return request(signal, async (requestSignal) => {
     const { data, error } = await getSupabaseClient()
       .from("events")

@@ -6,6 +6,7 @@ android/
 ios/
 .env
 .env.local
+.env.r2.local
 google-services.json
 *-firebase-adminsdk-*.json
 *.log

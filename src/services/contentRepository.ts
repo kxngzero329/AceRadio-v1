@@ -4,6 +4,7 @@ import { contentConfig } from "@/config/content";
 import type { AppContent } from "@/types/content";
 import type { ShowSchedule } from "@/types/show";
 import { formatShowSchedule } from "@/utils/showSchedule";
+import { publicSnapshotEnabled, readPublicSnapshot } from "@/services/publicSnapshot";
 
 const id = z.string().min(1).max(200);
 const nullableText = z.string().nullable();
@@ -13,6 +14,9 @@ const mediaSchema = z.object({
   id, bucket_id: z.enum(["show-artwork","presenter-photos","banners","station-media"]),
   object_path: z.string().min(1).refine(value => !value.startsWith("/") && !value.split("/").includes("..")),
   width: z.number().int().positive().nullable(), height: z.number().int().positive().nullable(),
+  // Optional for deployed v3 responses and old persisted offline catalogues.
+  // A malformed optional delivery URL must not hide the station catalogue.
+  public_url: httpsUrl.refine(value => !/^https:\/\/[^/]*@/.test(value)).nullable().optional().catch(null),
 });
 export const contentPayloadSchema = z.object({
   // Older persisted catalogues remain usable offline. Zod strips their obsolete
@@ -41,7 +45,7 @@ export function decodeContent(value: unknown, baseUrl: string): AppContent {
   // Validate cached payloads as well as live responses before rendering them.
   const data = contentPayloadSchema.parse(value);
   const media = new Map(data.media_assets.map(asset => [asset.id, {
-    uri: `${baseUrl}/storage/v1/object/public/${asset.bucket_id}/${asset.object_path.split("/").map(encodeURIComponent).join("/")}`,
+    uri: asset.public_url ?? `${baseUrl}/storage/v1/object/public/${asset.bucket_id}/${asset.object_path.split("/").map(encodeURIComponent).join("/")}`,
     ...(asset.width && asset.height ? { width: asset.width, height: asset.height } : {}),
   }]));
   const image = (assetId: string | null) => assetId ? media.get(assetId) : undefined;
@@ -75,6 +79,7 @@ export function isContentInWindow(item: { startsAt: string | null; endsAt: strin
 }
 
 export async function fetchAppContent(signal: AbortSignal): Promise<ContentPayload> {
+  if (publicSnapshotEnabled()) return contentPayloadSchema.parse((await readPublicSnapshot(signal)).app);
   const request = new AbortController();
   const abort = () => request.abort();
   signal.addEventListener("abort", abort, { once: true });

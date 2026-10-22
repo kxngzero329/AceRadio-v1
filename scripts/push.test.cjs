@@ -43,7 +43,7 @@ before(async()=>{
     grant usage on schema storage to anon,authenticated,service_role;
     grant select,insert,update,delete on storage.objects to anon,authenticated,service_role;
     grant select on storage.buckets to anon,authenticated,service_role;`);
-  for(const file of fs.readdirSync(path.join(root,'supabase/migrations')).filter(f=>f.endsWith('.sql')).sort()) await db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
+  for(const file of fs.readdirSync(path.join(root,'supabase/migrations')).filter(f=>f.endsWith('.sql')&&!f.endsWith('_public_content_delivery.sql')).sort()) await db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
   await db.exec(buildSeed());
   await db.query('insert into auth.users(id,email_confirmed_at) values($1,now())',[uid]);
 });

@@ -1,5 +1,6 @@
+import { CachedImage as Image } from "@/components/CachedImage";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Image, Platform, StyleSheet, View, type ImageSourcePropType } from "react-native";
+import { Animated, Easing, Platform, StyleSheet, View, type ImageSourcePropType } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { AceLogo } from "@/components/AceLogo";
 import { useReducedMotion } from "@/hooks/useReducedMotion";

@@ -8,7 +8,7 @@ const start='2026-10-19T16:00:00Z',end='2026-10-19T19:00:00Z';
 class Clock extends Date{static now(){return Date.parse(start)+1000;}}
 function load(file,imports={},globals={}){
  const exports={};const code=ts.transpileModule(fs.readFileSync(path.join(__dirname,'..',file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
- new vm.Script(code,{filename:file}).runInNewContext({exports,Date:Clock,console,...globals,require(name){assert.ok(Object.hasOwn(imports,name),'Unexpected import '+name);return imports[name];}});return exports;
+ new vm.Script(code,{filename:file}).runInNewContext({exports,Date:Clock,console,...globals,require(name) { if (name === '@/components/CachedImage') return { CachedImage: imports['react-native']?.Image ?? 'Image' };assert.ok(Object.hasOwn(imports,name),'Unexpected import '+name);return imports[name];}});return exports;
 }
 const schedule=load('src/utils/showSchedule.ts');
 const types=load('src/types/notifications.ts');

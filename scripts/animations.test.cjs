@@ -11,7 +11,7 @@ function load(relative, imports, globals = {}) {
   const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  new vm.Script(output, { filename }).runInNewContext({ exports, require: name => {
+  new vm.Script(output, { filename }).runInNewContext({ exports, require: name => { if (name === '@/components/CachedImage') return { CachedImage: imports['react-native']?.Image ?? 'Image' };
     assert.ok(imports[name], `Unexpected import: ${name}`);
     return imports[name];
   }, ...globals });

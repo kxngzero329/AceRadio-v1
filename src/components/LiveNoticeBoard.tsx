@@ -1,5 +1,6 @@
+import { CachedImage as Image } from "@/components/CachedImage";
 import { fonts } from "@/theme/fonts";
-import { ActivityIndicator, Alert, Image, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { ArrowUpRight, Bell, Radio } from "lucide-react-native";
 import { router } from "@/utils/navigation";
 import { useRadio } from "@/context/RadioContext";

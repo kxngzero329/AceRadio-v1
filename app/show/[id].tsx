@@ -1,9 +1,9 @@
+import { CachedImage as Image } from "@/components/CachedImage";
 import { fonts } from "@/theme/fonts";
 import {
   Animated,
   View,
   Text,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,

@@ -146,7 +146,7 @@ function harness({ focused = true, reducedMotion = false, canGoBack = true, plat
   const exports = {};
   const context = {
     exports,
-    require: name => { assert.ok(imports[name], `Unexpected import: ${name}`); return imports[name]; },
+    require: name => { if (name === '@/components/CachedImage') return { CachedImage: imports['react-native']?.Image ?? 'Image' }; assert.ok(imports[name], `Unexpected import: ${name}`); return imports[name]; },
   };
   if (platform === 'web') Object.assign(context, { window: browserWindow, PopStateEvent });
   else Object.defineProperty(context, 'window', { get() { throw new Error('Native hook accessed window'); } });

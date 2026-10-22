@@ -1,4 +1,5 @@
-import { Image, StyleSheet, type ImageProps } from "react-native";
+import { StyleSheet, type ImageProps } from "react-native";
+import { CachedImage as Image } from "@/components/CachedImage";
 
 type FittedImageProps = Pick<
   ImageProps,

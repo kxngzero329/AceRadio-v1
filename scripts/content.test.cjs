@@ -13,7 +13,8 @@ let db, beforeRemoval;
 function load(relative, imports = {}, extra = {}) {
   const filename = path.join(root,relative), exports = {};
   const output = ts.transpileModule(fs.readFileSync(filename,'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
-  new vm.Script(output,{ filename }).runInNewContext({ exports, require: name => {
+  new vm.Script(output,{ filename }).runInNewContext({ exports, require: name => { if (name === '@/components/CachedImage') return { CachedImage: imports['react-native']?.Image ?? 'Image' };
+    if (name === '@/services/publicSnapshot') return { publicSnapshotEnabled: () => false, readPublicSnapshot: () => { throw Error('Unexpected snapshot request'); } };
     if (Object.hasOwn(imports,name)) return imports[name];
     if (name === 'zod') return require('zod');
     throw Error('Unexpected import: ' + name);

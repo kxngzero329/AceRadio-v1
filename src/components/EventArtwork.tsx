@@ -1,5 +1,6 @@
+import { CachedImage as Image } from "@/components/CachedImage";
 import { useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { CalendarDays } from "lucide-react-native";
 import { colors } from "@/theme/colors";
 

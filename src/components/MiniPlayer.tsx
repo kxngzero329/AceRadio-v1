@@ -1,10 +1,10 @@
+import { CachedImage as Image } from "@/components/CachedImage";
 import { fonts } from "@/theme/fonts";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
   Platform,
-  Image,
   View,
   Text,
   Pressable,

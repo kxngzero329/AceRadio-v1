@@ -87,7 +87,7 @@ before(async () => {
     grant select on storage.buckets to anon,authenticated,service_role;`);
   for (const file of fs
     .readdirSync(path.join(root, "supabase/migrations"))
-    .filter((file) => file.endsWith(".sql"))
+    .filter((file) => file.endsWith(".sql") && !file.endsWith("_public_content_delivery.sql"))
     .sort())
     await db.exec(
       fs.readFileSync(path.join(root, "supabase/migrations", file), "utf8"),

@@ -2,6 +2,14 @@
 
 For an end-to-end map of the screens, playback, content flow, deployed database and CLI setup, see the [codebase overview](docs/codebase-overview.md), reviewed on 16 October 2026.
 
+R2 image delivery is active for all 32 optimised media records. Updated mobile
+builds cache artwork in memory/on disk and share a cached R2 public-content
+snapshot instead of polling Supabase catalogue tables. The rebuilt website/admin
+has matching local integration and is not yet published. A fresh mobile build is
+required for the new `expo-image` dependency. See [R2 delivery, limits and release
+checks](docs/r2-media.md); the current `r2.dev` address is a temporary, rate-limited
+endpoint, with a custom domain recommended before public launch.
+
 Accounts, the two-role permission system, MFA for admin writes, and cached favourites/settings sync are implemented. See [account setup and release checks](docs/accounts.md). Users can register and sign in with email and password only, with immediate sign-in after signup and account-linked favourites. Email verification and password reset are deferred until SMTP is configured; listening and guest favourites remain available.
 
 Expo SDK 57 / React Native / TypeScript app using the supplied AceRadio artwork and branding.

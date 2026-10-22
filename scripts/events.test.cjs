@@ -10,8 +10,9 @@ const root = path.resolve(__dirname, '..');
 function load(relative, imports = {}, globals = {}) {
   const filename = path.join(root, relative), exports = {};
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  new vm.Script(code, { filename }).runInNewContext({ exports, AbortController, setTimeout, clearTimeout, ...globals, require(name) {
-    if (Object.hasOwn(imports, name)) return imports[name];
+  new vm.Script(code, { filename }).runInNewContext({ exports, AbortController, setTimeout, clearTimeout, ...globals, require(name) { if (name === '@/components/CachedImage') return { CachedImage: imports['react-native']?.Image ?? 'Image' };
+    if (name === '@/services/publicSnapshot') return { publicSnapshotEnabled: () => false, readPublicSnapshot: () => { throw Error('Unexpected snapshot request'); } };
+    if (Object.hasOwn(imports,name)) return imports[name];
     if (name === 'zod') return require('zod');
     throw Error('Unexpected import: ' + name);
   } });
