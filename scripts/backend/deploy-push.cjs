@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { cli, projectRef, root } = require('./linked-project.cjs');
 const { manifest } = require('./seed.cjs');
-const migrations = ['20261019100000_reminder_preferences.sql','20261019101000_push_delivery.sql','20261020130000_favorite_live_reminders.sql'];
+const migrations = ['20261019100000_reminder_preferences.sql','20261019101000_push_delivery.sql','20261020130000_favorite_live_reminders.sql','20261023080000_push_worker_batching.sql'];
 const apply = process.argv.includes('--apply');
 const confirmed = process.argv[process.argv.indexOf('--confirm-project') + 1];
 if (apply && (!process.argv.includes('--confirm-project') || confirmed !== projectRef() || confirmed !== manifest.project_ref)) throw Error('Explicit --confirm-project must match the linked AceRadio project.');

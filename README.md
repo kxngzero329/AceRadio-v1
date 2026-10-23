@@ -16,6 +16,9 @@ Expo SDK 57 / React Native / TypeScript app using the supplied AceRadio artwork 
 
 Listening uses AceRadio's public live stream, `https://studio.ace.radio/stream`. Every show plays that same station stream. Supabase is deployed and enabled for local use and the EAS development, preview and production environments, with reproducible migrations, verified API imports, Storage, RLS and a persisted catalogue cache. A fresh build includes this integration; later published content updates arrive without another release. Supabase mode uses only a public URL/key. Unconfigured checkouts default to bundled content. See [backend setup and deployment status](docs/supabase.md).
 
+Notification request batching and the isolated 1,000-device capacity checks are
+documented in [backend capacity and rollout checks](docs/backend-capacity.md).
+
 ## Run
 
 Show reminders support guest phone favourites and synced account favourites,

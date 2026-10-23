@@ -1,5 +1,10 @@
 # Show reminders: setup and operation
 
+The 23 October backend optimisation batches delivery acknowledgements, reduces
+idle polling from five database API calls to one, and gates cleanup hourly.
+Minute reminders and existing client payloads are preserved. See
+[request reduction, 1,000-device checks and capacity limits](backend-capacity.md).
+
 For the iPhone setup after Android is working, follow the
 [complete iOS guide](ios-push-notifications.md). It covers the paid Apple team,
 bundle identifier, APNs key, device registration, preview build and adding the
@@ -52,20 +57,20 @@ with explicit approval on 20 October.
 Project: `dbgpfqyighcaquxwzkfe`; EAS project:
 `33e70d72-aa53-45a9-a75b-eb6c99bafbcf`.
 
-| Component | State |
-| --- | --- |
-| Revisioned reminder scope/timing in `user_settings` | Migrated; older boolean writes preserve new choices |
-| Private registrations, one-time requests, jobs, limits and worker leases | Migrated; no public token/table access |
-| `push-device` | Deployed; guest installation authentication and optional verified account bearer |
-| `push-dispatch` | Deployed; server worker authentication only |
-| `aceradio-show-reminders` cron | Active, every minute |
-| Worker credential | Installed in Supabase Secrets and encrypted Vault |
-| `PUSH_ENABLED` | `true`, approved phone-only preview test |
-| `PUSH_ALLOW_ALL` | `false` |
-| `PUSH_ENVIRONMENT` | `preview` |
-| Test devices | One Android preview installation, explicitly approved on 20 October |
-| Firebase / Expo token | Android client configured, FCM V1 upload confirmed by user, Expo server token installed |
-| Apple credentials | Pending user setup below |
+| Component                                                                | State                                                                                   |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| Revisioned reminder scope/timing in `user_settings`                      | Migrated; older boolean writes preserve new choices                                     |
+| Private registrations, one-time requests, jobs, limits and worker leases | Migrated; no public token/table access                                                  |
+| `push-device`                                                            | Deployed; guest installation authentication and optional verified account bearer        |
+| `push-dispatch`                                                          | Deployed; server worker authentication only                                             |
+| `aceradio-show-reminders` cron                                           | Active, every minute                                                                    |
+| Worker credential                                                        | Installed in Supabase Secrets and encrypted Vault                                       |
+| `PUSH_ENABLED`                                                           | `true`, approved phone-only preview test                                                |
+| `PUSH_ALLOW_ALL`                                                         | `false`                                                                                 |
+| `PUSH_ENVIRONMENT`                                                       | `preview`                                                                               |
+| Test devices                                                             | One Android preview installation, explicitly approved on 20 October                     |
+| Firebase / Expo token                                                    | Android client configured, FCM V1 upload confirmed by user, Expo server token installed |
+| Apple credentials                                                        | Pending user setup below                                                                |
 
 **20 October Android review:** the phone is registered as a guest with
 `rush-hour` saved, five-minute advance reminders and a one-time request for the
@@ -120,12 +125,12 @@ package and rejects an unrelated file or a service-account private key.
 On the AceRadio project at [expo.dev](https://expo.dev/), open **Environment
 variables**, select **preview**, and add:
 
-| Field | Value |
-| --- | --- |
-| Name | `GOOGLE_SERVICES_JSON` |
-| Type | File |
-| Visibility | Secret |
-| File | The Android client `google-services.json` from step 1 |
+| Field      | Value                                                 |
+| ---------- | ----------------------------------------------------- |
+| Name       | `GOOGLE_SERVICES_JSON`                                |
+| Type       | File                                                  |
+| Visibility | Secret                                                |
+| File       | The Android client `google-services.json` from step 1 |
 
 Repeat for **development** if using development clients, and **production**
 before production builds. The dynamic app config uses the file path supplied by

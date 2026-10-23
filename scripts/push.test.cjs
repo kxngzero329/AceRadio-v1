@@ -272,9 +272,9 @@ test('registration verifies signed-in bearers, validates inputs and rate-limits 
   const limited=deviceHarness({allowed:false});assert.equal((await limited.handler(limited.request())).status,429);assert.equal(limited.calls.length,1);
 });
 function dispatcher(fetcher,enabled=true,phase='reminder'){
-  const calls=[];let claimed=false;
+ const calls=[];
   const job={id:randomUUID(),lease:randomUUID(),token:'ExpoPushToken[abcdefghijklmnop]',showId:'restart',title:'The Restart',time:'18:00',startsAt:start,endsAt:end,expiresAt:'2026-10-19T15:57:00Z',phase};
-  const handler=createPushDispatchHandler({rpc:async(name,args)=>{calls.push({name,args});return {data:name==='push_worker_lock'?true:name==='push_pending_receipts'?[]:name==='push_claim_jobs'&&!claimed?(claimed=true,[job]):name==='push_claim_jobs'?[]:null,error:null};},fetch:fetcher,enabled,workerSecret:'s'.repeat(64),accessToken:'server-token',environment:'preview',allowed:[],pause:async()=>{},now:()=>Date.parse(now)});
+  const handler=createPushDispatchHandler({rpc:async(name,args)=>{calls.push({name,args});return {data:name==='push_worker_begin'?{acquired:true,idle:false,jobs:[job],receipts:[]}:name==='push_worker_flush'?[]:null,error:null};},fetch:fetcher,enabled,workerSecret:'s'.repeat(64),accessToken:'server-token',environment:'preview',allowed:[],pause:async()=>{},now:()=>Date.parse(now)});
   const request=(secret='s'.repeat(64))=>new Request('https://example.test/dispatch',{method:'POST',headers:{authorization:'Bearer '+secret}});
   return {handler,calls,request,job};
 }
@@ -289,11 +289,11 @@ test('sender builds typed expiring reminders with secure Expo authentication and
     assert.equal(message.sound,'default');assert.equal(message.priority,'high');assert.ok(message.title);assert.ok(message.body);assert.equal(message._contentAvailable,undefined,'Visible APNs alerts must not depend on background JS');assert.equal(message.badge,undefined);
     return new Response(JSON.stringify({data:[{status:'ok',id:'ticket-ok'}]}),{status:200});
   });
-  assert.equal((await h.handler(h.request())).status,200);assert.equal(h.calls.find(c=>c.name==='push_finish_job').args.p_ticket,'ticket-ok');
+  assert.equal((await h.handler(h.request())).status,200);assert.equal(h.calls.find(c=>c.name==='push_worker_flush').args.p_results[0].ticket,'ticket-ok');
 });
 test('temporary provider rejections back off; ambiguous timeouts and malformed success bodies are not blindly resent',async()=>{
   for(const [fetcher,state]of [[async()=>new Response('',{status:429}),'retry'],[async()=>{throw Error('timeout');},'uncertain'],[async()=>new Response('{}',{status:200}),'uncertain']]){
-    const h=dispatcher(fetcher);await h.handler(h.request());assert.equal(h.calls.find(c=>c.name==='push_finish_job').args.p_state,state);
+    const h=dispatcher(fetcher);await h.handler(h.request());assert.equal(h.calls.find(c=>c.name==='push_worker_flush').args.p_results[0].state,state);
   }
 });
 test('the live alert uses on-air text and the existing payload so installed previews can open it',async()=>{
