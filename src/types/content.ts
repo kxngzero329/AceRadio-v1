@@ -14,6 +14,7 @@ export type Banner = {
 };
 export type Announcement = {
   id: string; title: string; body: string; linkUrl: string | null;
+  imageUrl?: string | null;
   startsAt: string | null; endsAt: string | null;
   priority: number;
 };

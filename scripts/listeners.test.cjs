@@ -8,15 +8,17 @@ const root = path.resolve(__dirname,'..');
 function load(relative, imports = {}, globals = {}) {
   const exports = {}, filename = path.join(root,relative);
   const code = ts.transpileModule(fs.readFileSync(filename,'utf8'), { compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX} }).outputText;
-  new vm.Script(code,{filename}).runInNewContext({exports,fetch,Request,Response,URL,TextDecoder,AbortController,DOMException,setTimeout,clearTimeout, ...globals,
+  new vm.Script(code,{filename}).runInNewContext({exports,fetch,Request,Response,URL,TextDecoder,TextEncoder,AbortController,DOMException,setTimeout,clearTimeout, ...globals,
     require(name) { if (Object.hasOwn(imports,name)) return imports[name]; throw Error('Unexpected import: '+name); },
   });
   return exports;
 }
-const backend = load('supabase/functions/listener-stats/handler.ts');
+const icecast = load('supabase/functions/_shared/icecast.ts');
+const backendImports = {'../_shared/icecast.ts':icecast};
+const backend = load('supabase/functions/listener-stats/handler.ts',backendImports);
 const station = load('src/config/station.ts');
 const config = { contentConfig:{url:'https://test.supabase.co'} };
-const clientImports = {zod:require('zod'),'@/config/content':config,'@/config/station':station};
+const clientImports = {zod:require('zod'),'@/config/station':station,'../../supabase/functions/_shared/icecast':icecast};
 const client = load('src/services/listenerStats.ts',clientImports);
 const source = (listeners,listenurl='http://studio.arc.radio:8000/stream')=>({listenurl,listeners});
 const stats = listeners=>({icestats:{source:source(listeners)}});
@@ -93,7 +95,7 @@ test('invalid JSON, stale proxy data, missing stream and excessive bodies fail s
 });
 
 test('an upstream deadline aborts a hung statistics request',async()=>{
-  const short=load('supabase/functions/listener-stats/handler.ts',{}, {setTimeout:(fn)=>setTimeout(fn,5)});
+  const short=load('supabase/functions/listener-stats/handler.ts',backendImports, {setTimeout:(fn)=>setTimeout(fn,5)});
   let aborted=false;
   const handle=short.createListenerStatsHandler({fetch:(_url,{signal})=>new Promise((_resolve,reject)=>{
     signal.addEventListener('abort',()=>{aborted=true;reject(new DOMException('Aborted','AbortError'));},{once:true});
@@ -128,11 +130,11 @@ test('client validates stream identity/count and accounts for server sample age 
   assert.equal(client.decodeListenerSample({...payload(),sampled_at:'2099-01-01T00:00:00Z'},1000,2000).listeners,17);
 });
 
-test('production client reads only the deployed aggregate endpoint and propagates aborts',async()=>{
+test('production client reads the real Icecast URL directly without Supabase or credentials and propagates aborts',async()=>{
   const transport=load('src/services/listenerStats.ts',clientImports,{fetch:async(url,options)=>{
-    assert.equal(url,'https://test.supabase.co/functions/v1/listener-stats');
-    assert.equal(options.cache,'no-store');assert.ok(!options.headers.Authorization && !options.headers.apikey);
-    return json(payload(0));
+    assert.equal(url,'https://studio.ace.radio/status-json.xsl');
+    assert.equal(options.cache,'no-store');assert.equal(options.credentials,'omit');assert.ok(!options.headers.Authorization && !options.headers.apikey);
+    return json(stats(0));
   }});
   assert.equal((await transport.fetchListenerSample(new AbortController().signal)).listeners,0);
   let aborted=false;
@@ -203,7 +205,7 @@ function hookHarness(){
 
 test('the UI expires a count on time during a stalled refresh and cancels its deadline on cleanup',()=>{
   const h=hookHarness();
-  assert.equal(h.render(),17);assert.equal(h.options.refetchInterval,15_000);assert.equal(h.options.refetchIntervalInBackground,false);
+  assert.equal(h.render(),17);assert.equal(h.options.refetchInterval,10_000);assert.equal(h.options.refetchIntervalInBackground,false);
   assert.equal(h.advance(30_999),17);assert.equal(h.advance(31_000),null);
   assert.equal(h.setQuery({data:client.decodeListenerSample(payload(0),31_000,31_000),isError:false}),0);
   assert.equal(h.timers.size,1);h.dispose();assert.equal(h.timers.size,0);
@@ -241,4 +243,99 @@ test('the shared radio display uses only real counts in either content mode and 
     count=null;assert.equal(render(),'<span>Live radio</span>');
   }
   assert.equal(starts,0);
+});
+
+test("the direct client rejects stale/invalid ages, incorrect mounts, malformed and oversized bodies without fallback", async () => {
+  const responses = [
+    () => json(stats(17), { headers: { Age: "30" } }),
+    () => json(stats(17), { headers: { Age: "not-an-age" } }),
+    () => json(stats(17), { headers: { Age: "-1" } }),
+    () => json(stats(17), { headers: { Age: "9007199254740992" } }),
+    () => json({ icestats: { source: [source(1), source(2)] } }),
+    () =>
+      json({
+        icestats: { source: source(17, "https://other.example/stream") },
+      }),
+    () =>
+      new Response("<html>Statistics offline</html>", {
+        headers: { "content-type": "text/html" },
+      }),
+    () =>
+      new Response("bad-json", {
+        headers: { "content-type": "application/json" },
+      }),
+    () => json({ padding: "x".repeat(70_000), ...stats(17) }),
+    () => json(stats(17), { headers: { "content-length": "70000" } }),
+    () => new Response("", { status: 429 }),
+  ];
+  for (const response of responses) {
+    const calls = [];
+    const direct = load("src/services/listenerStats.ts", clientImports, {
+      fetch: async (url) => {
+        calls.push(url);
+        return response();
+      },
+    });
+    await assert.rejects(
+      direct.fetchListenerSample(new AbortController().signal),
+    );
+    assert.deepEqual(calls, [icecast.ICECAST_STATS_URL]);
+  }
+});
+
+test("native non-streaming responses work and byte limits also apply to native and multibyte JSON", async () => {
+  const native = (text) => ({
+    ok: true,
+    headers: new Headers({ "content-type": "application/json" }),
+    body: undefined,
+    text: async () => text,
+  });
+  const direct = load("src/services/listenerStats.ts", clientImports, {
+    fetch: async () => native(JSON.stringify(stats(0))),
+  });
+  assert.equal(
+    (await direct.fetchListenerSample(new AbortController().signal)).listeners,
+    0,
+  );
+  for (const text of [
+    JSON.stringify({ ...stats(17), padding: "x".repeat(70_000) }),
+    JSON.stringify({ ...stats(17), padding: "💚".repeat(20_000) }),
+  ]) {
+    const tooBig = load("src/services/listenerStats.ts", clientImports, {
+      fetch: async () => native(text),
+    });
+    await assert.rejects(
+      tooBig.fetchListenerSample(new AbortController().signal),
+      /too large/,
+    );
+  }
+});
+
+test("direct sample expiry includes API Age and request latency without trusting the phone calendar", async () => {
+  let time = Date.parse("2099-01-01T00:00:00Z");
+  class PhoneDate extends Date {
+    static now() {
+      return time;
+    }
+  }
+  const direct = load("src/services/listenerStats.ts", clientImports, {
+    Date: PhoneDate,
+    fetch: async () => {
+      time += 1000;
+      return json(stats(12), {
+        headers: { Age: "5", Date: "Fri, 23 Oct 2026 08:00:00 GMT" },
+      });
+    },
+  });
+  const sample = await direct.fetchListenerSample(new AbortController().signal);
+  assert.equal(sample.listeners, 12);
+  assert.equal(sample.expiresAt - sample.requestedAt, 25000);
+  assert.equal(
+    direct.freshListenerCount(sample, sample.requestedAt + 24999),
+    12,
+  );
+  assert.equal(
+    direct.freshListenerCount(sample, sample.requestedAt + 25000),
+    null,
+  );
 });

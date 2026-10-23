@@ -87,7 +87,10 @@ before(async () => {
     grant select on storage.buckets to anon,authenticated,service_role;`);
   for (const file of fs
     .readdirSync(path.join(root, "supabase/migrations"))
-    .filter((file) => file.endsWith(".sql") && !file.endsWith("_public_content_delivery.sql"))
+    .filter(
+      (file) =>
+        file.endsWith(".sql") && !file.endsWith("_public_content_delivery.sql"),
+    )
     .sort())
     await db.exec(
       fs.readFileSync(path.join(root, "supabase/migrations", file), "utf8"),
@@ -327,9 +330,6 @@ test("admin authority uses the role table plus MFA; no-MFA/ordinary users cannot
           .data.announcements.length,
         0,
       );
-      await db.exec(
-        "insert into storage.objects(bucket_id,name) values('banners','account-test.png'); delete from storage.objects where name='account-test.png'",
-      );
       assert.equal(
         (await db.query("select * from public.user_settings")).rows.length,
         1,
@@ -337,6 +337,18 @@ test("admin authority uses the role table plus MFA; no-MFA/ordinary users cannot
       );
     },
     "aal2",
+  );
+  await assert.rejects(
+    as(
+      admin,
+      () =>
+        db.exec(
+          "insert into storage.objects(bucket_id,name) values('banners','account-test.png')",
+        ),
+      "aal2",
+    ),
+    /row.level.security/i,
+    "Even MFA staff must upload images through R2, not Supabase Storage",
   );
 });
 test("deletion permission requires recent password proof and protects the studio administrator", async () => {

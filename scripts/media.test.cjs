@@ -120,7 +120,7 @@ test("additive R2 migration keeps all content, original paths and legacy public 
         .media_assets.length >= 31,
     );
 });
-test("mobile artwork, posters, presenters and spotlight prefer R2 while old caches and invalid URLs fall back", async () => {
+test("mobile artwork, posters, presenters and spotlight use R2; missing legacy URLs use placeholders", async () => {
   const data = await payload();
   const original = repository.decodeContent(data, "https://test.supabase.co");
   const first = data.shows[0];
@@ -142,16 +142,50 @@ test("mobile artwork, posters, presenters and spotlight prefer R2 while old cach
   for (const asset of data.media_assets)
     asset.public_url = "javascript:alert(1)";
   assert.equal(
-    repository.decodeContent(data, "https://test.supabase.co").shows[0].image
-      .uri,
-    original.shows[0].image.uri,
+    repository.decodeContent(data, "https://test.supabase.co").shows[0].image,
+    undefined,
   );
   for (const asset of data.media_assets) delete asset.public_url;
   assert.equal(
-    repository.decodeContent(data, "https://test.supabase.co").shows[0].image
-      .uri,
-    original.shows[0].image.uri,
+    repository.decodeContent(data, "https://test.supabase.co").shows[0].image,
+    undefined,
   );
+});
+test("new R2-only records resolve artwork and announcement images without a Supabase object", async () => {
+  const data = await payload();
+  const sha = "b".repeat(64);
+  const asset = {
+    ...data.media_assets[0],
+    id: `r2:show-artwork:${sha}`,
+    object_path: `r2/${sha}.webp`,
+    public_url: `https://media.ace.radio/show-artwork/r2/${sha}.webp`,
+  };
+  data.media_assets.push(asset);
+  data.shows[0].artwork_id = asset.id;
+  const base = {
+    id: "new-update",
+    title: "Station update",
+    body: "Full update",
+    link_url: null,
+    starts_at: null,
+    ends_at: null,
+  };
+  data.announcements = [{ ...base, image_url: asset.public_url }];
+  let decoded = repository.decodeContent(data, "https://test.supabase.co");
+  assert.equal(decoded.shows[0].image.uri, asset.public_url);
+  assert.equal(decoded.announcements[0].imageUrl, asset.public_url);
+  for (const image_url of [
+    undefined,
+    null,
+    "http://insecure.test/a",
+    "javascript:alert(1)",
+    "https://user:secret@media.test/a",
+  ]) {
+    data.announcements = [{ ...base, image_url }];
+    decoded = repository.decodeContent(data, "https://test.supabase.co");
+    assert.equal(decoded.announcements[0].imageUrl, null);
+    assert.equal(decoded.announcements[0].body, base.body);
+  }
 });
 test("existing media RLS still denies ordinary writes and permits only authorised staff", async () => {
   const asset = (await payload()).media_assets[0];
@@ -302,4 +336,203 @@ test("optimisation reduces photographic PNG downloads without changing dimension
   assert.equal((await sharp(result.bytes).metadata()).hasAlpha, true);
   assert.equal(safePath("../private"), false);
   assert.equal(safePath("banners/r2/a.jpg"), true);
+});
+
+test("shared R2 library migration merges duplicate references, guards concurrent edits and blocks Storage uploads", async () => {
+  const { buildLibraryPlan, librarySql } = require("./backend/r2-library.cjs");
+  const crypto = require("node:crypto");
+  let assets = (await db.query("select * from public.media_assets order by id"))
+    .rows;
+  const portrait = assets.find((a) => a.bucket_id === "presenter-photos");
+  const art = assets.find((a) => a.bucket_id === "show-artwork");
+  for (const asset of assets) {
+    const hash = crypto
+      .createHash("sha256")
+      .update(asset.id === art.id ? portrait.id : asset.id)
+      .digest("hex");
+    const key = `${asset.bucket_id}/r2/${hash}.png`;
+    await db.query(
+      "update public.media_assets set public_url=$2,r2_key=$3,r2_sha256=$4,r2_bytes=100 where id=$1",
+      [asset.id, "https://media.test/" + key, key, hash],
+    );
+  }
+  await db.query(
+    "update public.shows set artwork_id=$1 where id=(select id from public.shows order by id limit 1)",
+    [art.id],
+  );
+  const migration = fs.readFileSync(
+    path.join(root, "supabase/migrations/20261023140000_shared_r2_library.sql"),
+    "utf8",
+  );
+  await db.exec(migration);
+  const inventory = async () => ({
+    assets: (await db.query("select * from public.media_assets order by id"))
+      .rows,
+    objects: [],
+    events: [],
+    announcements: [],
+  });
+  let plan = buildLibraryPlan(await inventory());
+  assert.equal(plan.aliases.length, 1);
+  assert.equal(plan.aliases[0].canonical, portrait.id);
+  await db.query(
+    "update public.media_assets set alt_text='Concurrent editorial change' where id=$1",
+    [portrait.id],
+  );
+  await assert.rejects(db.exec(librarySql(plan)), /Media changed since review/);
+  await db.exec("rollback");
+  plan = buildLibraryPlan(await inventory());
+  await db.exec(librarySql(plan));
+  await db.exec(librarySql(plan));
+  assert.equal(
+    (await db.query("select id from public.media_assets where id=$1", [art.id]))
+      .rows.length,
+    0,
+  );
+  assert.equal(
+    (await db.query("select artwork_id from public.shows order by id limit 1"))
+      .rows[0].artwork_id,
+    portrait.id,
+  );
+  assert.equal(
+    (
+      await db.query("select alt_text from public.media_assets where id=$1", [
+        portrait.id,
+      ])
+    ).rows[0].alt_text,
+    "Concurrent editorial change",
+  );
+  assert.equal(
+    (
+      await db.query(
+        "select media_category from public.media_assets where id=$1",
+        [portrait.id],
+      )
+    ).rows[0].media_category,
+    "headshots",
+  );
+  await role(editor, async () => {
+    await assert.rejects(
+      db.query(
+        "insert into storage.objects(bucket_id,name) values('show-artwork','forbidden.png')",
+      ),
+      /row-level security/,
+    );
+  });
+  assert.ok(
+    (await db.query("select r2_key from public.media_assets")).rows.every((a) =>
+      /^(headshots|show-banners)\//.test(a.r2_key),
+    ),
+  );
+});
+
+test("solo shows share presenter headshots across the public API; edits and removals propagate without changing group art", async () => {
+  const { rows: shows } = await db.query(
+    "select id,artwork_id from public.shows order by id",
+  );
+  const { rows: hosts } = await db.query(
+    "select * from public.show_presenters",
+  );
+  const solo = shows.find(
+    (s) => hosts.filter((h) => h.show_id === s.id).length === 1 && s.artwork_id,
+  );
+  const group = shows.find(
+    (s) => hosts.filter((h) => h.show_id === s.id).length > 1,
+  );
+  assert.ok(solo && group);
+  const person = hosts.find((h) => h.show_id === solo.id).presenter_id;
+  const oldGroup = group.artwork_id;
+  await db.exec(
+    fs.readFileSync(
+      path.join(
+        root,
+        "supabase/migrations/20261023160000_shared_presenter_headshots.sql",
+      ),
+      "utf8",
+    ),
+  );
+  assert.equal(
+    (
+      await db.query("select photo_id from public.presenters where id=$1", [
+        person,
+      ])
+    ).rows[0].photo_id,
+    solo.artwork_id,
+  );
+  const replacement = (
+    await db.query(
+      "select id from public.media_assets where media_category='headshots' and id<>$1 limit 1",
+      [solo.artwork_id],
+    )
+  ).rows[0].id;
+  await role(editor, async () => {
+    await db.query("update public.presenters set photo_id=$2 where id=$1", [
+      person,
+      replacement,
+    ]);
+    const content = await payload();
+    assert.equal(
+      content.shows.find((s) => s.id === solo.id).artwork_id,
+      replacement,
+    );
+    assert.equal(
+      content.shows.find((s) => s.id === group.id).artwork_id,
+      oldGroup,
+    );
+    await db.query("update public.shows set artwork_id=$2 where id=$1", [
+      solo.id,
+      replacement,
+    ]);
+    assert.equal(
+      (
+        await db.query("select photo_id from public.presenters where id=$1", [
+          person,
+        ])
+      ).rows[0].photo_id,
+      replacement,
+    );
+    await db.query("update public.shows set artwork_id=null where id=$1", [
+      solo.id,
+    ]);
+    assert.equal(
+      (
+        await db.query("select photo_id from public.presenters where id=$1", [
+          person,
+        ])
+      ).rows[0].photo_id,
+      null,
+    );
+    assert.equal(
+      (await payload()).shows.find((s) => s.id === solo.id).artwork_id,
+      null,
+    );
+  });
+  await role(ordinary, async () => {
+    assert.equal(
+      (
+        await db.query(
+          "update public.presenters set photo_id=null where id=$1 returning id",
+          [person],
+        )
+      ).rows.length,
+      0,
+    );
+  });
+  await db.exec("begin;set local role anon");
+  try {
+    const content = await payload();
+    for (const show of content.shows) {
+      const links = content.show_presenters.filter(
+        (h) => h.show_id === show.id,
+      );
+      if (links.length === 1)
+        assert.equal(
+          show.artwork_id,
+          content.presenters.find((p) => p.id === links[0].presenter_id)
+            .photo_id,
+        );
+    }
+  } finally {
+    await db.exec("rollback");
+  }
 });

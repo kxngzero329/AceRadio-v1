@@ -3,6 +3,7 @@ import { Megaphone } from "lucide-react-native";
 import { ContentSheet } from "@/components/ContentSheet";
 import { ContentStatus } from "@/components/ContentStatus";
 import { ExternalContentButton } from "@/components/ExternalContentButton";
+import { EventArtwork } from "@/components/EventArtwork";
 import { useContent } from "@/context/ContentContext";
 import { colors } from "@/theme/colors";
 import { layout } from "@/theme/layout";
@@ -27,6 +28,11 @@ export default function AnnouncementsScreen() {
             <Text accessibilityRole="header" style={typography.sectionTitle}>
               {item.title}
             </Text>
+            {item.imageUrl && (
+              <View style={styles.artwork}>
+                <EventArtwork uri={item.imageUrl} title={item.title} detail />
+              </View>
+            )}
             <Text selectable style={styles.body}>
               {item.body}
             </Text>
@@ -62,6 +68,7 @@ const styles = StyleSheet.create({
     borderRadius: layout.cardRadius,
   },
   body: { ...typography.body, marginTop: 10 },
+  artwork: { marginTop: 14 },
   empty: { alignItems: "center", gap: 14, paddingVertical: 32 },
   emptyText: { ...typography.body, textAlign: "center" },
 });

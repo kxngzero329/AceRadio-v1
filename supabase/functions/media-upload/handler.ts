@@ -25,7 +25,7 @@ type Dependencies = {
     hash: string,
   ): Promise<void>;
   publicUrl(key: string): string;
-  save(token: string, record: MediaRecord, bytes: Uint8Array): Promise<void>;
+  save(token: string, record: MediaRecord): Promise<MediaRecord>;
 };
 const MAX_BYTES = 10 * 1024 * 1024;
 const headers = {
@@ -102,14 +102,21 @@ export function createMediaUploadHandler(deps: Dependencies) {
     }
     if (!deps.configured)
       return reply(503, { error: "R2 image uploads are not configured yet." });
-    const bucket = request.headers.get("x-media-bucket") ?? "";
+    const category = request.headers.get("x-media-bucket") ?? "";
+    const legacyBuckets: Record<string, string> = {
+      headshots: "show-artwork",
+      "show-banners": "banners",
+      events: "station-media",
+      announcements: "station-media",
+    };
+    const bucket = Object.hasOwn(legacyBuckets, category)
+      ? legacyBuckets[category]
+      : undefined;
     if (
-      ![
-        "show-artwork",
-        "presenter-photos",
-        "banners",
-        "station-media",
-      ].includes(bucket)
+      !["headshots", "show-banners", "events", "announcements"].includes(
+        category,
+      ) ||
+      !bucket
     )
       return reply(400, { error: "Invalid image category." });
     const type = request.headers.get("content-type")?.split(";")[0];
@@ -156,13 +163,14 @@ export function createMediaUploadHandler(deps: Dependencies) {
     }
     try {
       const sha = await deps.hash(bytes);
-      const objectPath = `r2/${sha}.${image.type === "jpg" ? "jpg" : image.type}`;
-      const key = `${bucket}/${objectPath}`;
+      const filename = `${sha}.${image.type === "jpg" ? "jpg" : image.type}`;
+      const key = `${category}/${filename}`;
+      const objectPath = `r2/${key}`;
       // Content addressing makes retries idempotent. Never accept an object path
       // or public URL supplied by a browser, and never delete an uncertain upload.
       await deps.put(key, bytes, type!, sha);
       const record: MediaRecord = {
-        id: `r2:${bucket}:${sha}`,
+        id: `r2:${category}:${sha}`,
         bucket_id: bucket,
         object_path: objectPath,
         mime_type: type!,
@@ -175,8 +183,8 @@ export function createMediaUploadHandler(deps: Dependencies) {
         r2_sha256: sha,
         r2_bytes: bytes.byteLength,
       };
-      await deps.save(bearer, record, bytes);
-      return reply(200, { media: record });
+      const saved = await deps.save(bearer, record);
+      return reply(200, { media: saved });
     } catch {
       return reply(502, {
         error:

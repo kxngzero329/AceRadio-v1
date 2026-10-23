@@ -48,7 +48,7 @@ function Artwork({
       {loading && (
         <ActivityIndicator
           color={colors.muted}
-          accessibilityLabel="Loading event artwork"
+          accessibilityLabel="Loading artwork"
         />
       )}
       {failed && (
@@ -56,7 +56,7 @@ function Artwork({
           testID="event-artwork-unavailable"
           accessible
           accessibilityRole="image"
-          accessibilityLabel="Event artwork unavailable"
+          accessibilityLabel="Artwork unavailable"
         >
           <CalendarDays color={colors.subtle} size={36} accessible={false} />
         </View>

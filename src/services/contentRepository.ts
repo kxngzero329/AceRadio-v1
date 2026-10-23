@@ -35,7 +35,7 @@ export const contentPayloadSchema = z.object({
   banners: z.array(z.object({ id, show_id: nullableText, title: z.string().min(1), subtitle: nullableText,
     image_id: id, placement: z.enum(["home_spotlight","home_banner"]), link_url: httpsUrl.nullable(), ...windowFields,
   })),
-  announcements: z.array(z.object({ id, title: z.string().min(1), body: z.string().min(1), link_url: httpsUrl.nullable(), priority: z.number().int().default(0), ...windowFields })),
+  announcements: z.array(z.object({ id, title: z.string().min(1), body: z.string().min(1), link_url: httpsUrl.nullable(), image_url: httpsUrl.refine(value => !/^https:\/\/[^/]*@/.test(value)).nullable().optional().catch(null), priority: z.number().int().default(0), ...windowFields })),
 });
 export type ContentPayload = z.infer<typeof contentPayloadSchema>;
 
@@ -44,8 +44,8 @@ export const emptyContent: AppContent = { shows: [], presenters: [], banners: []
 export function decodeContent(value: unknown, baseUrl: string): AppContent {
   // Validate cached payloads as well as live responses before rendering them.
   const data = contentPayloadSchema.parse(value);
-  const media = new Map(data.media_assets.map(asset => [asset.id, {
-    uri: asset.public_url ?? `${baseUrl}/storage/v1/object/public/${asset.bucket_id}/${asset.object_path.split("/").map(encodeURIComponent).join("/")}`,
+  const media = new Map(data.media_assets.filter(asset => asset.public_url).map(asset => [asset.id, {
+    uri: asset.public_url!,
     ...(asset.width && asset.height ? { width: asset.width, height: asset.height } : {}),
   }]));
   const image = (assetId: string | null) => assetId ? media.get(assetId) : undefined;
@@ -70,7 +70,7 @@ export function decodeContent(value: unknown, baseUrl: string): AppContent {
       return artwork ? [{ id: banner.id, title: banner.title, subtitle: banner.subtitle, showId: banner.show_id,
         image: artwork, placement: banner.placement, linkUrl: banner.link_url, startsAt: banner.starts_at, endsAt: banner.ends_at }] : [];
     }),
-    announcements: data.announcements.map(item => ({ id: item.id, title: item.title, body: item.body, linkUrl: item.link_url, priority: item.priority, startsAt: item.starts_at, endsAt: item.ends_at })).sort((a,b) => b.priority - a.priority),
+    announcements: data.announcements.map(item => ({ id: item.id, title: item.title, body: item.body, linkUrl: item.link_url, imageUrl: item.image_url ?? null, priority: item.priority, startsAt: item.starts_at, endsAt: item.ends_at })).sort((a,b) => b.priority - a.priority),
   };
 }
 

@@ -413,6 +413,9 @@ verify_jwt = false
 [functions.media-upload]
 verify_jwt = false
 
+[functions.media-maintenance]
+verify_jwt = false
+
 [functions.content-publish]
 verify_jwt = false
 

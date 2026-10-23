@@ -114,21 +114,26 @@ certification of 1,000 simultaneously active phones on the current Supabase or
 Cloudflare plan. Registered users, concurrent users and concurrent listeners
 are different workloads.
 
+The subsequent direct-Icecast change moves updated apps' live-count reads off
+Supabase; it does not install a shared server/CDN cache. See [live listener
+delivery](listeners.md).
+
 Current steady-state estimates if **all 1,000 users are active for an entire
 hour**, excluding retries/startup/writes:
 
-| Surface                                             | Approximate hourly requests | Destination                                          |
-| --------------------------------------------------- | --------------------------: | ---------------------------------------------------- |
-| Native public pointer, once/minute                  |                      60,000 | R2; unchanged JSON is reused                         |
-| Live listener count, every 15 seconds               |                     240,000 | Supabase Edge; no database reads inside that handler |
-| Account sync, every 30 seconds, all 1,000 signed in |                     120,000 | Supabase database API                                |
-| Idle reminder worker                                |                          60 | Supabase database API, independent of phone count    |
-| Public content publisher                            |          60 revision checks | Supabase database API, independent of phone count    |
+| Surface                                             | Approximate hourly requests | Destination                                                  |
+| --------------------------------------------------- | --------------------------: | ------------------------------------------------------------ |
+| Native public pointer, once/minute                  |                      60,000 | R2; unchanged JSON is reused                                 |
+| Live listener count, every 10 seconds               |                     360,000 | Existing Icecast API directly; no per-phone Supabase request |
+| Account sync, every 30 seconds, all 1,000 signed in |                     120,000 | Supabase database API                                        |
+| Idle reminder worker                                |                          60 | Supabase database API, independent of phone count            |
+| Public content publisher                            |          60 revision checks | Supabase database API, independent of phone count            |
 
 Queries are shared across components in each client, and client background/focus
 rules suppress inactive polling. Those controls do not eliminate real active
 usage. Listener history is a separate once-per-minute collector. Audio bandwidth
-continues to go to the station stream server, not Supabase.
+continues to go to the station stream server, not Supabase. The streaming host
+now also receives updated clients' public statistics requests.
 
 Before a public release approaching 1,000 concurrent users:
 
@@ -145,12 +150,13 @@ Before a public release approaching 1,000 concurrent users:
    reads and representative slow networks; avoid testing 1,000 accounts on live
    production by surprise.
 4. Account for real active listener polling. At larger concurrency, a suitable
-   shared edge cache/transport for listener statistics may be needed; this patch
-   preserves the existing freshness and correct counts rather than silently
-   reducing the refresh frequency.
+   shared cache/transport on the streaming host or CDN may be needed. The direct
+   API removes per-phone Supabase count invocations but does not certify the
+   streaming server for 1,000 simultaneous clients.
 5. Check growth/retention of listener history and delivery records over time.
-   Existing original Supabase image objects and legacy public APIs remain for
-   older installed builds, so adopting new clients is part of reducing usage.
+   Legacy public APIs remain for compatible R2-aware builds. Supabase image
+   files were removed on 23 October after the owner confirmed those supported
+   clients; older Supabase-image builds are no longer supported.
 
 ## Deployment and rollback
 

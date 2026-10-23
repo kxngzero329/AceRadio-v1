@@ -108,6 +108,84 @@ export function createR2Store(config: {
     }
   };
   return {
+    async list() {
+      const keys: string[] = [];
+      let continuation = "";
+      const xmlText = (value: string) =>
+        value
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '\"')
+          .replace(/&apos;/g, "'");
+      for (let page = 0; page < 100; page++) {
+        const url = new URL(`${endpoint.origin}/${config.bucket}`);
+        url.searchParams.set("list-type", "2");
+        url.searchParams.set("encoding-type", "url");
+        if (continuation)
+          url.searchParams.set("continuation-token", continuation);
+        const response = await fetch(await signer.sign(url.toString()), {
+          signal: AbortSignal.timeout(15000),
+          redirect: "error",
+        });
+        if (!response.ok) throw Error("R2 inventory failed");
+        const xml = await response.text();
+        if (
+          xml.length > 2097152 ||
+          !xml.includes("<ListBucketResult") ||
+          /<!DOCTYPE|<!ENTITY/i.test(xml)
+        )
+          throw Error("Invalid R2 inventory");
+        for (const match of xml.matchAll(/<Key>([^<]*)<\/Key>/g))
+          keys.push(decodeURIComponent(xmlText(match[1])));
+        const truncated = /<IsTruncated>(true|false)<\/IsTruncated>/.exec(
+          xml,
+        )?.[1];
+        if (truncated === "false") return keys;
+        const next =
+          /<NextContinuationToken>([^<]+)<\/NextContinuationToken>/.exec(
+            xml,
+          )?.[1];
+        if (truncated !== "true" || !next || xmlText(next) === continuation)
+          throw Error("Incomplete R2 inventory");
+        continuation = xmlText(next);
+      }
+      throw Error("R2 inventory page limit exceeded");
+    },
+    async retireLegacy(source: string, target: string, sha: string) {
+      if (
+        !/^[a-f0-9]{64}$/.test(sha) ||
+        !/^(show-artwork|presenter-photos|banners|station-media)\/r2\/[a-f0-9]{64}\.(jpg|png|webp)$/.test(
+          source,
+        ) ||
+        !/^(headshots|show-banners|events|announcements)\/[a-f0-9]{64}\.(jpg|png|webp)$/.test(
+          target,
+        ) ||
+        source.split("/").pop() !== target.split("/").pop() ||
+        !target.split("/").pop()?.startsWith(`${sha}.`)
+      )
+        throw Error("Invalid legacy retirement");
+      await verified(target, sha);
+      const before = await request(source, "HEAD");
+      if (before.status === 404) return { removed: false };
+      if (!before.ok) throw Error("Legacy source unavailable");
+      await verified(source, sha);
+      const response = await request(source, "DELETE");
+      if (![200, 204].includes(response.status))
+        throw Error("Legacy retirement failed");
+      let absent = false;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if ((await request(source, "HEAD")).status === 404) {
+          absent = true;
+          break;
+        }
+        await new Promise((resolve) =>
+          setTimeout(resolve, 300 * (attempt + 1)),
+        );
+      }
+      if (!absent) throw Error("Legacy object still exists");
+      return { removed: true };
+    },
     publicUrl: (key: string) =>
       `${config.baseUrl.replace(/\/+$/, "")}/${encode(key)}`,
     async put(key: string, bytes: Uint8Array, type: string, sha: string) {

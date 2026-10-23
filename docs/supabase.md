@@ -1,5 +1,10 @@
 # Supabase content backend
 
+**Media update, 23 October 2026:** the shared R2 library supersedes the historical
+Storage/import details below. All Supabase image files have been removed, R2
+uploads/reuse are active, and legacy Storage-file imports are disabled. See
+[the current R2 structure and release checks](r2-media.md).
+
 **19 October push update:** account reminder scope/timing, private installation
 registrations and delivery queues are deployed. The protected dispatcher and
 minute cron are installed with sending disabled pending Firebase/Apple/Expo

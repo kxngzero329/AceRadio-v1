@@ -1,8 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 import { imageSize } from "npm:image-size@2.0.4";
 import { createR2Store } from "../_shared/r2.ts";
-import { createMediaUploadHandler, type MediaRecord } from "./handler.ts";
-import { preserveLegacyImage } from "./compatibility.ts";
+import { createMediaUploadHandler } from "./handler.ts";
+import { registerMedia } from "./register.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const key = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -16,14 +16,6 @@ const client = (token: string) =>
     },
   });
 let store: ReturnType<typeof createR2Store> | null = null;
-const hashBytes = async (bytes: Uint8Array) =>
-  [
-    ...new Uint8Array(
-      await crypto.subtle.digest("SHA-256", bytes as BufferSource),
-    ),
-  ]
-    .map((n) => n.toString(16).padStart(2, "0"))
-    .join("");
 try {
   const account = Deno.env.get("R2_ACCOUNT_ID") ?? "";
   if (Deno.env.get("R2_ACCESS_KEY_ID") && Deno.env.get("R2_SECRET_ACCESS_KEY"))
@@ -75,47 +67,6 @@ Deno.serve(
     },
     put: (...args) => store!.put(...args),
     publicUrl: (key) => store!.publicUrl(key),
-    async save(token, record: MediaRecord, bytes: Uint8Array) {
-      const caller = client(token);
-      const bucket = caller.storage.from(record.bucket_id);
-      const publicUrl = bucket.getPublicUrl(record.object_path).data.publicUrl;
-      await preserveLegacyImage(
-        {
-          upload: async () => {
-            const uploaded = await bucket.upload(record.object_path, bytes, {
-              contentType: record.mime_type,
-              cacheControl: "31536000",
-              upsert: false,
-            });
-            if (uploaded.error)
-              throw Error("Legacy image copy needs verification");
-          },
-          read: () =>
-            fetch(publicUrl, {
-              redirect: "error",
-              signal: AbortSignal.timeout(15000),
-            }),
-          hash: hashBytes,
-        },
-        record.sha256,
-      );
-      const result = await caller
-        .from("media_assets")
-        .upsert(record, { onConflict: "id", ignoreDuplicates: true });
-      if (result.error) throw Error("Media registration failed");
-      const saved = await caller
-        .from("media_assets")
-        .select("public_url,r2_sha256,r2_key,status")
-        .eq("id", record.id)
-        .single();
-      if (
-        saved.error ||
-        saved.data.public_url !== record.public_url ||
-        saved.data.r2_sha256 !== record.r2_sha256 ||
-        saved.data.r2_key !== record.r2_key ||
-        saved.data.status !== "published"
-      )
-        throw Error("Media registration conflict");
-    },
+    save: (token, record) => registerMedia(client(token), record),
   }),
 );

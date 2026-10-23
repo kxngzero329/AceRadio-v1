@@ -93,7 +93,7 @@ test('migrations and seed return the complete verified public catalogue anonymou
     assert.equal(mapped.shows.find(show => show.id === 'top-20').presenter,'Christopher Marshall & Caitlin Sisam');
     assert.equal(mapped.presenters.find(presenter => presenter.name === 'Jarred Sisam').photo,undefined);
     assert.ok(mapped.presenters.every(presenter => presenter.bio === null));
-    assert.ok(mapped.shows.every(show => show.image.uri.startsWith('https://test.supabase.co/storage/v1/object/public/')));
+    assert.ok(mapped.shows.every(show => show.image === undefined));
   });
 });
 

@@ -323,6 +323,11 @@ export type Database = {
       }
       media_assets: {
         Row: {
+          public_url: string | null
+          r2_key: string | null
+          r2_sha256: string | null
+          r2_bytes: number | null
+          media_category: string | null
           alt_text: string | null
           bucket_id: string
           created_at: string
@@ -337,6 +342,11 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          public_url?: string | null
+          r2_key?: string | null
+          r2_sha256?: string | null
+          r2_bytes?: number | null
+          media_category?: never
           alt_text?: string | null
           bucket_id: string
           created_at?: string
@@ -351,6 +361,11 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          public_url?: string | null
+          r2_key?: string | null
+          r2_sha256?: string | null
+          r2_bytes?: number | null
+          media_category?: never
           alt_text?: string | null
           bucket_id?: string
           created_at?: string
@@ -778,6 +793,7 @@ export type Database = {
       get_app_content: { Args: never; Returns: Json }
       get_app_content_v2: { Args: never; Returns: Json }
       get_app_content_v3: { Args: never; Returns: Json }
+      show_headshot_id: { Args: { target_show: string; fallback: string | null }; Returns: string | null }
       get_event_ticket_availability: {
         Args: { event_id: string }
         Returns: Json

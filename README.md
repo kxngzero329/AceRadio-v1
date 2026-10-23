@@ -2,7 +2,13 @@
 
 For an end-to-end map of the screens, playback, content flow, deployed database and CLI setup, see the [codebase overview](docs/codebase-overview.md), reviewed on 16 October 2026.
 
-R2 image delivery is active for all 32 optimised media records. Updated mobile
+Solo shows, presenters and show-host entries share the presenter's headshot;
+co-hosted shows retain group artwork. The four obsolete R2 image folders have
+been removed; refresh test-device catalogue caches. Keep `public-content/`.
+
+R2 image delivery uses a shared library with `headshots`, `show-banners`,
+`events` and `announcements` folders. All 33 old Supabase image files were
+removed after verified migration; Supabase now stores image URLs/metadata only. Updated mobile
 builds cache artwork in memory/on disk and share a cached R2 public-content
 snapshot instead of polling Supabase catalogue tables. The rebuilt website/admin
 has matching local integration and is not yet published. A fresh mobile build is
@@ -14,7 +20,7 @@ Accounts, the two-role permission system, MFA for admin writes, and cached favou
 
 Expo SDK 57 / React Native / TypeScript app using the supplied AceRadio artwork and branding.
 
-Listening uses AceRadio's public live stream, `https://studio.ace.radio/stream`. Every show plays that same station stream. Supabase is deployed and enabled for local use and the EAS development, preview and production environments, with reproducible migrations, verified API imports, Storage, RLS and a persisted catalogue cache. A fresh build includes this integration; later published content updates arrive without another release. Supabase mode uses only a public URL/key. Unconfigured checkouts default to bundled content. See [backend setup and deployment status](docs/supabase.md).
+Listening uses AceRadio's public live stream, `https://studio.ace.radio/stream`. Every show plays that same station stream. Supabase is deployed and enabled for local use and the EAS development, preview and production environments, with reproducible migrations, verified API imports, RLS, R2 media delivery and a persisted catalogue cache. A fresh build includes this integration; later published content updates arrive without another release. Supabase mode uses only a public URL/key. Unconfigured checkouts default to bundled content. See [backend setup and deployment status](docs/supabase.md).
 
 Notification request batching and the isolated 1,000-device capacity checks are
 documented in [backend capacity and rollout checks](docs/backend-capacity.md).
@@ -54,7 +60,7 @@ and web. See [typography, font sources and checks](docs/typography.md).
 - Home's “Listen Live” selects the show scheduled at the current time in South African Standard Time (SAST), then starts the real station audio. Outside a listed show slot, it still starts the station stream. The public source is configured in `src/config/station.ts`.
 - The hero crossfades into the selected presenter artwork with a gentle zoom and text entrance. It shows the title, presenter, subtitle, schedule and listener count.
 - Live badges, the Home notice board, the Shows “Live now” filter, and playback's live lineup follow each show's printed SAST day and time slot. Schedule checks use the Africa/Johannesburg time zone and refresh automatically.
-- Listener counts come from the verified Icecast `/stream` statistics through a public Supabase Edge Function. They refresh about every 15 seconds and count active stream connections across players. Failed/expired statistics show “Live radio”; sample counts are never displayed in either content mode. Outside scheduled slots, playback still uses the station identity. See [listener count implementation and checks](docs/listeners.md).
+- Listener counts come directly from the existing public Icecast status API, with no per-phone Supabase request for the displayed count. They refresh about every ten seconds while the app is active and count stream connections across players. Failed/expired statistics show “Live radio”; sample counts are never displayed in either content mode. Outside scheduled slots, playback still uses the station identity. See [listener count implementation and checks](docs/listeners.md).
 - Show details indicate whether the selected show is On air or Scheduled. Listening from show details is enabled only during that show's SAST schedule.
 - The hero, mini player and full player share one audio player and show selection across navigation. Native pause keeps the system media session available; resume keeps the selected show and reconnects to the station's current live audio. Closing the mini player or finishing the sleep timer releases the player and removes its system controls.
 - The mini player appears after station audio has actually started and remains available while paused. Previous / Play-Pause / Next use the currently scheduled live lineup; its close button stops playback and fades the mini player away.

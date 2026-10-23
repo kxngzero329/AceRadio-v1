@@ -1,5 +1,10 @@
 # AceRadio codebase overview
 
+**Media update, 23 October 2026:** the shared R2 library supersedes the historical
+Storage/import details below. All Supabase image files have been removed, R2
+uploads/reuse are active, and legacy Storage-file imports are disabled. See
+[the current R2 structure and release checks](r2-media.md).
+
 **Subsequent integration on 19 October 2026:** the app reads published events
 from the shared website/admin table, with an independent public cache, Home
 cards and event list/detail pages. Announcements now have a compact priority
@@ -47,8 +52,9 @@ flowchart TD
   Tap[Listener presses Play] --> Radio
   Radio --> Transport[Native Expo Audio or browser Audio]
   Transport --> Stream[studio.ace.radio/stream]
-  Icecast[Public Icecast statistics] --> Edge[listener-stats Edge Function]
-  Edge --> Count[Shared ephemeral listener query]
+  Icecast[Public Icecast statistics] --> Count[Shared ephemeral listener query]
+  Icecast --> Edge[Legacy listener-stats Edge Function]
+  Edge --> History[Admin listener history]
   Count --> Screens
   Count --> PlayerUI[Hero and full player]
   Local[Local favourites and notification preference] --> Screens
@@ -88,9 +94,20 @@ The sleep timer offers Off/15/30/45/60 minutes. It uses a JavaScript timeout and
 
 ## Listener statistics
 
-`supabase/functions/listener-stats/handler.ts` reads the fixed public Icecast statistics URL, selects exactly one verified `/stream` mount and returns only its aggregate count and sample metadata. It never connects to audio or queries the database. Zero is valid; errors, malformed/ambiguous statistics and stale data produce unavailability.
+`src/services/listenerStats.ts` reads the existing public Icecast status URL directly.
+The pure shared decoder selects exactly one verified `/stream` mount and retains
+only its count and freshness metadata. It never opens audio, invokes Supabase or
+queries the database for the displayed count. Zero is valid; malformed/ambiguous
+statistics, failures and stale data produce unavailability.
 
-The function caches for ten seconds per warm worker, shares in-flight reads, uses a five-second upstream deadline/backoff and limits response size. It exposes public GET/OPTIONS with CORS and `verify_jwt=false`. The shared client query refreshes every 15 seconds while foregrounded; samples expire within 30 seconds including server age/network latency. The UI uses no bundled listener estimates. The count measures stream connections across players, not unique people or per-show audiences. See [listener details](listeners.md).
+The app query refreshes every ten seconds while foregrounded and expires samples
+within 30 seconds, including HTTP Age and request latency. Raw JSON parsing is
+bounded and supports native fetch responses without a readable stream. The count
+measures stream connections across players, not unique people or per-show
+users. The existing deployed `listener-stats` Edge Function remains for older
+builds and once-per-minute admin history collection. No shared server/CDN cache
+was installed; each updated phone polls Icecast directly. See [listener
+details](listeners.md).
 
 ## Deployed database
 

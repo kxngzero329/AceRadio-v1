@@ -1,99 +1,122 @@
 # Live listener count
 
-The app displays the active connection count for the exact broadcast it plays:
-`https://studio.ace.radio/stream`. The verified source is the public Icecast JSON
-endpoint at `https://studio.ace.radio/status-json.xsl`.
+Updated on 23 October 2026. The app reads the **existing public Icecast API**
+directly: `https://studio.ace.radio/status-json.xsl`. No new endpoint or streaming
+server configuration is required. The live audio URL remains
+`https://studio.ace.radio/stream`.
 
-This measures connections to that stream across the mobile app, website and other
-players, including background audio. It is not a count of unique people or open
-apps. Multiple devices can represent one person; listeners behind external relays
-are not necessarily visible individually to this server. All shows use the same
-station stream, so the number is the station audience rather than separate show
-audiences. Checking statistics does not open an audio connection or inflate it.
+The displayed count measures active connections to that stream across the app,
+website and other players, including background audio. It is not a unique-person
+count or a count of open apps. Statistics requests do not open an audio connection
+or increase the audience. `listener_peak` is not used as the current count.
 
-## Data flow and accuracy
+## Current app data flow
 
-- The public, read-only `listener-stats` Supabase Edge Function fetches only the
-  fixed Icecast statistics URL. Caller-supplied URLs never change its destination.
-- It requires exactly one `/stream` entry advertised under the verified
-  `studio.ace.radio` / `studio.arc.radio` names. The latter is Icecast's internal
-  advertised hostname. Missing/ambiguous mounts, invalid counts, upstream errors
-  and timeouts return 503, never a fabricated zero. An actual zero is valid.
-- The function returns only the aggregate count, public stream URL, sampling time,
-  sample age and schema version. It exposes no listener identities, IP addresses,
-  raw server statistics or credentials and has no database access.
-- Warm workers cache a sample for at most ten seconds and deduplicate concurrent
-  upstream reads. This is an opportunistic per-worker cache, not a global cache;
-  separate/cold workers can make independent reads. Upstream failures have a
-  five-second cooldown. There is no counter table or database write.
-- HTTP responses use `Cache-Control: no-store`. Public CORS and GET/OPTIONS are
-  supported. `verify_jwt = false` is intentional: the aggregate is public already,
-  and no listener sign-in or API key is needed to read it.
-- The app has one shared query, refreshed about every 15 seconds while visible,
-  with foreground/reconnect refresh. It does not poll while backgrounded. The
-  streaming server continues counting background audio connections independently.
-- The UI expires a sample at 30 seconds, including server-reported age and request
-  latency. It uses elapsed sample age instead of comparing the phone's calendar
-  clock with the server's sampling timestamp. Errors or expired/unavailable data
-  show “Live radio” (or the card's plain LIVE badge). No sample count is used as a
-  fallback, even in bundled content mode.
-- Listener samples are excluded from the persisted catalogue. Updating statistics
-  does not start, pause, reconnect, or change the metadata of the audio transport.
+**App → existing Icecast status URL**
 
-This is a frequently refreshed reading, not an instantaneous unique-person total.
-Under normal conditions it may lag a connection change by the server cache plus
-the app's refresh interval. A fresh count is shown on Home, the full player and
-live show cards; the existing narrow-card layout can show the plain LIVE badge.
+- `src/services/listenerStats.ts` performs a public HTTPS GET directly, without
+  account credentials or Supabase API keys; browser cookies are explicitly
+  omitted. Native cookie handling follows the platform fetch implementation.
+  No authentication is required. It works independently of
+  Supabase catalogue configuration, including bundled content mode.
+- The source is fixed in the pure shared decoder at
+  `supabase/functions/_shared/icecast.ts`. Only one exact `/stream` entry under
+  `studio.ace.radio` or its advertised `studio.arc.radio` alias is accepted.
+  Source objects and arrays are both supported. Missing, ambiguous or unrelated
+  mounts, invalid/negative/fractional counts and malformed responses fail safely.
+- The response must be JSON and is limited to 64 KiB. Reading works with both
+  browser streaming responses and React Native fetch responses without a readable
+  body stream. Known Content-Length and decoded byte sizes are checked.
+- The shared TanStack query refreshes every **10 seconds while foregrounded**,
+  including foreground/reconnect refresh, and is reused across Home, player and
+  live show widgets. It does not poll in the background and does not retry in a
+  tight loop. Each phone still makes its own requests; this is not a shared cache
+  across users.
+- Fetch uses `cache: no-store`. The live source currently also returns
+  `Cache-Control: no-cache, no-store` and `Access-Control-Allow-Origin: *`.
+  Browser CORS and native HTTPS support are checked without exposing credentials.
+- Only the validated count and local freshness metadata enter the client cache;
+  raw Icecast administrator/server details are not retained as app query data.
+- A sample expires after at most **30 seconds**, conservatively accounting for
+  HTTP Age and the full request duration. Raw Icecast JSON provides no per-response
+  sampling timestamp; the client estimates freshness from request timing rather
+  than misusing `server_start` or `stream_start`. A phone's calendar need not
+  match the streaming server's clock.
+- Errors or expired data show the existing “Live radio”/plain LIVE state, never a
+  fabricated zero. A valid actual zero is displayed. There is **no automatic
+  Supabase fallback** that could recreate per-phone Edge usage during an outage.
+- Counts are excluded from persisted catalogue data. Refreshing statistics never
+  starts, stops, reconnects or changes the metadata of audio playback.
 
-## Deployment and configuration
+This is polling, not an instantaneous push subscription. Count changes generally
+appear on a subsequent refresh, subject to network and server disconnection
+recognition. Closing the app does not necessarily disconnect background audio.
 
-The function is deployed to the linked `aceradio_db` project. Existing local/EAS
-`EXPO_PUBLIC_SUPABASE_URL` values select it; no new app environment variables or
-privileged keys are needed. An unconfigured checkout shows “Live radio”.
+## Supabase and admin history
 
-To repeat an authorised deployment, use:
+The existing deployed `listener-stats` Edge Function remains available for older
+installed builds and the separate once-per-minute admin listener-history
+collector. It still provides its original aggregate version-1 response and
+per-warm-worker cache. The shared decoder was extracted in source without
+changing its public contract. This app change requires **no production backend
+migration, function deployment, credential change or cron change**.
 
-```sh
-npm run backend:deploy-listeners              # dry run
-npm run backend:deploy-listeners -- --apply --confirm-project dbgpfqyighcaquxwzkfe
-```
+Updated apps make **zero Supabase database or Edge requests for the displayed
+listener count**. Other account/content/notification operations and the admin
+collector continue independently. Older installed versions keep their original
+transport until updated.
 
-The script deploys only this function and checks the linked project against the
-confirmation/import manifest. It does not modify database tables or content.
-Install a preview containing the new app code to enable the display on a phone.
+## Capacity and configuration
+
+No listener-specific environment variable or private key is needed. Expo Go
+needs a reload with this code; installed previews/releases need an updated build.
+The verified public endpoint already exists, and no nginx service or invented
+URL was added.
+
+Traffic has moved to the streaming host, not disappeared. At 1,000 continuously
+foregrounded clients with one poll per ten seconds, the steady-state estimate is
+**360,000 statistics requests/hour** (about 100/second), excluding startup,
+foreground and navigation refreshes. Its ability to serve that traffic must be
+confirmed by the hosting provider or an authorised load test. Client polling is
+not a server-enforced abuse limit. No 1,000-client load test is run against the
+live streaming host without that coordination.
+
+A shared server/CDN cache remains a possible future improvement when hosting
+access exists. It is not required for the direct API integration and is not
+claimed to have been deployed. See [backend capacity](backend-capacity.md).
 
 ## Verification
 
-Verified on 15 October 2026: all **90 tests** passed (15 listener, 21 content,
-30 radio, 16 navigation and 8 web input), along with app TypeScript, Deno's strict
-function check, and Android/iOS/web bundle exports. The deployed public endpoint
-and direct Icecast source both reported 13 connections during the comparison;
-GET without credentials and browser OPTIONS/CORS also passed. Physical phone
-checks remain necessary for the installed preview.
+On 23 October 2026, all **290 app/backend tests** passed, including 18 listener
+tests. TypeScript, the existing Edge handler's Deno check, and Android/iOS/web
+exports passed. Chrome read the actual public API four times, observed polling
+intervals of approximately ten seconds, matched the visible count to the API,
+and made **zero Supabase listener-count requests**. Simulated HTTP failure and
+subsequent recovery also passed without runtime errors. Evidence is in ignored
+`.qa/direct-listeners` artifacts. Physical-device checks remain necessary.
 
 ```sh
 npm run test:listeners
-npm run test:radio
-npm run test:content
-npm run test:navigation
-npm run test:web-input
+node --test scripts/*.test.cjs
 npm run typecheck
 npx --yes deno check supabase/functions/listener-stats/index.ts
 npx expo export --platform all --output-dir .qa/listener-export
-curl https://dbgpfqyighcaquxwzkfe.supabase.co/functions/v1/listener-stats
 ```
 
-Tests execute the actual parser, HTTP handler, client transport, freshness logic,
-query/persistence settings and hook lifecycle. They cover zero, wrong/ambiguous
-mounts, malformed responses, stale upstream caches, concurrent reads, timeouts,
-network failures, background return, sample expiration and recovery. The radio
-integration test confirms that real counts replace fixtures in both content modes
-and that reading counts never starts audio.
+Tests run the actual common decoder, existing aggregate handler, direct client
+transport, query sharing/persistence settings and hook lifecycle. They cover
+valid zero, exact/ambiguous mounts, API errors, cancellation/deadlines, streaming
+and native non-streaming bodies, multibyte size limits, invalid/stale HTTP Age,
+clock offsets, foreground return, expiry and recovery. The radio integration
+checks that real counts replace fixtures in both content modes and that reading
+statistics never starts audio.
 
-On a phone, compare the displayed count with the source using the sampling time,
-allowing for the short refresh/cache delay. Check that pause/stop, background
-listening and system controls work while statistics refresh or are unavailable.
+Browser verification must observe GETs to the real status URL and **no requests
+to `/functions/v1/listener-stats`** from the updated app. Other web content requests
+may still use their separate public-content Edge reader. Device checks should
+compare the count with the real status response while accounting for timing and
+other listeners, then exercise background playback, pause/stop and system controls.
 
 References: [Icecast statistics](https://www.icecast.org/docs/icecast-latest/server_stats/),
-[Supabase function configuration](https://supabase.com/docs/guides/functions/function-configuration),
+[React Native networking](https://reactnative.dev/docs/network),
 [TanStack focus refresh](https://tanstack.com/query/latest/docs/framework/react/guides/window-focus-refetching).
